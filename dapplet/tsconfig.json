@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "lib": ["es2019", "dom"],
+    "moduleResolution": "Node",
+    "noEmitHelpers": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx"
+  }
+}

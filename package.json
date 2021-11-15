@@ -1,0 +1,34 @@
+{
+  "name": "tipping-near-dapplet",
+  "version": "0.1.0",
+  "description": "Tipping Dapplet, allowing you to send money to another person on Twitter",
+  "main": "",
+  "scripts": {
+    "postinstall": "concurrently -c magenta,cyan -n dapplet,overlay \"npm run install:dapplet\" \"npm run install:overlay\"",
+    "install:dapplet": "cd dapplet && npm i",
+    "install:overlay": "cd overlay && npm i",
+    "start": "concurrently -c magenta,cyan -n dapplet,overlay \"npm run start:dapplet\" \"npm run start:overlay\"",
+    "start:dapplet": "cd dapplet && npm start",
+    "start:overlay": "cd overlay && npm start",
+    "prettier": "npx prettier --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dapplets/dapplet-near-example.git"
+  },
+  "cacheDirectories": [
+    "dapplet/node_modules",
+    "overlay/node_modules",
+    "contract/node_modules"
+  ],
+  "author": "Dapplets Project",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^6.0.2",
+    "prettier": "2.2.1"
+  },
+  "bugs": {
+    "url": "https://github.com/dapplets/dapplet-near-example/issues"
+  },
+  "homepage": "https://github.com/dapplets/dapplet-near-example#readme"
+}
