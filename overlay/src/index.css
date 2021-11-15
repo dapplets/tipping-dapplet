@@ -4,6 +4,9 @@
   padding: 0;
 }
 
-body { font-family: "Montserrat"; }
+body { font-family: "Montserrat" !important; }
+body h1,
+body h2,
+body h3 { font-family: "Roboto" !important; }
 
 a { text-decoration: none; }
