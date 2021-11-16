@@ -21,7 +21,7 @@ export default () => {
     for (let i = 0; i < arr1.length; i++) {
       merged.push({
         ...arr1[i],
-        ...(arr2.find((itmInner: IPayments) => itmInner.nearId === arr1[i].nearId))
+        ...(arr2.find((itmInner: IPayments) => itmInner.nearId === arr1[i].nearId) ?? { payment: 0 })
       });
     }
 
