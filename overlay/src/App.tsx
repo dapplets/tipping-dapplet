@@ -3,12 +3,36 @@ import { Button, Container, Header, List } from 'semantic-ui-react';
 import { bridge } from './dappletBridge';
 import './app.css';
 import { ISendTipping, ITipping } from './interfaces';
+import { groupBy } from 'lodash';
 
 
 export default () => {
-  const [tippings, setTippings] = useState<null | ITipping[]>(null);
+  const [tippings, setTippings] = useState<null | ISendTipping[]>(null);
 
-  useEffect(() => bridge.onData(setTippings), []);
+  useEffect(() => {
+    bridge.onData(item => {
+      const parsing = tippingParsing(item);
+      setTippings(parsing);
+    })
+  }, []);
+
+  function tippingParsing(tippings: ITipping[]) {
+    const group = groupBy(tippings, 'nearId');
+
+    return Object.keys(group)
+      .reduce((acc: any, item) => {
+        const obj = group[item]
+          .reduce((acc: any, item) => {
+            return {
+              nearId: item.nearId,
+              count: acc.count + item.count
+            }
+          }, { count: 0, });
+
+        acc.push(obj);
+        return acc;
+      }, []);
+  }
 
   async function onClick(config: ISendTipping) {
     try {
@@ -33,6 +57,9 @@ export default () => {
     bridge.sendNearToken({ nearId, count });
   }
 
+  console.log(tippings);
+
+
   return (
     <React.Fragment>
       <Container className="c-container">
@@ -41,11 +68,13 @@ export default () => {
 
       <Container style={{ margin: 20 }}>
         <List className='list' divided relaxed>
-          {tippings && tippings.map(({ nearId, count, tweetId }) => {
+          {tippings && tippings.map(({ nearId, count }, key) => {
+            console.log(nearId, count);
+
 
             return (
               <List.Item
-                key={tweetId}
+                key={key}
                 style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <List.Content>
                   <List.Header as="h3">{nearId}</List.Header>

@@ -1,5 +1,6 @@
 import { } from '@dapplets/dapplet-extension';
-import EXAMPLE_IMG from './icons/money-svgrepo-com.svg';
+import WHITE_ICON from './icons/money-twiter-light.svg';
+import DARK_ICON from './icons/money-twiter-dark.svg';
 import { ButtonCTXProps, ITipping } from '../../overlay/src/interfaces';
 
 // https://twitter.com/rimberjack
@@ -7,6 +8,8 @@ import { ButtonCTXProps, ITipping } from '../../overlay/src/interfaces';
 // https://twitter.com/LearnNear
 
 // (([a-z\d]+[\-_])*[a-z\d]+\.)*([a-z\d]+[\-_])*[a-z\d]+\.near
+
+// receiver_id: "alsakhaev.testnet"
 
 export const nameStorage = 'tippings';
 
@@ -73,23 +76,40 @@ export default class TwitterFeature {
 
     Core.onAction(() => this.openOverlay());
 
-    const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
-    console.log(wallet);
-
     const { button } = this.adapter.exports;
     this.adapter.attachConfig({
       POST: (ctx: ButtonCTXProps) =>
         button({
           DEFAULT: {
-            img: EXAMPLE_IMG,
+            img: {
+              DARK: WHITE_ICON,
+              LIGHT: DARK_ICON
+            },
+            label: 'Tip',
             tooltip: 'Send donation',
-            exec: async () => {
+            exec: async (_, me) => {
               await this.saveTippingInStorage(this.parsingTipping(ctx));
               await this.updateOverlay();
+              await this.setCountToLabel(ctx, me);
+              console.log('exec:', await this.getTippingInStorage());
             },
+            init: async (_, me) => {
+              await this.setCountToLabel(ctx, me);
+            }
           },
         }),
     });
+  }
+
+  async setCountToLabel(ctx: ButtonCTXProps, me: any): Promise<void> {
+    const getTippingInStorage = await this.getTippingInStorage();
+
+    for (const item of getTippingInStorage) {
+      if (item.tweetId === ctx.id) {
+        me.label = item.count + ' NEAR';
+        break;
+      }
+    }
   }
 
   async saveTippingInStorage(newValue: ITipping): Promise<void> {
@@ -97,20 +117,21 @@ export default class TwitterFeature {
 
     const prevValue = await this.getTippingInStorage() || [];
     const update = this.updateTippings(prevValue, newValue);
-    await Core.storage.set(nameStorage, JSON.stringify(update));
+
+    await Core.storage.set(nameStorage, JSON.stringify(update)); // DataLayer
   }
 
   async getTippingInStorage(): Promise<ITipping[]> {
-    return JSON.parse(await Core.storage.get(nameStorage) || "[]");
+    return JSON.parse(await Core.storage.get(nameStorage) || "[]"); // DataLayer (JSON => Object)
   }
 
-  parsingTipping(value: ButtonCTXProps): ITipping {
-    const nearId = this.getNearId(value.authorFullname);
+  parsingTipping(ctxButton: ButtonCTXProps): ITipping {
+    const nearId = this.getNearId(ctxButton.authorFullname);
 
     return nearId && {
+      nearId,
       count: 1,
-      nearId: nearId,
-      tweetId: value.id
+      tweetId: ctxButton.id
     }
   }
 
@@ -124,12 +145,13 @@ export default class TwitterFeature {
     return nearId && nearId[0];
   }
 
+  // Data Layer
   updateTippings(prevTippings: ITipping[], newTipping: ITipping): ITipping[] {
-    const itemIndex = prevTippings.findIndex(item => item.nearId === newTipping.nearId);
+    const itemIndex = prevTippings.findIndex(item => item.tweetId === newTipping.tweetId);
     if (itemIndex === -1) return [...prevTippings, newTipping];
 
     const getTipping = prevTippings[itemIndex];
-    const updateTipping = { ...getTipping, count: getTipping.count + 1 }
+    const updateTipping = { ...getTipping, count: getTipping.count + 1, }
 
     return [
       ...prevTippings.slice(0, itemIndex),

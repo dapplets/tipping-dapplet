@@ -9,6 +9,7 @@
     "ethers": "^5.0.14",
     "immutability-helper": "^3.1.1",
     "javascript-time-ago": "^2.3.8",
+    "lodash": "^4.17.21",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-linkify": "^1.0.0-alpha",
@@ -23,6 +24,7 @@
     "build": "webpack"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.177",
     "@types/node": "^15.0.2",
     "@types/react": "^17.0.5",
     "@types/react-dom": "^17.0.3",

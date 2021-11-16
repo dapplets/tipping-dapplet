@@ -14,7 +14,7 @@
   "main": {
     "$ref": "package.json#/main"
   },
-  "icon": "src/icons/money-svgrepo-com.png",
+  "icon": "src/icons/money-logo.svg",
   "contextIds": [
     "twitter-adapter.dapplet-base.eth"
   ],
