@@ -30,5 +30,8 @@
   "bugs": {
     "url": "https://github.com/dapplets/dapplet-near-example/issues"
   },
-  "homepage": "https://github.com/dapplets/dapplet-near-example#readme"
+  "homepage": "https://github.com/dapplets/dapplet-near-example#readme",
+  "dependencies": {
+    "mathjs": "^10.0.0"
+  }
 }

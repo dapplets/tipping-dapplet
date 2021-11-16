@@ -20,9 +20,61 @@ export default class TwitterFeature {
     if (!this._overlay) {
       this._overlay = (<any>Core)
         .overlay({ name: 'overlay', title: 'Tipping Near' })
+        .listen({
+          connectWallet: async () => {
+            try {
+              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              await wallet.connect();
+              this._overlay.send('connectWallet_done', wallet.accountId);
+            } catch (err) {
+              this._overlay.send('connectWallet_undone', err);
+            }
+          },
+          disconnectWallet: async () => {
+            try {
+              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              await wallet.disconnect();
+              this._overlay.send('disconnectWallet_done');
+            } catch (err) {
+              this._overlay.send('disconnectWallet_undone', err);
+            }
+          },
+          isWalletConnected: async () => {
+            try {
+              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              const isWalletConnected = await wallet.isConnected();
+              this._overlay.send('isWalletConnected_done', isWalletConnected);
+            } catch (err) {
+              this._overlay.send('isWalletConnected_undone', err);
+            }
+          },
+          getCurrentNearAccount: async () => {
+            try {
+              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              this._overlay.send('getCurrentNearAccount_done', wallet.accountId);
+            } catch (err) {
+              this._overlay.send('getCurrentNearAccount_undone', err);
+            }
+          },
+          sendNearToken: async (_: any, { type, message }: any) => {
+            try {
+              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              wallet.sendMoney(message.nearId, String(message.count) + '000000000000000000000000')
+                .then((item) => {
+                  console.log(item);
+                })
+            }
+            catch (err) {
+              console.error('ERROR:', err);
+            }
+          }
+        });
     }
 
     Core.onAction(() => this.openOverlay());
+
+    const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+    console.log(wallet);
 
     const { button } = this.adapter.exports;
     this.adapter.attachConfig({
@@ -33,6 +85,7 @@ export default class TwitterFeature {
             tooltip: 'Send donation',
             exec: async () => {
               await this.saveTippingInStorage(this.parsingTipping(ctx));
+              await this.updateOverlay();
             },
           },
         }),
@@ -62,8 +115,8 @@ export default class TwitterFeature {
   }
 
   getNearId(authorFullname: string): string | null {
-    const regExp = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
-
+    // const regExp = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
+    const regExp = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.testnet/;
     const nearId = authorFullname
       .toLowerCase()
       .match(regExp);
@@ -88,5 +141,9 @@ export default class TwitterFeature {
   async openOverlay(): Promise<void> {
     const getTippings = await this.getTippingInStorage();
     this._overlay.send('data', getTippings);
+  }
+
+  async updateOverlay(): Promise<void> {
+    if (this._overlay.isOpen()) this.openOverlay();
   }
 }

@@ -13,3 +13,8 @@ export interface ITipping {
 	nearId: string;
 	count: number;
 }
+
+export interface ISendTipping {
+	nearId: string;
+	count: number;
+}

@@ -1,4 +1,5 @@
 import GeneralBridge from '@dapplets/dapplet-overlay-bridge';
+import { ISendTipping } from './interfaces';
 
 class Bridge extends GeneralBridge {
   _subId: number = 0;
@@ -9,6 +10,51 @@ class Bridge extends GeneralBridge {
       callback(data);
       return this._subId.toString();
     });
+  }
+
+  async connectWallet(): Promise<string> {
+    return this.call(
+      'connectWallet',
+      null,
+      'connectWallet_done',
+      'connectWallet_undone'
+    );
+  }
+
+  async disconnectWallet(): Promise<string> {
+    return this.call(
+      'disconnectWallet',
+      null,
+      'disconnectWallet_done',
+      'disconnectWallet_undone'
+    );
+  }
+
+  async isWalletConnected(): Promise<boolean> {
+    return this.call(
+      'isWalletConnected',
+      null,
+      'isWalletConnected_done',
+      'isWalletConnected_undone'
+    );
+  }
+
+  async getCurrentNearAccount(): Promise<string> {
+    return this.call(
+      'getCurrentNearAccount',
+      null,
+      'getCurrentNearAccount_done',
+      'getCurrentNearAccount_undone'
+    );
+  }
+
+  sendNearToken({ nearId, count }: ISendTipping) {
+    return this.call(
+      'sendNearToken',
+      { nearId, count },
+      'sendNearToken_done',
+      'sendNearToken_undone'
+    )
   }
 
   public async call(
