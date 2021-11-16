@@ -5,7 +5,6 @@ import { IPayments, ISendTipping, ITipping, ITippingsState } from './interfaces'
 import { groupBy } from 'lodash';
 import './app.css';
 
-
 export default () => {
   const [tippings, setTippings] = useState<null | ITippingsState[]>(null);
 
@@ -88,7 +87,7 @@ export default () => {
                 style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <List.Content>
                   <List.Header as="h3">{nearId}</List.Header>
-                  <List.Description as="span">{resultCount} NEAR ({payment} already paid)</List.Description>
+                  <List.Description as="span">{count} NEAR ({payment} already paid)</List.Description>
                 </List.Content>
                 <Button
                   style={{ marginLeft: 'auto', maxWidth: 140, width: '100%', whiteSpace: 'nowrap' }}

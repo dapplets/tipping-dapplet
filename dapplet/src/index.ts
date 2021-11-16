@@ -67,7 +67,6 @@ export default class TwitterFeature {
                 .then(async () => {
                   await this.savePaymentsInStorage({ nearId: message.nearId, payment: message.count });
                   await this.updateOverlay();
-                  console.log(await this.getPaymentsInStorage());;
                 })
             }
             catch (err) {
@@ -94,7 +93,6 @@ export default class TwitterFeature {
               await this.saveTippingInStorage(this.parsingTipping(ctx));
               await this.updateOverlay();
               await this.setCountToLabel(ctx, me);
-              console.log('exec:', await this.getTippingInStorage());
             },
             init: async (_, me) => {
               await this.setCountToLabel(ctx, me);
