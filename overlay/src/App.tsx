@@ -1,20 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Container, Header, List } from 'semantic-ui-react';
 import { bridge } from './dappletBridge';
-import './app.css';
-import { ISendTipping, ITipping } from './interfaces';
+import { IPayments, ISendTipping, ITipping, ITippingsState } from './interfaces';
 import { groupBy } from 'lodash';
+import './app.css';
 
 
 export default () => {
-  const [tippings, setTippings] = useState<null | ISendTipping[]>(null);
+  const [tippings, setTippings] = useState<null | ITippingsState[]>(null);
 
   useEffect(() => {
     bridge.onData(item => {
-      const parsing = tippingParsing(item);
-      setTippings(parsing);
+      const mergeArr = merge(tippingParsing(item.tippings), item.payment);
+      setTippings(mergeArr);
     })
   }, []);
+
+  function merge(arr1: any, arr2: any) {
+    let merged = [];
+
+    for (let i = 0; i < arr1.length; i++) {
+      merged.push({
+        ...arr1[i],
+        ...(arr2.find((itmInner: IPayments) => itmInner.nearId === arr1[i].nearId))
+      });
+    }
+
+    return merged;
+  }
 
   function tippingParsing(tippings: ITipping[]) {
     const group = groupBy(tippings, 'nearId');
@@ -54,11 +67,8 @@ export default () => {
   }
 
   async function onSendTipping({ count, nearId }: ISendTipping) {
-    bridge.sendNearToken({ nearId, count });
+    count > 0 && bridge.sendNearToken({ nearId, count });
   }
-
-  console.log(tippings);
-
 
   return (
     <React.Fragment>
@@ -68,9 +78,9 @@ export default () => {
 
       <Container style={{ margin: 20 }}>
         <List className='list' divided relaxed>
-          {tippings && tippings.map(({ nearId, count }, key) => {
-            console.log(nearId, count);
+          {tippings && tippings.map(({ nearId, count, payment }, key) => {
 
+            const resultCount = count - payment;
 
             return (
               <List.Item
@@ -78,12 +88,13 @@ export default () => {
                 style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <List.Content>
                   <List.Header as="h3">{nearId}</List.Header>
-                  <List.Description as="span">{count} NEAR</List.Description>
+                  <List.Description as="span">{resultCount} NEAR ({payment} already paid)</List.Description>
                 </List.Content>
                 <Button
-                  style={{ marginLeft: 'auto' }}
-                  onClick={() => onClick({ nearId, count })}
-                >Send
+                  style={{ marginLeft: 'auto', maxWidth: 140, width: '100%', whiteSpace: 'nowrap' }}
+                  onClick={() => onClick({ nearId, count: resultCount })}
+                >
+                  Send {resultCount} NEAR
                 </Button>
               </List.Item>
             );

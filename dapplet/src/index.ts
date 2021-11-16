@@ -1,7 +1,7 @@
 import { } from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
-import { ButtonCTXProps, ITipping } from '../../overlay/src/interfaces';
+import { ButtonCTXProps, IPayments, ITipping } from '../../overlay/src/interfaces';
 
 // https://twitter.com/rimberjack
 // https://twitter.com/ilblackdragon
@@ -11,7 +11,8 @@ import { ButtonCTXProps, ITipping } from '../../overlay/src/interfaces';
 
 // receiver_id: "alsakhaev.testnet"
 
-export const nameStorage = 'tippings';
+export const nameTippings = 'tippings';
+export const namePayments = 'payments';
 
 @Injectable
 export default class TwitterFeature {
@@ -63,8 +64,10 @@ export default class TwitterFeature {
             try {
               const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
               wallet.sendMoney(message.nearId, String(message.count) + '000000000000000000000000')
-                .then((item) => {
-                  console.log(item);
+                .then(async () => {
+                  await this.savePaymentsInStorage({ nearId: message.nearId, payment: message.count });
+                  await this.updateOverlay();
+                  console.log(await this.getPaymentsInStorage());;
                 })
             }
             catch (err) {
@@ -118,11 +121,22 @@ export default class TwitterFeature {
     const prevValue = await this.getTippingInStorage() || [];
     const update = this.updateTippings(prevValue, newValue);
 
-    await Core.storage.set(nameStorage, JSON.stringify(update)); // DataLayer
+    await Core.storage.set(nameTippings, JSON.stringify(update)); // DataLayer
+  }
+
+  async savePaymentsInStorage(payments: IPayments): Promise<void> {
+    const prevValue = await this.getPaymentsInStorage() || [];
+    const update = this.updatePayment(prevValue, payments);
+
+    await Core.storage.set(namePayments, JSON.stringify(update)); // DataLayer
   }
 
   async getTippingInStorage(): Promise<ITipping[]> {
-    return JSON.parse(await Core.storage.get(nameStorage) || "[]"); // DataLayer (JSON => Object)
+    return JSON.parse(await Core.storage.get(nameTippings) || "[]"); // DataLayer (JSON => Object)
+  }
+
+  async getPaymentsInStorage(): Promise<IPayments[]> {
+    return JSON.parse(await Core.storage.get('payments') || "[]"); // DataLayer (JSON => Object)
   }
 
   parsingTipping(ctxButton: ButtonCTXProps): ITipping {
@@ -160,9 +174,24 @@ export default class TwitterFeature {
     ]
   }
 
+  updatePayment(prevPayment: IPayments[], newPayment: IPayments): IPayments[] {
+    const itemIndex = prevPayment.findIndex(item => item.nearId === newPayment.nearId);
+    if (itemIndex === -1) return [...prevPayment, newPayment];
+
+    const getPayment = prevPayment[itemIndex];
+    const updatePayment = { ...getPayment, payment: getPayment.payment + newPayment.payment }
+
+    return [
+      ...prevPayment.slice(0, itemIndex),
+      updatePayment,
+      ...prevPayment.slice(itemIndex + 1)
+    ];
+  }
+
   async openOverlay(): Promise<void> {
-    const getTippings = await this.getTippingInStorage();
-    this._overlay.send('data', getTippings);
+    const tippings = await this.getTippingInStorage();
+    const payment = await this.getPaymentsInStorage();
+    this._overlay.send('data', { tippings, payment });
   }
 
   async updateOverlay(): Promise<void> {

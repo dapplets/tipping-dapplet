@@ -18,3 +18,19 @@ export interface ISendTipping {
 	nearId: string;
 	count: number;
 }
+
+export interface ITippingsState {
+	nearId: string;
+	count: number;
+	payment: number;
+}
+
+export interface IPayments {
+	nearId: string;
+	payment: number;
+}
+
+export interface onDataProps {
+	tippings: ITipping[];
+	payment: IPayments[];
+}

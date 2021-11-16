@@ -1,10 +1,10 @@
 import GeneralBridge from '@dapplets/dapplet-overlay-bridge';
-import { ISendTipping } from './interfaces';
+import { ISendTipping, onDataProps } from './interfaces';
 
 class Bridge extends GeneralBridge {
   _subId: number = 0;
 
-  onData(callback: (data?: any) => void) {
+  onData(callback: (data: onDataProps) => void) {
     this.subscribe('data', (data: any) => {
       this._subId = Math.trunc(Math.random() * 1_000_000_000);
       callback(data);
