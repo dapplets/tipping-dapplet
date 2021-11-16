@@ -21,13 +21,15 @@ export default class TwitterFeature {
   private _overlay: any;
 
   async activate(): Promise<void> {
+    const network = await Core.storage.get('network');
+
     if (!this._overlay) {
       this._overlay = (<any>Core)
         .overlay({ name: 'overlay', title: 'Tipping Near' })
         .listen({
           connectWallet: async () => {
             try {
-              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              const wallet = await Core.wallet({ type: 'near', network: network });
               await wallet.connect();
               this._overlay.send('connectWallet_done', wallet.accountId);
             } catch (err) {
@@ -36,7 +38,7 @@ export default class TwitterFeature {
           },
           disconnectWallet: async () => {
             try {
-              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              const wallet = await Core.wallet({ type: 'near', network: network });
               await wallet.disconnect();
               this._overlay.send('disconnectWallet_done');
             } catch (err) {
@@ -45,7 +47,7 @@ export default class TwitterFeature {
           },
           isWalletConnected: async () => {
             try {
-              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              const wallet = await Core.wallet({ type: 'near', network: network });
               const isWalletConnected = await wallet.isConnected();
               this._overlay.send('isWalletConnected_done', isWalletConnected);
             } catch (err) {
@@ -54,7 +56,7 @@ export default class TwitterFeature {
           },
           getCurrentNearAccount: async () => {
             try {
-              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
+              const wallet = await Core.wallet({ type: 'near', network: network });
               this._overlay.send('getCurrentNearAccount_done', wallet.accountId);
             } catch (err) {
               this._overlay.send('getCurrentNearAccount_undone', err);
@@ -62,8 +64,8 @@ export default class TwitterFeature {
           },
           sendNearToken: async (_: any, { type, message }: any) => {
             try {
-              const wallet = await Core.wallet({ type: 'near', network: 'testnet' });
-              wallet.sendMoney(message.nearId, String(message.count) + '000000000000000000000000')
+              const wallet = await Core.wallet({ type: 'near', network: network });
+              wallet.sendMoney(message.nearId, (String(message.count) + '000000000000000000000000') as any)
                 .then(async () => {
                   await this.savePaymentsInStorage({ nearId: message.nearId, payment: message.count });
                   await this.updateOverlay();
@@ -82,7 +84,18 @@ export default class TwitterFeature {
     this.adapter.attachConfig({
       POST: (ctx: ButtonCTXProps) =>
         button({
-          DEFAULT: {
+          initial: 'HIDDEN',
+          HIDDEN: {
+            hidden: true,
+            init: async (_, me) => {
+              const nearId = this.getNearId(ctx.authorFullname, network);
+              if (nearId) {
+                me.state = 'READY';
+                await this.setCountToLabel(ctx, me);
+              }
+            }
+          },
+          READY: {
             img: {
               DARK: WHITE_ICON,
               LIGHT: DARK_ICON
@@ -90,14 +103,13 @@ export default class TwitterFeature {
             label: 'Tip',
             tooltip: 'Send donation',
             exec: async (_, me) => {
-              await this.saveTippingInStorage(this.parsingTipping(ctx));
+              const nearId = this.getNearId(ctx.authorFullname, network);
+              if (nearId)
+              await this.saveTippingInStorage(this.parsingTipping(nearId, ctx));
               await this.updateOverlay();
               await this.setCountToLabel(ctx, me);
             },
-            init: async (_, me) => {
-              await this.setCountToLabel(ctx, me);
-            }
-          },
+          }
         }),
     });
   }
@@ -137,9 +149,7 @@ export default class TwitterFeature {
     return JSON.parse(await Core.storage.get('payments') || "[]"); // DataLayer (JSON => Object)
   }
 
-  parsingTipping(ctxButton: ButtonCTXProps): ITipping {
-    const nearId = this.getNearId(ctxButton.authorFullname);
-
+  parsingTipping(nearId: string, ctxButton: ButtonCTXProps): ITipping {
     return nearId && {
       nearId,
       count: 1,
@@ -147,12 +157,12 @@ export default class TwitterFeature {
     }
   }
 
-  getNearId(authorFullname: string): string | null {
-    // const regExp = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
-    const regExp = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.testnet/;
+  getNearId(authorFullname: string, network: string): string | null {
+    const regExpMainnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
+    const regExpTestnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.testnet/;
     const nearId = authorFullname
       .toLowerCase()
-      .match(regExp);
+      .match(network === 'testnet' ? regExpTestnet : regExpMainnet);
 
     return nearId && nearId[0];
   }

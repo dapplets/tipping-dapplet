@@ -1,11 +1,18 @@
 {
   "type": "object",
-  "required": ["overlayUrl"],
+  "required": ["network"],
   "properties": {
-    "overlayUrl": {
+    "payments": {
       "type": "string",
-      "title": "URL of the overlay",
-      "hidden": true
+      "title": "All payments"
+    },
+    "tippings": {
+      "type": "string",
+      "title": "All tippings"
+    },
+    "network": {
+      "type": "string",
+      "title": "Target network (testnet, mainnet)"
     }
   }
 }
