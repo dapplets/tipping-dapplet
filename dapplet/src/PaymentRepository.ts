@@ -4,7 +4,7 @@ import { IPayment } from "../../overlay/src/interfaces";
 
 interface IPaymentRepository {
 	getAll: () => Promise<IPayment[]>;
-	create: (payment: IPayment) => Promise<void>;
+	upsert: (tipping: IPayment) => Promise<void>;
 }
 
 export class PaymentRepository implements IPaymentRepository {
@@ -14,24 +14,20 @@ export class PaymentRepository implements IPaymentRepository {
 		return JSON.parse(await Core.storage.get(this._payment) || "[]");
 	}
 
-	public async create(payment: IPayment): Promise<void> {
-		const prevValue = await this.getAll() || [];
-		const update = this.updatePayment(prevValue, payment);
-
-		await Core.storage.set(this._payment, JSON.stringify(update)); // DataLayer
+	async getByPaymentNearId(nearAccountId: string): Promise<IPayment | null> {
+		const payments = await this.getAll();
+		return payments.find(x => x.nearId === nearAccountId) ?? null;
 	}
 
-	private updatePayment(prevValue: IPayment[], newValue: IPayment): IPayment[] {
-		const itemIndex = prevValue.findIndex(item => item.nearId === newValue.nearId);
-		if (itemIndex === -1) return [...prevValue, newValue];
+	async upsert(newValue: IPayment): Promise<void> {
+		const prevValues = await this.getAll() || [];
 
-		const getPayment = prevValue[itemIndex];
-		const updatePayment = { ...getPayment, payment: getPayment.payment + newValue.payment }
+		const itemIndex = prevValues.findIndex(item => item.nearId === newValue.nearId);
+		if (itemIndex === -1) {
+			return Core.storage.set(this._payment, JSON.stringify([...prevValues, newValue]));
+		}
 
-		return [
-			...prevValue.slice(0, itemIndex),
-			updatePayment,
-			...prevValue.slice(itemIndex + 1)
-		];
+		prevValues[itemIndex] = newValue; // update
+		return Core.storage.set(this._payment, JSON.stringify(prevValues));
 	}
 }

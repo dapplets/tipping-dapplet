@@ -25,6 +25,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
+    "@types/lodash": "^4.14.177",
     "@types/numeral": "^2.0.2",
     "concurrently": "^6.0.2",
     "prettier": "2.2.1"
@@ -35,6 +36,7 @@
   "homepage": "https://github.com/dapplets/dapplet-near-example#readme",
   "dependencies": {
     "bn.js": "^5.2.0",
+    "lodash": "^4.17.21",
     "mathjs": "^10.0.0",
     "numeral": "^2.0.6"
   }

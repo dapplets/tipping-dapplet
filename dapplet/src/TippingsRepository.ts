@@ -1,56 +1,34 @@
-import { ButtonCTXProps, ITipping } from "../../overlay/src/interfaces";
-
+import { ITipping } from "../../overlay/src/interfaces";
 
 interface ITippingsRepository {
 	getAll: () => Promise<ITipping[]>;
-	create: (tipping: ITipping) => Promise<void>;
-	parsing: (nearId: string, ctxButton: ButtonCTXProps) => Promise<ITipping>;
+	upsert: (tipping: ITipping) => Promise<void>;
 }
 
 export class TippingsRepository implements ITippingsRepository {
 	private _tippings = 'tippings';
-	private _step: number;
-
-	constructor() {
-		this.getStep()
-	}
-
-	private async getStep(): Promise<void> {
-		this._step = await Core.storage.get('step');
-	}
 
 	async getAll(): Promise<ITipping[]> {
 		return JSON.parse(await Core.storage.get(this._tippings) || "[]");
 	}
 
-	async create(tipping: ITipping): Promise<void> {
-		if (!tipping) return;
-
-		const prevValue = await this.getAll() || [];
-		const update = this.updateTippings(prevValue, tipping);
-
-		await Core.storage.set(this._tippings, JSON.stringify(update));
+	async getByTweetId(tweetId: string): Promise<ITipping | null> {
+		const tippings = await this.getAll();
+		return tippings.find(x => x.tweetId === tweetId) ?? null;
 	}
 
-	private updateTippings(prevValues: ITipping[], newValue: ITipping): ITipping[] {
+	async upsert(newValue: ITipping): Promise<void> {
+		if (!newValue) return;
+		const prevValues = await this.getAll() || [];
+
 		const itemIndex = prevValues.findIndex(item => item.tweetId === newValue.tweetId);
-		if (itemIndex === -1) return [...prevValues, newValue];
-
-		const getTipping = prevValues[itemIndex];
-		const updateTipping = { ...getTipping, count: getTipping.count + this._step, }
-
-		return [
-			...prevValues.slice(0, itemIndex),
-			updateTipping,
-			...prevValues.slice(itemIndex + 1)
-		];
-	}
-
-	public async parsing(nearId: string, ctxButton: ButtonCTXProps): Promise<ITipping> {
-		return nearId && {
-			nearId,
-			count: this._step,
-			tweetId: ctxButton.id
+		if (itemIndex === -1) {
+			// insert
+			return Core.storage
+				.set(this._tippings, JSON.stringify([...prevValues, newValue]));
 		}
+
+		prevValues[itemIndex] = newValue; // update
+		return Core.storage.set(this._tippings, JSON.stringify(prevValues));
 	}
 }

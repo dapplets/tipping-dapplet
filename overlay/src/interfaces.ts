@@ -1,4 +1,4 @@
-export interface ButtonCTXProps {
+export interface Tweet {
 	authorFullname: string;
 	authorImg: string;
 	authorUsername: string;

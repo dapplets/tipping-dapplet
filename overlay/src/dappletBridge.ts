@@ -1,60 +1,34 @@
 import GeneralBridge from '@dapplets/dapplet-overlay-bridge';
 import { ISendTipping, onDataProps } from './interfaces';
+import { UserStat } from '../../dapplet/src/tippingService';
 
 class Bridge extends GeneralBridge {
   _subId: number = 0;
 
-  onData(callback: (data: onDataProps) => void) {
-    this.subscribe('data', (data: any) => {
+  onUpdate(callback: () => void) {
+    this.subscribe('updated', () => {
       this._subId = Math.trunc(Math.random() * 1_000_000_000);
-      callback(data);
+      callback();
       return this._subId.toString();
     });
   }
 
-  async connectWallet(): Promise<string> {
+  async getAllUserStat(): Promise<UserStat[]> {
     return this.call(
-      'connectWallet',
+      'getAllUserStat',
       null,
-      'connectWallet_done',
-      'connectWallet_undone'
+      'getAllUserStat_done',
+      'getAllUserStat_undone'
     );
   }
 
-  async disconnectWallet(): Promise<string> {
+  async donateToUser(nearAccountId: string, donateAmount: number): Promise<string> {
     return this.call(
-      'disconnectWallet',
-      null,
-      'disconnectWallet_done',
-      'disconnectWallet_undone'
+      'donateToUser',
+      { nearAccountId, donateAmount },
+      'donateToUser_done',
+      'donateToUser_undone'
     );
-  }
-
-  async isWalletConnected(): Promise<boolean> {
-    return this.call(
-      'isWalletConnected',
-      null,
-      'isWalletConnected_done',
-      'isWalletConnected_undone'
-    );
-  }
-
-  async getCurrentNearAccount(): Promise<string> {
-    return this.call(
-      'getCurrentNearAccount',
-      null,
-      'getCurrentNearAccount_done',
-      'getCurrentNearAccount_undone'
-    );
-  }
-
-  sendNearToken({ nearId, count }: ISendTipping) {
-    return this.call(
-      'sendNearToken',
-      { nearId, count },
-      'sendNearToken_done',
-      'sendNearToken_undone'
-    )
   }
 
   public async call(
