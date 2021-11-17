@@ -48,6 +48,7 @@ export default () => {
 
   async function onClick(config: ISendTipping) {
     try {
+      // fisabled true
       await isWalletConnected();
       await onSendTipping(config);
     }
@@ -79,7 +80,7 @@ export default () => {
         <List className='list' divided relaxed>
           {tippings && tippings.map(({ nearId, count, payment }, key) => {
 
-            const resultCount = count - payment;
+            const resultCount = toFixed(count - payment);
 
             return (
               <List.Item
@@ -87,11 +88,12 @@ export default () => {
                 style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <List.Content>
                   <List.Header as="h3">{nearId}</List.Header>
-                  <List.Description as="span">{count} NEAR ({payment} already paid)</List.Description>
+                  <List.Description as="span">{toFixed(count)} NEAR ({toFixed(payment)} already paid)</List.Description>
                 </List.Content>
                 <Button
                   style={{ marginLeft: 'auto', maxWidth: 140, width: '100%', whiteSpace: 'nowrap' }}
                   onClick={() => onClick({ nearId, count: resultCount })}
+                  disabled={resultCount === 0}
                 >
                   Send {resultCount} NEAR
                 </Button>
@@ -103,3 +105,8 @@ export default () => {
     </React.Fragment>
   );
 };
+
+function toFixed(value: number): number {
+  const power = Math.pow(10, 14);
+  return Number(String(Math.round(value * power) / power));
+}

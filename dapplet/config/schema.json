@@ -1,6 +1,9 @@
 {
   "type": "object",
-  "required": ["network"],
+  "required": [
+    "network",
+    "step"
+  ],
   "properties": {
     "payments": {
       "type": "string",
@@ -13,6 +16,10 @@
     "network": {
       "type": "string",
       "title": "Target network (testnet, mainnet)"
+    },
+    "step": {
+      "type": "number",
+      "title": "Donation increase step"
     }
   }
 }

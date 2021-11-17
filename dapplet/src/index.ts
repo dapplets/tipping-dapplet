@@ -14,14 +14,21 @@ import { ButtonCTXProps, IPayments, ITipping } from '../../overlay/src/interface
 export const nameTippings = 'tippings';
 export const namePayments = 'payments';
 
+const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
+
 @Injectable
 export default class TwitterFeature {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any,  @typescript-eslint/explicit-module-boundary-types
   @Inject('twitter-adapter.dapplet-base.eth') public adapter: any;
   private _overlay: any;
+  private _step: number;
 
   async activate(): Promise<void> {
+
+    console.log(Core);
+
     const network = await Core.storage.get('network');
+    this._step = await Core.storage.get('step');
 
     if (!this._overlay) {
       this._overlay = (<any>Core)
@@ -65,8 +72,15 @@ export default class TwitterFeature {
           sendNearToken: async (_: any, { type, message }: any) => {
             try {
               const wallet = await Core.wallet({ type: 'near', network: network });
-              wallet.sendMoney(message.nearId, (String(message.count) + '000000000000000000000000') as any)
+
+              // Переписать на async/await
+              wallet.sendMoney(
+                message.nearId,
+                parseNearAmount(String(message.count))
+              )
                 .then(async () => {
+                  // current_sending: false,
+
                   await this.savePaymentsInStorage({ nearId: message.nearId, payment: message.count });
                   await this.updateOverlay();
                 })
@@ -105,7 +119,7 @@ export default class TwitterFeature {
             exec: async (_, me) => {
               const nearId = this.getNearId(ctx.authorFullname, network);
               if (nearId)
-              await this.saveTippingInStorage(this.parsingTipping(nearId, ctx));
+                await this.saveTippingInStorage(await this.parsingTipping(nearId, ctx));
               await this.updateOverlay();
               await this.setCountToLabel(ctx, me);
             },
@@ -116,10 +130,9 @@ export default class TwitterFeature {
 
   async setCountToLabel(ctx: ButtonCTXProps, me: any): Promise<void> {
     const getTippingInStorage = await this.getTippingInStorage();
-
     for (const item of getTippingInStorage) {
       if (item.tweetId === ctx.id) {
-        me.label = item.count + ' NEAR';
+        me.label = formatNearAmount(parseNearAmount(item.count.toString()), 4) + ' NEAR';
         break;
       }
     }
@@ -149,10 +162,10 @@ export default class TwitterFeature {
     return JSON.parse(await Core.storage.get('payments') || "[]"); // DataLayer (JSON => Object)
   }
 
-  parsingTipping(nearId: string, ctxButton: ButtonCTXProps): ITipping {
+  async parsingTipping(nearId: string, ctxButton: ButtonCTXProps): Promise<ITipping> {
     return nearId && {
       nearId,
-      count: 1,
+      count: this._step,
       tweetId: ctxButton.id
     }
   }
@@ -173,7 +186,7 @@ export default class TwitterFeature {
     if (itemIndex === -1) return [...prevTippings, newTipping];
 
     const getTipping = prevTippings[itemIndex];
-    const updateTipping = { ...getTipping, count: getTipping.count + 1, }
+    const updateTipping = { ...getTipping, count: getTipping.count + this._step, }
 
     return [
       ...prevTippings.slice(0, itemIndex),
