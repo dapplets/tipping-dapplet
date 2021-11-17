@@ -1,7 +1,9 @@
 import { } from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
-import { ButtonCTXProps, IPayments, ITipping } from '../../overlay/src/interfaces';
+import { ButtonCTXProps } from '../../overlay/src/interfaces';
+import { PaymentRepository } from './PaymentRepository';
+import { TippingsRepository } from './TippingsRepository';
 
 // https://twitter.com/rimberjack
 // https://twitter.com/ilblackdragon
@@ -16,19 +18,17 @@ export const namePayments = 'payments';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 
+const paymentRepository = new PaymentRepository();
+const tippingsRepository = new TippingsRepository();
+
 @Injectable
 export default class TwitterFeature {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any,  @typescript-eslint/explicit-module-boundary-types
   @Inject('twitter-adapter.dapplet-base.eth') public adapter: any;
   private _overlay: any;
-  private _step: number;
 
   async activate(): Promise<void> {
-
-    console.log(Core);
-
     const network = await Core.storage.get('network');
-    this._step = await Core.storage.get('step');
 
     if (!this._overlay) {
       this._overlay = (<any>Core)
@@ -81,7 +81,7 @@ export default class TwitterFeature {
                 .then(async () => {
                   // current_sending: false,
 
-                  await this.savePaymentsInStorage({ nearId: message.nearId, payment: message.count });
+                  await paymentRepository.create({ nearId: message.nearId, payment: message.count })
                   await this.updateOverlay();
                 })
             }
@@ -118,8 +118,8 @@ export default class TwitterFeature {
             tooltip: 'Send donation',
             exec: async (_, me) => {
               const nearId = this.getNearId(ctx.authorFullname, network);
-              if (nearId)
-                await this.saveTippingInStorage(await this.parsingTipping(nearId, ctx));
+              if (nearId) await tippingsRepository.create(await tippingsRepository.parsing(nearId, ctx))
+
               await this.updateOverlay();
               await this.setCountToLabel(ctx, me);
             },
@@ -129,44 +129,12 @@ export default class TwitterFeature {
   }
 
   async setCountToLabel(ctx: ButtonCTXProps, me: any): Promise<void> {
-    const getTippingInStorage = await this.getTippingInStorage();
+    const getTippingInStorage = await tippingsRepository.getAll();
     for (const item of getTippingInStorage) {
       if (item.tweetId === ctx.id) {
         me.label = formatNearAmount(parseNearAmount(item.count.toString()), 4) + ' NEAR';
         break;
       }
-    }
-  }
-
-  async saveTippingInStorage(newValue: ITipping): Promise<void> {
-    if (!newValue) return;
-
-    const prevValue = await this.getTippingInStorage() || [];
-    const update = this.updateTippings(prevValue, newValue);
-
-    await Core.storage.set(nameTippings, JSON.stringify(update)); // DataLayer
-  }
-
-  async savePaymentsInStorage(payments: IPayments): Promise<void> {
-    const prevValue = await this.getPaymentsInStorage() || [];
-    const update = this.updatePayment(prevValue, payments);
-
-    await Core.storage.set(namePayments, JSON.stringify(update)); // DataLayer
-  }
-
-  async getTippingInStorage(): Promise<ITipping[]> {
-    return JSON.parse(await Core.storage.get(nameTippings) || "[]"); // DataLayer (JSON => Object)
-  }
-
-  async getPaymentsInStorage(): Promise<IPayments[]> {
-    return JSON.parse(await Core.storage.get('payments') || "[]"); // DataLayer (JSON => Object)
-  }
-
-  async parsingTipping(nearId: string, ctxButton: ButtonCTXProps): Promise<ITipping> {
-    return nearId && {
-      nearId,
-      count: this._step,
-      tweetId: ctxButton.id
     }
   }
 
@@ -180,38 +148,9 @@ export default class TwitterFeature {
     return nearId && nearId[0];
   }
 
-  // Data Layer
-  updateTippings(prevTippings: ITipping[], newTipping: ITipping): ITipping[] {
-    const itemIndex = prevTippings.findIndex(item => item.tweetId === newTipping.tweetId);
-    if (itemIndex === -1) return [...prevTippings, newTipping];
-
-    const getTipping = prevTippings[itemIndex];
-    const updateTipping = { ...getTipping, count: getTipping.count + this._step, }
-
-    return [
-      ...prevTippings.slice(0, itemIndex),
-      updateTipping,
-      ...prevTippings.slice(itemIndex + 1)
-    ]
-  }
-
-  updatePayment(prevPayment: IPayments[], newPayment: IPayments): IPayments[] {
-    const itemIndex = prevPayment.findIndex(item => item.nearId === newPayment.nearId);
-    if (itemIndex === -1) return [...prevPayment, newPayment];
-
-    const getPayment = prevPayment[itemIndex];
-    const updatePayment = { ...getPayment, payment: getPayment.payment + newPayment.payment }
-
-    return [
-      ...prevPayment.slice(0, itemIndex),
-      updatePayment,
-      ...prevPayment.slice(itemIndex + 1)
-    ];
-  }
-
   async openOverlay(): Promise<void> {
-    const tippings = await this.getTippingInStorage();
-    const payment = await this.getPaymentsInStorage();
+    const tippings = await tippingsRepository.getAll();
+    const payment = await paymentRepository.getAll();
     this._overlay.send('data', { tippings, payment });
   }
 

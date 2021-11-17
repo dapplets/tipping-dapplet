@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Container, Header, List } from 'semantic-ui-react';
 import { bridge } from './dappletBridge';
-import { IPayments, ISendTipping, ITipping, ITippingsState } from './interfaces';
+import { IPayment, ISendTipping, ITipping, ITippingsState } from './interfaces';
 import { groupBy } from 'lodash';
 import './app.css';
 
@@ -21,7 +21,7 @@ export default () => {
     for (let i = 0; i < arr1.length; i++) {
       merged.push({
         ...arr1[i],
-        ...(arr2.find((itmInner: IPayments) => itmInner.nearId === arr1[i].nearId) ?? { payment: 0 })
+        ...(arr2.find((itmInner: IPayment) => itmInner.nearId === arr1[i].nearId) ?? { payment: 0 })
       });
     }
 
@@ -79,7 +79,6 @@ export default () => {
       <Container style={{ margin: 20 }}>
         <List className='list' divided relaxed>
           {tippings && tippings.map(({ nearId, count, payment }, key) => {
-
             const resultCount = toFixed(count - payment);
 
             return (

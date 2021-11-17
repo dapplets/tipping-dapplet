@@ -25,12 +25,12 @@ export interface ITippingsState {
 	payment: number;
 }
 
-export interface IPayments {
+export interface IPayment {
 	nearId: string;
 	payment: number;
 }
 
 export interface onDataProps {
 	tippings: ITipping[];
-	payment: IPayments[];
+	payment: IPayment[];
 }
