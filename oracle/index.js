@@ -9,7 +9,7 @@ async function start() {
     await keyStore.setKey(process.env.NETWORK_ID, process.env.ORACLE_ACCOUNT_ID, keyPair);
 
     const config = {
-        keyStore, 
+        keyStore,
         networkId: process.env.NETWORK_ID,
         nodeUrl: process.env.NODE_URL,
         walletUrl: process.env.WALLET_URL,
@@ -42,7 +42,7 @@ async function start() {
     console.log(`Found ${pendingRequests.length} pending requests.`);
     console.log(`Browser launching...`);
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
 
     console.log(`Browser launched.`);
@@ -55,7 +55,7 @@ async function start() {
             const request = await contract.getVerificationRequest({ id: requestId });
 
             let { nearAccount, externalAccount, isUnlink, proofUrl } = request;
-            
+
             nearAccount = nearAccount.toLowerCase();
             externalAccount = externalAccount.toLowerCase();
 
