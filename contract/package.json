@@ -1,0 +1,32 @@
+{
+  "name": "main",
+  "version": "0.0.1",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "build": "asb",
+    "build:debug": "asb --target debug",
+    "test": "npm run build:debug && npm run test:integration",
+    "test:unit": "asp --nologo",
+    "test:integration": "jest",
+    "deploy:dev": "npm run build && near dev-deploy",
+    "deploy": "npm run build && near deploy"
+  },
+  "devDependencies": {
+    "env-cmd": "~10.1.0",
+    "jest": "~27.3.1",
+    "jest-environment-node": "~27.3.1",
+    "near-cli": "~2.2.0",
+    "near-sdk-as": "3.2.3",
+    "regenerator-runtime": "~0.13.9",
+    "shelljs": "^0.8.4",
+    "@babel/preset-env": "^7.14.0"
+  },
+  "jest": {
+    "testEnvironment": "near-cli/test_environment",
+    "testPathIgnorePatterns": [
+      "<rootDir>/contract/",
+      "<rootDir>/node_modules/"
+    ]
+  }
+}
