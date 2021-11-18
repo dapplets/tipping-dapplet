@@ -118,16 +118,26 @@ export default class TwitterFeature {
     const isMyProfile = ctx.id === user.username;
     if (isMyProfile) {
       const nearAccount = await this.identityService.getNearAccount('twitter/' + ctx.id);
-      me.state = nearAccount ? "UNLINK" : "LINK";
+      me.state = nearAccount ? 'UNLINK' : 'LINK';
     }
   };
 
   onProfileButtonLinkExec = (ctx, me) => {
-    this.identityService.requestVerification(`twitter/${ctx.id}`, false, 'https://twitter.com/' + ctx.id);
+    const nearAccount = this.parseNearId(ctx.authorFullname, this._network);
+    if (nearAccount) {
+      alert('Add NEAR Account ID in your profile name before continue.');
+    } else {
+      this.identityService.requestVerification(`twitter/${ctx.id}`, false, 'https://twitter.com/' + ctx.id);
+    }
   };
 
   onProfileButtonUnlinkExec = (ctx, me) => {
-    this.identityService.requestVerification(`twitter/${ctx.id}`, true, 'https://twitter.com/' + ctx.id);
+    const nearAccount = this.parseNearId(ctx.authorFullname, this._network);
+    if (nearAccount) {
+      alert('Remove NEAR Account ID from your profile name before continue.');
+    } else {
+      this.identityService.requestVerification(`twitter/${ctx.id}`, true, 'https://twitter.com/' + ctx.id);
+    }
   };
 
   onProfileAvatarBadgeInit = async (ctx, me) => {
@@ -176,10 +186,10 @@ export default class TwitterFeature {
     return totalTweetDonation ? formatNearAmount(parseNearAmount(totalTweetDonation.toString()), 4) + ' NEAR' : 'Tip';
   }
 
-  parseNearId(authorFullname: string, network: string): string | null {
+  parseNearId(fullname: string, network: string): string | null {
     const regExpMainnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
     const regExpTestnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.testnet/;
-    const nearId = authorFullname.toLowerCase().match(network === 'testnet' ? regExpTestnet : regExpMainnet);
+    const nearId = fullname.toLowerCase().match(network === 'testnet' ? regExpTestnet : regExpMainnet);
 
     return nearId && nearId[0];
   }
