@@ -68,6 +68,8 @@ async function start() {
                 let title = await page.title();
                 title = title.toLowerCase();
 
+                console.log(`Downloaded page "${title}".`);
+
                 if (!isUnlink) {
                     if (title.indexOf('@' + username) !== -1 && title.indexOf(nearAccount) !== -1) {
                         console.log(`Approving request...`);
