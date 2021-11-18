@@ -3,10 +3,10 @@ import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
 import { Tweet } from '../../overlay/src/interfaces';
-import { PaymentRepository } from './PaymentRepository';
+import { PaymentRepository } from './repositories/PaymentRepository';
 import { TippingsRepository } from './TippingsRepository';
 import { TippingService } from './tippingService';
-import { IdentityService } from './identityService';
+import { IdentityService } from './services/IdentityService';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 
