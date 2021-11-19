@@ -65,7 +65,7 @@ export class TippingService {
     }));
   }
 
-  async getTotalDonationByTweet(tweetId: string): Promise<number> {
+  async getTotalDonationByItem(tweetId: string): Promise<number> {
     const getTippingInStorage = await this.tippingsRepository.getAll();
     for (const item of getTippingInStorage) {
       if (item.tweetId === tweetId) return item.count;

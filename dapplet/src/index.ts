@@ -2,9 +2,10 @@ import {} from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
-import { PaymentRepository } from './repositories/PaymentRepository';
-import { TippingsRepository } from './repositories/TippingsRepository';
-import { TippingService } from './services/TippingService';
+// import { PaymentRepository } from './repositories/PaymentRepository';
+// import { TippingsRepository } from './repositories/TippingsRepository';
+// import { TippingService } from './services/TippingService';
+import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
 
@@ -15,9 +16,10 @@ export default class TwitterFeature {
   @Inject('twitter-adapter.dapplet-base.eth')
   public adapter: any;
 
-  private paymentRepository = new PaymentRepository();
-  private tippingsRepository = new TippingsRepository();
-  private tippingService = new TippingService(this.tippingsRepository, this.paymentRepository);
+  // private paymentRepository = new PaymentRepository();
+  // private tippingsRepository = new TippingsRepository();
+  // private tippingService = new TippingService(this.tippingsRepository, this.paymentRepository);
+  private tippingService = new TippingContractService();
   private identityService = new IdentityService();
 
   private _step: number;
@@ -62,19 +64,18 @@ export default class TwitterFeature {
         button({
           DEFAULT: {
             hidden: true,
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            tooltip: 'Claim tokens',
+            init: this.onProfileButtonClaimInit,
+            exec: this.onProfileButtonClaimExec,
+          },
+        }),
+        button({
+          DEFAULT: {
+            hidden: true,
+            img: NEAR_DARK_ICON,
             init: this.onProfileButtonDefaultInit,
-          },
-          LINK: {
-            img: NEAR_DARK_ICON,
-            label: 'Link Account',
-            tooltip: 'Link account with NEAR wallet',
             exec: this.onProfileButtonLinkExec,
-          },
-          UNLINK: {
-            img: NEAR_DARK_ICON,
-            label: 'Unlink Account',
-            tooltip: 'Unlink account from NEAR wallet',
-            exec: this.onProfileButtonUnlinkExec,
           },
         }),
         avatarBadge({
@@ -94,12 +95,11 @@ export default class TwitterFeature {
             img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
             label: 'Tip',
             tooltip: 'Send donation',
-            hidden: true,
             amount: 0,
             debouncedDonate: debounce(this.onDebounceDonate, 1000),
             init: this.onPostButtonInit,
             exec: this.onPostButtonExec,
-          }
+          },
         }),
         avatarBadge({
           DEFAULT: {
@@ -115,30 +115,94 @@ export default class TwitterFeature {
     });
   }
 
-  onProfileButtonDefaultInit = async (ctx, me) => {
+  onProfileButtonClaimInit = async (profile, me) => {
     const user = this.adapter.getCurrentUser();
-    const isMyProfile = ctx.id === user.username;
+    const isMyProfile = profile.id === user.username;
     if (isMyProfile) {
-      const nearAccount = await this.identityService.getNearAccount('twitter/' + ctx.id);
-      me.state = nearAccount ? 'UNLINK' : 'LINK';
+      const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
+      const availableTokens = tokens.toFixed(3);
+      me.label = `Claim ${availableTokens} Ⓝ`;
+      me.hidden = false;
+    } else {
+      me.hidden = true;
     }
   };
 
-  onProfileButtonLinkExec = (ctx, me) => {
-    const nearAccount = this.parseNearId(ctx.authorFullname, this._network);
+  onProfileButtonClaimExec = async (profile, me) => {
+    const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
     if (!nearAccount) {
-      alert('Add NEAR Account ID in your profile name before continue.');
+      alert('You must link NEAR account before continue.');
     } else {
-      this.identityService.requestVerification(`twitter/${ctx.id}`, false, 'https://twitter.com/' + ctx.id);
+      try {
+        me.disabled = true;
+        me.loading = true;
+        me.label = 'Waiting...';
+        await this.tippingService.claimTokens();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        me.disabled = false;
+        me.loading = false;
+        this.onProfileButtonClaimInit(profile, me);
+      }
     }
   };
 
-  onProfileButtonUnlinkExec = (ctx, me) => {
-    const nearAccount = this.parseNearId(ctx.authorFullname, this._network);
-    if (nearAccount) {
-      alert('Remove NEAR Account ID from your profile name before continue.');
+  onProfileButtonDefaultInit = async (profile, me) => {
+    // ToDo: getCurrentUser throws an error sometimes
+    const user = this.adapter.getCurrentUser();
+    const isMyProfile = profile.id === user.username;
+    if (isMyProfile) {
+      const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
+      if (!nearAccount) {
+        me.label = 'Link';
+        me.tooltip = 'Link account with NEAR wallet';
+      } else {
+        me.label = 'Unlink';
+        me.tooltip = 'Unlink account from NEAR wallet';
+      }
+      me.hidden = false;
     } else {
-      this.identityService.requestVerification(`twitter/${ctx.id}`, true, 'https://twitter.com/' + ctx.id);
+      me.hidden = true;
+    }
+  };
+
+  onProfileButtonLinkExec = async (profile, me) => {
+    const nearAccount = this.parseNearId(profile.authorFullname, this._network);
+    try {
+      me.disabled = true;
+      me.loading = true;
+      const linkedAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
+      me.label = 'Waiting...';
+      if (linkedAccount) {
+        // unlink
+        if (nearAccount) {
+          alert('Remove NEAR Account ID from your profile name before continue.');
+        } else {
+          await this.identityService.requestVerification(
+            `twitter/${profile.id}`,
+            true,
+            'https://twitter.com/' + profile.id,
+          );
+        }
+      } else {
+        // link
+        if (!nearAccount) {
+          alert('Add NEAR Account ID in your profile name before continue.');
+        } else {
+          await this.identityService.requestVerification(
+            `twitter/${profile.id}`,
+            false,
+            'https://twitter.com/' + profile.id,
+          );
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      me.disabled = false;
+      me.loading = false;
+      this.onProfileButtonDefaultInit(profile, me);
     }
   };
 
@@ -156,24 +220,19 @@ export default class TwitterFeature {
   };
 
   onPostButtonInit = async (tweet, me) => {
-    const nearId = this.parseNearId(tweet.authorFullname, this._network);
-    if (nearId) {
-      me.hidden = false;
-      me.nearId = nearId;
-      me.donationsAmount = await this.tippingService.getTotalDonationByTweet(tweet.id);
-      me.label = me.donationsAmount ? this.formatNear(me.donationsAmount) + ' NEAR' : 'Tip';
-    }
+    me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
+    me.label = me.donationsAmount ? this.formatNear(me.donationsAmount) + ' NEAR' : 'Tip';
   };
 
-  onDebounceDonate = async (me: any, nearId: string, tweetId: string, amount: number) => {
+  onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: number) => {
     try {
       me.loading = true;
       me.disabled = true;
-      await this.tippingService.donateByTweet(nearId, tweetId, amount);
+      await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, amount);
     } catch (e) {
       console.error(e);
     } finally {
-      me.donationsAmount = await this.tippingService.getTotalDonationByTweet(tweetId);
+      me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweetId);
       me.loading = false;
       me.disabled = false;
       me.amount = 0;
@@ -184,7 +243,8 @@ export default class TwitterFeature {
   onPostButtonExec = async (tweet, me) => {
     me.amount += this._step;
     me.label = this.formatNear(me.donationsAmount + me.amount) + ' NEAR';
-    await me.debouncedDonate(me, me.nearId, tweet.id, me.amount);
+    const externalAccount = 'twitter/' + tweet.authorUsername;
+    await me.debouncedDonate(me, externalAccount, tweet.id, parseNearAmount(me.amount.toString()));
   };
 
   onPostAvatarBadgeInit = async (ctx, me) => {
