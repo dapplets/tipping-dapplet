@@ -124,7 +124,7 @@ export default class TwitterFeature {
 
   onProfileButtonLinkExec = (ctx, me) => {
     const nearAccount = this.parseNearId(ctx.authorFullname, this._network);
-    if (nearAccount) {
+    if (!nearAccount) {
       alert('Add NEAR Account ID in your profile name before continue.');
     } else {
       this.identityService.requestVerification(`twitter/${ctx.id}`, false, 'https://twitter.com/' + ctx.id);
