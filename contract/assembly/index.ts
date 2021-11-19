@@ -6,7 +6,7 @@ import {
   u128,
   ContractPromiseBatch,
   PersistentSet,
-  PersistentVector
+  PersistentVector,
 } from "near-sdk-core";
 
 type NearAccount = string; // example: user.near, user.testnet
@@ -38,6 +38,7 @@ export class VerificationRequest {
 
 const verificationRequests = new PersistentVector<VerificationRequest>("f");
 const pendingRequests = new PersistentSet<u32>("g");
+const approvedRequests = new PersistentSet<u32>("k");
 
 // Tipping
 
@@ -97,6 +98,18 @@ export function getVerificationRequest(id: u32): VerificationRequest | null {
   return verificationRequests[id];
 }
 
+export function getRequestStatus(id: u32): u8 {
+  if (!verificationRequests.containsIndex(id)) {
+    return u8(0); // not found
+  } else if (pendingRequests.has(id)) {
+    return u8(1); // pending
+  } else if (approvedRequests.has(id)) {
+    return u8(2); // approved
+  } else {
+    return u8(3); // rejected
+  }
+}
+
 // Tipping
 
 export function getTotalTipsByItemId(itemId: string): u128 {
@@ -121,9 +134,6 @@ export function approveRequest(requestId: u32): void {
   assert(pendingRequests.has(requestId), "The request has already been processed");
   const req = verificationRequests[requestId];
 
-  // ToDo: check that delete will not be reverted
-  pendingRequests.delete(requestId);
-
   if (req.isUnlink) {
     assert(externalByNear.contains(req.nearAccount), "The NEAR account doesn't have a linked account");
     assert(nearByExternal.contains(req.externalAccount), "The external account doesn't have a linked account");
@@ -139,6 +149,10 @@ export function approveRequest(requestId: u32): void {
 
     logging.log("Accounts " + req.nearAccount + " and " + req.externalAccount + " are linked");
   }
+
+  // ToDo: check that delete will not be reverted
+  pendingRequests.delete(requestId);
+  approvedRequests.add(requestId);
 }
 
 export function rejectRequest(requestId: u32): void {
@@ -172,13 +186,12 @@ export function unlinkAll(): void {
   nearByExternal.clear();
 }
 
-
 // Requests
 
 export function requestVerification(externalAccount: ExternalAccount, isUnlink: boolean, url: string): u32 {
   assert(Context.sender == Context.predecessor, "Cross-contract calls is not allowed");
   assert(
-    u128.ge(Context.attachedDeposit, (storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero))!),
+    u128.ge(Context.attachedDeposit, storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero)!),
     "Insufficient stake amount"
   );
 
@@ -196,40 +209,50 @@ export function requestVerification(externalAccount: ExternalAccount, isUnlink: 
 // Tipping
 
 export function sendTips(recipientExternalAccount: ExternalAccount, itemId: string): void {
-    const nearAccount = nearByExternal.get(recipientExternalAccount);
+  const nearAccount = nearByExternal.get(recipientExternalAccount);
 
-    if (nearAccount) {
-      ContractPromiseBatch.create(nearAccount).transfer(Context.attachedDeposit);
-      logging.log(Context.sender + " tips " + Context.attachedDeposit.toString() + " NEAR to " + recipientExternalAccount + " <=> " + nearAccount);
-    } else {
-      const availableTips = availableTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
-      const newAvailableTips = u128.add(availableTips, Context.attachedDeposit);
-      availableTipsByExternal.set(recipientExternalAccount, newAvailableTips);
-      logging.log(Context.sender + " tips " + Context.attachedDeposit.toString() + " NEAR to " + recipientExternalAccount);
-    }
+  if (nearAccount) {
+    ContractPromiseBatch.create(nearAccount).transfer(Context.attachedDeposit);
+    logging.log(
+      Context.sender +
+        " tips " +
+        Context.attachedDeposit.toString() +
+        " NEAR to " +
+        recipientExternalAccount +
+        " <=> " +
+        nearAccount
+    );
+  } else {
+    const availableTips = availableTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
+    const newAvailableTips = u128.add(availableTips, Context.attachedDeposit);
+    availableTipsByExternal.set(recipientExternalAccount, newAvailableTips);
+    logging.log(
+      Context.sender + " tips " + Context.attachedDeposit.toString() + " NEAR to " + recipientExternalAccount
+    );
+  }
 
-    // update item stat
-    const oldTotalTipsByItem = totalTipsByItem.get(itemId, u128.Zero)!;
-    const newTotalTipsByItem = u128.add(oldTotalTipsByItem, Context.attachedDeposit);
-    totalTipsByItem.set(itemId, newTotalTipsByItem);
+  // update item stat
+  const oldTotalTipsByItem = totalTipsByItem.get(itemId, u128.Zero)!;
+  const newTotalTipsByItem = u128.add(oldTotalTipsByItem, Context.attachedDeposit);
+  totalTipsByItem.set(itemId, newTotalTipsByItem);
 
-    // update user stat
-    const oldTotalTipsByExternal = totalTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
-    const newTotalTipsByExternal = u128.add(oldTotalTipsByExternal, Context.attachedDeposit);
-    totalTipsByExternal.set(recipientExternalAccount, newTotalTipsByExternal);
+  // update user stat
+  const oldTotalTipsByExternal = totalTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
+  const newTotalTipsByExternal = u128.add(oldTotalTipsByExternal, Context.attachedDeposit);
+  totalTipsByExternal.set(recipientExternalAccount, newTotalTipsByExternal);
 }
 
 export function claimTokens(): void {
-    const externalAccount = externalByNear.get(Context.sender);
-    assert(externalAccount != null, "You don't have any linked account.");
+  const externalAccount = externalByNear.get(Context.sender);
+  assert(externalAccount != null, "You don't have any linked account.");
 
-    const availableTips = availableTipsByExternal.get(externalAccount!, u128.Zero)!;
-    assert(u128.gt(availableTips, u128.Zero), "No tips to withdraw.");
+  const availableTips = availableTipsByExternal.get(externalAccount!, u128.Zero)!;
+  assert(u128.gt(availableTips, u128.Zero), "No tips to withdraw.");
 
-    ContractPromiseBatch.create(Context.sender).transfer(availableTips);
-    availableTipsByExternal.set(externalAccount!, u128.Zero);
+  ContractPromiseBatch.create(Context.sender).transfer(availableTips);
+  availableTipsByExternal.set(externalAccount!, u128.Zero);
 
-    logging.log(Context.sender + " claimed " + availableTips.toString() + " NEAR from " + externalAccount!);
+  logging.log(Context.sender + " claimed " + availableTips.toString() + " NEAR from " + externalAccount!);
 }
 
 // HELPERS
