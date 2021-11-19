@@ -135,22 +135,16 @@ export function approveRequest(requestId: u32): void {
   const req = verificationRequests[requestId];
 
   if (req.isUnlink) {
-    assert(externalByNear.contains(req.nearAccount), "The NEAR account doesn't have a linked account");
-    assert(nearByExternal.contains(req.externalAccount), "The external account doesn't have a linked account");
     externalByNear.delete(req.nearAccount);
     nearByExternal.delete(req.externalAccount);
-
     logging.log("Accounts " + req.nearAccount + " and " + req.externalAccount + " are unlinked");
   } else {
-    assert(!externalByNear.contains(req.nearAccount), "The NEAR account already has a linked account");
-    assert(!nearByExternal.contains(req.externalAccount), "The external account already has a linked account");
+    
     externalByNear.set(req.nearAccount, req.externalAccount);
     nearByExternal.set(req.externalAccount, req.nearAccount);
-
     logging.log("Accounts " + req.nearAccount + " and " + req.externalAccount + " are linked");
   }
 
-  // ToDo: check that delete will not be reverted
   pendingRequests.delete(requestId);
   approvedRequests.add(requestId);
 }
@@ -194,6 +188,15 @@ export function requestVerification(externalAccount: ExternalAccount, isUnlink: 
     u128.ge(Context.attachedDeposit, storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero)!),
     "Insufficient stake amount"
   );
+
+  // ToDo: audit it
+  if (isUnlink) {
+    assert(externalByNear.contains(Context.sender), "The NEAR account doesn't have a linked account");
+    assert(nearByExternal.contains(externalAccount), "The external account doesn't have a linked account");
+  } else {
+    assert(!externalByNear.contains(Context.sender), "The NEAR account already has a linked account");
+    assert(!nearByExternal.contains(externalAccount), "The external account already has a linked account");
+  }    
 
   const id = verificationRequests.push(new VerificationRequest(Context.sender, externalAccount, isUnlink, url));
   pendingRequests.add(id);
