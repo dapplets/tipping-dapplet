@@ -1,7 +1,7 @@
 import { groupBy } from 'lodash'
 
-import { TippingsRepository } from "./TippingsRepository";
-import { PaymentRepository } from "./PaymentRepository";
+import { TippingsRepository } from "../repositories/TippingsRepository";
+import { PaymentRepository } from "../repositories/PaymentRepository";
 
 const { parseNearAmount } = Core.near.utils.format;
 
