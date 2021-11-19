@@ -24,6 +24,6 @@ export class IdentityService {
     const contract = await this.contract;
     const stake = await contract.getMinStakeAmount();
     const requestId = await contract.requestVerification({ externalAccount, isUnlink, url }, undefined, stake);
-    console.log('requestId', requestId)
+    console.log('requestId', requestId);
   }
 }
