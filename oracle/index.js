@@ -56,12 +56,19 @@ async function start() {
 
             let { nearAccount, externalAccount, isUnlink, proofUrl } = request;
 
+            
             nearAccount = nearAccount.toLowerCase();
             externalAccount = externalAccount.toLowerCase();
-
+            
             const [socialNetwork, username] = externalAccount.split('/');
-
+            
             if (socialNetwork === 'twitter') {
+                if (proofUrl.indexOf('https://twitter.com') !== 0) {
+                    console.log(`Invalid proof URL for Twitter: "${proofUrl}". Rejecting request...`);
+                    await contract.rejectRequest({ args: { requestId } });
+                    return;
+                }
+
                 console.log(`${isUnlink ? "Unlink" : "Link"} "${nearAccount}" <=> "${externalAccount}" with proof: ${proofUrl}`);
 
                 await page.goto(request.proofUrl, { waitUntil: 'networkidle2' });
