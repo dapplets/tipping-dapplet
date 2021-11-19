@@ -229,7 +229,7 @@ export function claimTokens(): void {
     ContractPromiseBatch.create(Context.sender).transfer(availableTips);
     availableTipsByExternal.set(externalAccount!, u128.Zero);
 
-    logging.log(Context.sender + " claimed " + availableTips + " NEAR from " + externalAccount);
+    logging.log(Context.sender + " claimed " + availableTips.toString() + " NEAR from " + externalAccount!);
 }
 
 // HELPERS
