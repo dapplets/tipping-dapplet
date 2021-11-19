@@ -6,6 +6,7 @@ import { PaymentRepository } from './repositories/PaymentRepository';
 import { TippingsRepository } from './repositories/TippingsRepository';
 import { TippingService } from './services/TippingService';
 import { IdentityService } from './services/IdentityService';
+import { debounce } from 'lodash';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 
@@ -22,18 +23,18 @@ export default class TwitterFeature {
   private _step: number;
   private _network: string;
 
-  private _overlay = Core.overlay({ name: 'overlay', title: 'Tipping Near' }).listen({
-    getAllUserStat: () =>
-      this.tippingService
-        .getAllUserStat()
-        .then((x) => this._overlay.send('getAllUserStat_done', x))
-        .catch((e) => this._overlay.send('getAllUserStat_undone', e)),
-    donateToUser: (_: any, { type, message }: any) =>
-      this.tippingService
-        .donateToUser(message.nearAccountId, message.donateAmount)
-        .then(() => this._overlay.send('donateToUser_done'))
-        .catch((e) => this._overlay.send('donateToUser_undone', e)),
-  });
+  // private _overlay = Core.overlay({ name: 'overlay', title: 'Tipping Near' }).listen({
+  //   getAllUserStat: () =>
+  //     this.tippingService
+  //       .getAllUserStat()
+  //       .then((x) => this._overlay.send('getAllUserStat_done', x))
+  //       .catch((e) => this._overlay.send('getAllUserStat_undone', e)),
+  //   donateToUser: (_: any, { type, message }: any) =>
+  //     this.tippingService
+  //       .donateToUser(message.nearAccountId, message.donateAmount)
+  //       .then(() => this._overlay.send('donateToUser_done'))
+  //       .catch((e) => this._overlay.send('donateToUser_undone', e)),
+  // });
 
   async activate(): Promise<void> {
     this._step = await Core.storage.get('step');
@@ -52,12 +53,12 @@ export default class TwitterFeature {
       );
     }
 
-    Core.onAction(() => this._overlay.send(''));
+    // Core.onAction(() => this._overlay.send(''));
 
     const { button, avatarBadge } = this.adapter.exports;
 
     this.adapter.attachConfig({
-      PROFILE: (profile: any) => [
+      PROFILE: () => [
         button({
           DEFAULT: {
             hidden: true,
@@ -94,9 +95,11 @@ export default class TwitterFeature {
             label: 'Tip',
             tooltip: 'Send donation',
             hidden: true,
+            amount: 0,
+            debouncedDonate: debounce(this.onDebounceDonate, 1000),
             init: this.onPostButtonInit,
             exec: this.onPostButtonExec,
-          },
+          }
         }),
         avatarBadge({
           DEFAULT: {
@@ -157,14 +160,31 @@ export default class TwitterFeature {
     if (nearId) {
       me.hidden = false;
       me.nearId = nearId;
-      me.label = await this.getDonationsLabel(tweet.id);
+      me.donationsAmount = await this.tippingService.getTotalDonationByTweet(tweet.id);
+      me.label = me.donationsAmount ? this.formatNear(me.donationsAmount) + ' NEAR' : 'Tip';
+    }
+  };
+
+  onDebounceDonate = async (me: any, nearId: string, tweetId: string, amount: number) => {
+    try {
+      me.loading = true;
+      me.disabled = true;
+      await this.tippingService.donateByTweet(nearId, tweetId, amount);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      me.donationsAmount = await this.tippingService.getTotalDonationByTweet(tweetId);
+      me.loading = false;
+      me.disabled = false;
+      me.amount = 0;
+      me.label = me.donationsAmount ? this.formatNear(me.donationsAmount) + ' NEAR' : 'Tip';
     }
   };
 
   onPostButtonExec = async (tweet, me) => {
-    await this.tippingService.addDonation(me.nearId, tweet.id, this._step);
-    me.label = await this.getDonationsLabel(tweet.id);
-    if (this._overlay.isOpen()) this._overlay.send('updated');
+    me.amount += this._step;
+    me.label = this.formatNear(me.donationsAmount + me.amount) + ' NEAR';
+    await me.debouncedDonate(me, me.nearId, tweet.id, me.amount);
   };
 
   onPostAvatarBadgeInit = async (ctx, me) => {
@@ -180,16 +200,15 @@ export default class TwitterFeature {
     window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
   };
 
-  async getDonationsLabel(tweetId: string): Promise<string> {
-    const totalTweetDonation = await this.tippingService.getTotalDonationByTweet(tweetId);
-    return totalTweetDonation ? formatNearAmount(parseNearAmount(totalTweetDonation.toString()), 4) + ' NEAR' : 'Tip';
-  }
-
   parseNearId(fullname: string, network: string): string | null {
     const regExpMainnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
     const regExpTestnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.testnet/;
     const nearId = fullname.toLowerCase().match(network === 'testnet' ? regExpTestnet : regExpMainnet);
 
     return nearId && nearId[0];
+  }
+
+  formatNear(amount: number): string {
+    return Number(formatNearAmount(parseNearAmount(amount.toString()), 4)).toFixed(2);
   }
 }

@@ -107,6 +107,11 @@ export class TippingService {
     await wallet.sendMoney(nearAccountId, parseNearAmount(String(donateAmount)));
     await this.addPayment(nearAccountId, donateAmount);
   }
+
+  async donateByTweet(nearAccountId: string, tweetId: string, amount: number): Promise<void> {
+    await this.donateToUser(nearAccountId, amount);
+    await this.addDonation(nearAccountId, tweetId, amount);
+  }
 }
 
 function toFixed(value: number): number {
