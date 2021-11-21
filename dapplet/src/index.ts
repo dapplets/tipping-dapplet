@@ -128,8 +128,8 @@ export default class TwitterFeature {
   }
 
   onProfileButtonClaimInit = async (profile, me) => {
-    const user = this.adapter.getCurrentUser();
-    const isMyProfile = profile.id === user.username;
+    const username = await this.getCurrentUserAsync();
+    const isMyProfile = profile.id === username;
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
       const availableTokens = toFixedString(tokens, 3);
@@ -161,9 +161,8 @@ export default class TwitterFeature {
   };
 
   onProfileButtonDefaultInit = async (profile, me) => {
-    // ToDo: getCurrentUser throws an error sometimes
-    const user = this.adapter.getCurrentUser();
-    const isMyProfile = profile.id === user.username;
+    const username = this.adapter.getCurrentUser();
+    const isMyProfile = profile.id === username;
     if (isMyProfile) {
       const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
       if (!nearAccount) {
@@ -300,5 +299,22 @@ export default class TwitterFeature {
 
   formatNear(amount: string): string {
     return Number(formatNearAmount(amount, 4)).toFixed(2);
+  }
+
+  async getCurrentUserAsync(): Promise<string | null> {
+    let i = 0;
+
+    while (i < 10) {
+      i++;
+      try {
+        const user = this.adapter.getCurrentUser();
+        return user ? null : user.username;
+      } catch (e) {
+        console.error(e);
+      }
+      await new Promise((res) => setTimeout(res, 1000));
+    }
+    
+    return null;
   }
 }
