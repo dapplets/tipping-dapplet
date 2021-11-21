@@ -319,30 +319,6 @@ export function shutdown(): void {
   logging.log("Shutdown occured");
 }
 
-export function clearStorage(): void {
-  _onlyOwner();
-
-  storage.delete(OWNER_ACCOUNT_KEY);
-  storage.delete(ORACLE_ACCOUNT_KEY);
-  storage.delete(MIN_STAKE_AMOUNT_KEY);
-  storage.delete(INIT_CONTRACT_KEY);
-  storage.delete(ACTIVE_CONTRACT_KEY);
-  storage.delete(MAX_AMOUNT_PER_ITEM_KEY);
-  storage.delete(MAX_AMOUNT_PER_TIP_KEY);
-
-  externalByNear.clear();
-  nearByExternal.clear();
-  pendingRequests.clear();
-  totalTipsByItem.clear();
-  totalTipsByExternal.clear();
-  availableTipsByExternal.clear();
-  approvedRequests.clear();
-
-  for (let i = 0; i < verificationRequests.length; i++) {
-    verificationRequests.pop();
-  }
-}
-
 // HELPERS
 
 function _onlyOracle(): void {
