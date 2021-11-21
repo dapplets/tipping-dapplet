@@ -12,13 +12,13 @@ export class TippingContractService {
     changeMethods: ['sendTips', 'claimTokens'],
   });
 
-  async getTotalDonationByItem(itemId: string): Promise<number> {
+  async getTotalDonationByItem(itemId: string): Promise<string> {
     const contract = await this.contract;
     const tipsAmount = await contract.getTotalTipsByItemId({ itemId: itemId });
-    return Number(formatNearAmount(tipsAmount));
+    return tipsAmount;
   }
 
-  async donateByTweet(externalAccount: string, itemId: string, amount: number): Promise<void> {
+  async donateByTweet(externalAccount: string, itemId: string, amount: string): Promise<void> {
     const contract = await this.contract;
     await contract.sendTips({
       recipientExternalAccount: externalAccount,
@@ -26,10 +26,10 @@ export class TippingContractService {
     }, undefined, amount);
   }
 
-  async getAvailableTipsByExternalAccount(externalAccount: string): Promise<number> {
+  async getAvailableTipsByExternalAccount(externalAccount: string): Promise<string> {
     const contract = await this.contract;
     const tipsAmount = await contract.getAvailableTipsByExternalAccount({ externalAccount });
-    return Number(formatNearAmount(tipsAmount));
+    return tipsAmount;
   }
 
   async claimTokens(): Promise<void> {

@@ -8,8 +8,14 @@ import NEAR_DARK_ICON from './icons/near-dark.svg';
 import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
+import { equals, lte, sum, toFixedString } from './helpers';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
+
+enum NearNetwork {
+  MAINNET = 'mainnet',
+  TESTNET = 'testnet',
+}
 
 @Injectable
 export default class TwitterFeature {
@@ -22,8 +28,10 @@ export default class TwitterFeature {
   private tippingService = new TippingContractService();
   private identityService = new IdentityService();
 
-  private _step: number;
-  private _network: string;
+  private _stepYocto: string;
+  private _network: NearNetwork;
+  private _maxAmountPerItem = '10000000000000000000000000'; // 10 NEAR
+  private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
   // private _overlay = Core.overlay({ name: 'overlay', title: 'Tipping Near' }).listen({
   //   getAllUserStat: () =>
@@ -39,10 +47,10 @@ export default class TwitterFeature {
   // });
 
   async activate(): Promise<void> {
-    this._step = await Core.storage.get('step');
+    const step = await Core.storage.get('step');
     this._network = await Core.storage.get('network');
 
-    if (this._step <= 0) {
+    if (step <= 0) {
       throw new Error(
         'A donation step must be more than zero. ' + 'Change the step parameter in the dapplet settings.',
       );
@@ -54,6 +62,8 @@ export default class TwitterFeature {
           'Change the network parameter in the dapplet settings.',
       );
     }
+
+    this._stepYocto = parseNearAmount(step.toString());
 
     // Core.onAction(() => this._overlay.send(''));
 
@@ -95,7 +105,9 @@ export default class TwitterFeature {
             img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
             label: 'Tip',
             tooltip: 'Send donation',
-            amount: 0,
+            amount: '0',
+            donationsAmount: '0',
+            nearAccount: '',
             debouncedDonate: debounce(this.onDebounceDonate, 1000),
             init: this.onPostButtonInit,
             exec: this.onPostButtonExec,
@@ -120,7 +132,7 @@ export default class TwitterFeature {
     const isMyProfile = profile.id === user.username;
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
-      const availableTokens = tokens.toFixed(3);
+      const availableTokens = toFixedString(tokens, 3);
       me.label = `Claim ${availableTokens} Ⓝ`;
       me.hidden = false;
     } else {
@@ -215,16 +227,22 @@ export default class TwitterFeature {
     }
   };
 
-  onProfileAvatarBadgeExec = (ctx, me) => {
-    window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
+  onProfileAvatarBadgeExec = (_, me) => {
+    if (this._network === NearNetwork.TESTNET) {
+      window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
+    } else if (this._network === NearNetwork.MAINNET) {
+      window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
+    } else {
+      throw new Error('Unsupported network');
+    }
   };
 
   onPostButtonInit = async (tweet, me) => {
     me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
-    me.label = me.donationsAmount ? this.formatNear(me.donationsAmount) + ' NEAR' : 'Tip';
+    me.label = equals(me.donationsAmount, '0') ? 'Tip' : this.formatNear(me.donationsAmount) + ' NEAR';
   };
 
-  onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: number) => {
+  onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
     try {
       me.loading = true;
       me.disabled = true;
@@ -235,16 +253,22 @@ export default class TwitterFeature {
       me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweetId);
       me.loading = false;
       me.disabled = false;
-      me.amount = 0;
-      me.label = me.donationsAmount ? this.formatNear(me.donationsAmount) + ' NEAR' : 'Tip';
+      me.amount = '0';
+      me.label = equals(me.donationsAmount, '0') ? 'Tip' : this.formatNear(me.donationsAmount) + ' NEAR';
     }
   };
 
   onPostButtonExec = async (tweet, me) => {
-    me.amount += this._step;
-    me.label = this.formatNear(me.donationsAmount + me.amount) + ' NEAR';
+    if (
+      lte(sum(me.donationsAmount, me.amount, this._stepYocto), this._maxAmountPerItem) &&
+      lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
+    ) {
+      me.amount = sum(me.amount, this._stepYocto);
+      me.label = this.formatNear(sum(me.donationsAmount, me.amount)) + ' NEAR';
+    }
+
     const externalAccount = 'twitter/' + tweet.authorUsername;
-    await me.debouncedDonate(me, externalAccount, tweet.id, parseNearAmount(me.amount.toString()));
+    await me.debouncedDonate(me, externalAccount, tweet.id, me.amount);
   };
 
   onPostAvatarBadgeInit = async (ctx, me) => {
@@ -257,18 +281,24 @@ export default class TwitterFeature {
   };
 
   onPostAvatarBadgeExec = (ctx, me) => {
-    window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
+    if (this._network === NearNetwork.TESTNET) {
+      window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
+    } else if (this._network === NearNetwork.MAINNET) {
+      window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
+    } else {
+      throw new Error('Unsupported network');
+    }
   };
 
   parseNearId(fullname: string, network: string): string | null {
     const regExpMainnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.near/;
     const regExpTestnet = /(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.testnet/;
-    const nearId = fullname.toLowerCase().match(network === 'testnet' ? regExpTestnet : regExpMainnet);
+    const nearId = fullname.toLowerCase().match(network === NearNetwork.TESTNET ? regExpTestnet : regExpMainnet);
 
     return nearId && nearId[0];
   }
 
-  formatNear(amount: number): string {
-    return Number(formatNearAmount(parseNearAmount(amount.toString()), 4)).toFixed(2);
+  formatNear(amount: string): string {
+    return Number(formatNearAmount(amount, 4)).toFixed(2);
   }
 }
