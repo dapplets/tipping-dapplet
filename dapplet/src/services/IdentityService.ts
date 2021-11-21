@@ -9,11 +9,11 @@ export class IdentityService {
 
   private _nearByExternal = new Map<ExternalAccount, NearAccount>();
 
-  public async getNearAccount(externalAccount: ExternalAccount): Promise<NearAccount> {
+  public async getNearAccount(externalAccount: ExternalAccount, isNoCache: boolean): Promise<NearAccount> {
     const contract = await this.contract;
 
     // caching requests
-    if (!this._nearByExternal.has(externalAccount)) {
+    if (!this._nearByExternal.has(externalAccount) || isNoCache) {
       this._nearByExternal.set(externalAccount, contract.getNearAccount({ externalAccount }));
     }
 

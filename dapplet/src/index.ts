@@ -164,7 +164,7 @@ export default class TwitterFeature {
     const username = await this.getCurrentUserAsync();
     const isMyProfile = profile.id.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
-      const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
+      const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id, true);
       if (!nearAccount) {
         me.label = 'Link';
         me.tooltip = 'Link account with NEAR wallet';
