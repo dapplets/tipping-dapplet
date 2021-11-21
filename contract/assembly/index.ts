@@ -216,6 +216,21 @@ export function changeMinStake(minStakeAmount: u128): void {
   logging.log("Changed min stake: " + minStakeAmount.toString());
 }
 
+
+export function changeMaxAmountPerItem(maxAmountPerItem: u128): void {
+  _active();
+  _onlyOwner();
+  storage.set<u128>(MAX_AMOUNT_PER_ITEM_KEY, maxAmountPerItem);
+  logging.log("Changed max amount of item tips: " + maxAmountPerItem.toString());
+}
+
+export function changeMaxAmountPerTip(maxAmountPerTip: u128): void {
+  _active();
+  _onlyOwner();
+  storage.set<u128>(MAX_AMOUNT_PER_TIP_KEY, maxAmountPerTip);
+  logging.log("Changed max amount of one tip: " + maxAmountPerTip.toString());
+}
+
 export function unlinkAll(): void {
   _active();
   _onlyOwner();
