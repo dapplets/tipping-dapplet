@@ -48,14 +48,25 @@ const totalTipsByItem = new PersistentUnorderedMap<string, u128>("h");
 const totalTipsByExternal = new PersistentUnorderedMap<ExternalAccount, u128>("i");
 const availableTipsByExternal = new PersistentUnorderedMap<ExternalAccount, u128>("j");
 
+const MAX_AMOUNT_PER_ITEM_KEY = "n";
+const MAX_AMOUNT_PER_TIP_KEY = "o";
+
 // INITIALIZATION
 
-export function initialize(ownerAccountId: NearAccount, oracleAccountId: NearAccount, minStakeAmount: u128): void {
+export function initialize(
+  ownerAccountId: NearAccount,
+  oracleAccountId: NearAccount,
+  minStakeAmount: u128,
+  maxAmountPerItem: u128,
+  maxAmountPerTip: u128
+): void {
   assert(storage.getPrimitive<bool>(INIT_CONTRACT_KEY, false) == false, "Contract already initialized");
 
   storage.set<NearAccount>(OWNER_ACCOUNT_KEY, ownerAccountId);
   storage.set<NearAccount>(ORACLE_ACCOUNT_KEY, oracleAccountId);
   storage.set<u128>(MIN_STAKE_AMOUNT_KEY, minStakeAmount);
+  storage.set<u128>(MAX_AMOUNT_PER_ITEM_KEY, maxAmountPerItem);
+  storage.set<u128>(MAX_AMOUNT_PER_TIP_KEY, maxAmountPerTip);
   storage.set<bool>(INIT_CONTRACT_KEY, true);
   storage.set<bool>(ACTIVE_CONTRACT_KEY, true);
 
@@ -95,7 +106,17 @@ export function getOracleAccount(): NearAccount | null {
 
 export function getMinStakeAmount(): u128 {
   _active();
-  return storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero) as u128;
+  return storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero)!;
+}
+
+export function getMaxAmountPerItem(): u128 {
+  _active();
+  return storage.get<u128>(MAX_AMOUNT_PER_ITEM_KEY, u128.Zero)!;
+}
+
+export function getMaxAmountPerTip(): u128 {
+  _active();
+  return storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!;
 }
 
 // Requests
@@ -224,7 +245,9 @@ export function requestVerification(externalAccount: ExternalAccount, isUnlink: 
 
   const id = verificationRequests.push(new VerificationRequest(Context.sender, externalAccount, isUnlink, url));
   pendingRequests.add(id);
-  ContractPromiseBatch.create(storage.get<NearAccount>(ORACLE_ACCOUNT_KEY) as string).transfer(Context.attachedDeposit);
+
+  const oracleAccount = storage.get<NearAccount>(ORACLE_ACCOUNT_KEY)!;
+  ContractPromiseBatch.create(oracleAccount).transfer(Context.attachedDeposit);
 
   logging.log(
     Context.sender + " requests to link " + externalAccount + " account. Proof ID: " + id.toString() + " URL: " + url
@@ -237,6 +260,10 @@ export function requestVerification(externalAccount: ExternalAccount, isUnlink: 
 
 export function sendTips(recipientExternalAccount: ExternalAccount, itemId: string): void {
   _active();
+
+  assert(Context.attachedDeposit > u128.Zero, "Tips amounts must be greater than zero");
+  assert(u128.add(totalTipsByItem.get(itemId, u128.Zero)!, Context.attachedDeposit) <= storage.get<u128>(MAX_AMOUNT_PER_ITEM_KEY, u128.Zero)! , "New total tips amount exceeds allowance");
+  assert(Context.attachedDeposit <= storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)! , "Tips amount exceeds allowance");
 
   const nearAccount = nearByExternal.get(recipientExternalAccount);
 
@@ -294,12 +321,14 @@ export function shutdown(): void {
 
 export function clearStorage(): void {
   _onlyOwner();
-  
+
   storage.delete(OWNER_ACCOUNT_KEY);
   storage.delete(ORACLE_ACCOUNT_KEY);
   storage.delete(MIN_STAKE_AMOUNT_KEY);
   storage.delete(INIT_CONTRACT_KEY);
   storage.delete(ACTIVE_CONTRACT_KEY);
+  storage.delete(MAX_AMOUNT_PER_ITEM_KEY);
+  storage.delete(MAX_AMOUNT_PER_TIP_KEY);
 
   externalByNear.clear();
   nearByExternal.clear();
@@ -310,7 +339,7 @@ export function clearStorage(): void {
   approvedRequests.clear();
 
   for (let i = 0; i < verificationRequests.length; i++) {
-    verificationRequests.pop();    
+    verificationRequests.pop();
   }
 }
 
