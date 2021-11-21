@@ -129,7 +129,7 @@ export default class TwitterFeature {
 
   onProfileButtonClaimInit = async (profile, me) => {
     const username = await this.getCurrentUserAsync();
-    const isMyProfile = profile.id === username;
+    const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
       const availableTokens = toFixedString(tokens, 3);
@@ -161,8 +161,8 @@ export default class TwitterFeature {
   };
 
   onProfileButtonDefaultInit = async (profile, me) => {
-    const username = this.adapter.getCurrentUser();
-    const isMyProfile = profile.id === username;
+    const username = await this.getCurrentUserAsync();
+    const isMyProfile = profile.id.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
       if (!nearAccount) {
@@ -308,13 +308,13 @@ export default class TwitterFeature {
       i++;
       try {
         const user = this.adapter.getCurrentUser();
-        return user ? null : user.username;
+        return user ? user.username : null;
       } catch (e) {
         console.error(e);
       }
       await new Promise((res) => setTimeout(res, 1000));
     }
-    
+
     return null;
   }
 }
