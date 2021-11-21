@@ -1,10 +1,10 @@
 {
   "main": {
-    "network": "mainnet",
+    "network": "testnet",
     "step": 0.05
   },
   "test": {
-    "network": "mainnet",
+    "network": "testnet",
     "step": 0.05
   },
   "dev": {
