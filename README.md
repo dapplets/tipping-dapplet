@@ -9,10 +9,10 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 2. Download the [**Dapplet Browser Extension**](https://github.com/dapplets/dapplet-extension/releases/tag/v0.44.0-alpha.5).
 
 3. Open chrome://extensions in a new tab. 
-	![image](/assets/0.png)
+![image](/assets/0.png)
 
 4. Switch the Developer mode on and press F5 to refresh the page.
-	![image](/assets/1.png)
+![image](/assets/1.png)
 
 :::note
 If you are using **Ubuntu** or possibly another **Linux OS** the Dapplets extension can disappear from the Chrome Extensions after restarting the PC. To avoid this **unzip** the archive and use the **`Load unpacked`** button to add the extension.
@@ -101,6 +101,7 @@ After this, the **Claim** button should change to 0 and the tokens should be add
 ## Donating tokens to other users
 
 Look at the new icon that is now displayed next to any tweet, yours, or any other user’s:
+
 ![image](/assets/20.png)
 
 This icon has two functions:
@@ -124,9 +125,9 @@ To do this, please follow the instructions below:
 1. Click on **Dapplets Extension**
 2. Find **Tipping NEAR Dapplet**
 3. Click on the *Gear Wheel*
-	![image](/assets/22.png)
+![image](/assets/22.png)
 4. Settings will open. Here you can change Donation increase step.
-	![image](/assets/23.png)
+![image](/assets/23.png)
 
 
 
