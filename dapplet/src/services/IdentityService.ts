@@ -9,7 +9,7 @@ export class IdentityService {
 
   private _nearByExternal = new Map<ExternalAccount, NearAccount>();
 
-  public async getNearAccount(externalAccount: ExternalAccount, isNoCache: boolean): Promise<NearAccount> {
+  public async getNearAccount(externalAccount: ExternalAccount, isNoCache: boolean = false): Promise<NearAccount> {
     const contract = await this.contract;
 
     // caching requests
