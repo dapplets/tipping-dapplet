@@ -3,7 +3,7 @@ import { Button, Container, Header, List } from 'semantic-ui-react';
 import { bridge } from './dappletBridge';
 import { IPayment, ISendTipping, ITipping, ITippingsState } from './interfaces';
 import { groupBy } from 'lodash';
-import { UserStat } from '../../dapplet/src/tippingService';
+import { UserStat } from '../../dapplet/src/services/tippingService';
 import './app.css';
 
 export default () => {

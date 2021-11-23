@@ -1,4 +1,4 @@
-import {} from '@dapplets/dapplet-extension';
+import { } from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
@@ -59,7 +59,7 @@ export default class TwitterFeature {
     if (!(this._network === 'mainnet' || this._network === 'testnet')) {
       throw new Error(
         'Only "mainnet" and "testnet" networks are supported. ' +
-          'Change the network parameter in the dapplet settings.',
+        'Change the network parameter in the dapplet settings.',
       );
     }
 
@@ -132,7 +132,8 @@ export default class TwitterFeature {
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
-      const availableTokens = toFixedString(tokens, 3);
+      const formatNearAmount = Core.near.utils.format.formatNearAmount(tokens);
+      const availableTokens = toFixedString(formatNearAmount, 2);
       me.label = `Claim ${availableTokens} Ⓝ`;
       me.hidden = false;
     } else {

@@ -1,6 +1,6 @@
 import GeneralBridge from '@dapplets/dapplet-overlay-bridge';
 import { ISendTipping, onDataProps } from './interfaces';
-import { UserStat } from '../../dapplet/src/tippingService';
+import { UserStat } from '../../dapplet/src/services/tippingService';
 
 class Bridge extends GeneralBridge {
   _subId: number = 0;
