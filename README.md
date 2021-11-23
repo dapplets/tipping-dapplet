@@ -80,9 +80,11 @@ Now we will connect your Twitter profile to your NEAR account.
 	![image](/assets/15.png)
 
 Go back to your Twitter Profile page. There, the Link icon has changed to:
+
 ![image](/assets/16.png)
 
 This is temporary, when the transaction is completed successfully the icon will change again:
+
 ![image](/assets/17.png)
 
 Done, your Twitter account is now linked to your Near.testnet account
