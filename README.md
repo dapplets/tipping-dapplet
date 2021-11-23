@@ -8,13 +8,13 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 
 2. Download the [**Dapplet Browser Extension**](https://github.com/dapplets/dapplet-extension/releases/tag/v0.44.0-alpha.5).
 
-3. Open **chrome://extensions** in a new tab. 
-
-![image](/assets/0.png)
+3. Open **chrome://extensions** in a new tab.
+	
+	![image](/assets/0.png)
 
 4. Switch the Developer mode on and press F5 to refresh the page.
-
-![image](/assets/1.png)
+	
+	![image](/assets/1.png)
 
 **P.S.** If you are using **Ubuntu** or possibly another **Linux OS** the Dapplets extension can disappear from the Chrome Extensions after restarting the PC. To avoid this **unzip** the archive and use the *Load unpacked* button to add the extension.
 
@@ -31,6 +31,7 @@ This Dapplet is created especially for **Twitter**. Please go to the official Tw
 2. Find **Tipping NEAR Dapplet** in the list of dapplets.
 	![image](/assets/4.png)
 3. Click on the switch to activate it.
+	
 	![image](/assets/5.png)
 
 Now the dapplet is turned on. You will see two new icons in your Twitter profile.
@@ -48,8 +49,8 @@ To interact with the Tipping NEAR Dapplet, you need to connect a wallet.
 1. Click on **Dapplets Extension** Icon. The overlay will open.
 
 2. Select the **Wallets** Tab.
-
-![image](/assets/7.png)
+	
+	![image](/assets/7.png)
 
 3. You don't have any wallets connected right now. 
 Click the **Connect** button.
@@ -92,11 +93,13 @@ Done, your Twitter account is now linked to your Near.testnet account
 ## Accepting donated tokens
 
 If you already have tokens that were donated to you by other users, you can collect them by clicking:
+
 ![image](/assets/18.png)
 
 The button will show how many tokens were donated to you at the moment, which you have not yet collected.
 
 When you click on the button a new page will open. 
+
 ![image](/assets/19.png)
 
 Click **Allow** to accept the tokens donated to you.
@@ -106,7 +109,6 @@ After this, the **Claim** button should change to 0 and the tokens should be add
 ## Donating tokens to other users
 
 Look at the new icon that is now displayed next to any tweet, yours, or any other user’s:
-
 ![image](/assets/20.png)
 
 This icon has two functions:
@@ -116,7 +118,6 @@ This icon has two functions:
 Every click on the button increases the total donation by 0.05 NEAR. The transaction has a delay, which allows you to click several times to increase the donation. You can try sending yourself some tokens to see how it works.
 
 Choose one of your own tweets, and donate a few tokens to yourself. When you do this, a page will open:
-
 ![image](/assets/21.png)
 
 Click **Allow** and the tokens will be sent. The counter will increase by the number of tokens you have donated. The maximum amount you can donate in one transaction is equal to 1 token. The maximum per one tweet - 10 tokens. 
@@ -130,8 +131,8 @@ To do this, please follow the instructions below:
 1. Click on **Dapplets Extension**
 2. Find **Tipping NEAR Dapplet**
 3. Click on the *Gear Wheel*
-
-![image](/assets/22.png)
+	
+	![image](/assets/22.png)
 
 4. Settings will open. Here you can change Donation increase step.
 ![image](/assets/23.png)
