@@ -48,7 +48,8 @@ To interact with the Tipping NEAR Dapplet, you need to connect a wallet.
 1. Click on **Dapplets Extension** Icon. The overlay will open.
 
 2. Select the **Wallets** Tab.
-	![image](/assets/7.png)
+
+![image](/assets/7.png)
 
 3. You don't have any wallets connected right now. 
 Click the **Connect** button.
@@ -127,7 +128,9 @@ To do this, please follow the instructions below:
 1. Click on **Dapplets Extension**
 2. Find **Tipping NEAR Dapplet**
 3. Click on the *Gear Wheel*
+
 ![image](/assets/22.png)
+
 4. Settings will open. Here you can change Donation increase step.
 ![image](/assets/23.png)
 
