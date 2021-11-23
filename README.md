@@ -8,7 +8,7 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 
 2. Download the [**Dapplet Browser Extension**](https://github.com/dapplets/dapplet-extension/releases/tag/v0.44.0-alpha.5).
 
-3. Open chrome://extensions in a new tab. 
+3. Open **chrome://extensions** in a new tab. 
 
 ![image](/assets/0.png)
 
@@ -16,12 +16,10 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 
 ![image](/assets/1.png)
 
-:::note
-If you are using **Ubuntu** or possibly another **Linux OS** the Dapplets extension can disappear from the Chrome Extensions after restarting the PC. To avoid this **unzip** the archive and use the **`Load unpacked`** button to add the extension.
+> If you are using **Ubuntu** or possibly another **Linux OS** the Dapplets extension can disappear from the Chrome Extensions after restarting the PC. To avoid this **unzip** the archive and use the **`Load unpacked`** button to add the extension.
+> ![image](/assets/2.png)
+> ![image](/assets/3.png)
 
-![image](/assets/2.png)
-![image](/assets/3.png)
-:::
 
 ## Run the Dapplet
 
