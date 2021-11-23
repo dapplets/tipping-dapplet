@@ -109,6 +109,7 @@ After this, the **Claim** button should change to 0 and the tokens should be add
 ## Donating tokens to other users
 
 Look at the new icon that is now displayed next to any tweet, yours, or any other user’s:
+
 ![image](/assets/20.png)
 
 This icon has two functions:
