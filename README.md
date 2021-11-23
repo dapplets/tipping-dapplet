@@ -16,9 +16,11 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 
 ![image](/assets/1.png)
 
-> If you are using **Ubuntu** or possibly another **Linux OS** the Dapplets extension can disappear from the Chrome Extensions after restarting the PC. To avoid this **unzip** the archive and use the **`Load unpacked`** button to add the extension.
-> ![image](/assets/2.png)
-> ![image](/assets/3.png)
+**P.S.** If you are using **Ubuntu** or possibly another **Linux OS** the Dapplets extension can disappear from the Chrome Extensions after restarting the PC. To avoid this **unzip** the archive and use the *Load unpacked* button to add the extension.
+
+![image](/assets/2.png)
+
+![image](/assets/3.png)
 
 
 ## Run the Dapplet
