@@ -1,6 +1,6 @@
 // Class for interacting with paid tweets
 import { } from '@dapplets/dapplet-extension';
-import { IPayment } from "../../../overlay/src/interfaces";
+import { IPayment } from "../interfaces";
 
 interface IPaymentRepository {
 	getAll: () => Promise<IPayment[]>;

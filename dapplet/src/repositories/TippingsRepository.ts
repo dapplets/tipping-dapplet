@@ -1,4 +1,4 @@
-import { ITipping } from "../../../overlay/src/interfaces";
+import { ITipping } from "../interfaces";
 
 interface ITippingsRepository {
 	getAll: () => Promise<ITipping[]>;

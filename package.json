@@ -4,12 +4,8 @@
   "description": "Tipping Dapplet, allowing you to send money to another person on Twitter",
   "main": "",
   "scripts": {
-    "postinstall": "concurrently -c magenta,cyan -n dapplet,overlay \"npm run install:dapplet\" \"npm run install:overlay\"",
-    "install:dapplet": "cd dapplet && npm i",
-    "install:overlay": "cd overlay && npm i",
-    "start": "concurrently -c magenta,cyan -n dapplet,overlay \"npm run start:dapplet\" \"npm run start:overlay\"",
-    "start:dapplet": "cd dapplet && npm start",
-    "start:overlay": "cd overlay && npm start",
+    "install": "cd dapplet && npm i",
+    "start": "cd dapplet && npm start",
     "prettier": "npx prettier --write ."
   },
   "repository": {
@@ -18,7 +14,6 @@
   },
   "cacheDirectories": [
     "dapplet/node_modules",
-    "overlay/node_modules",
     "contract/node_modules"
   ],
   "author": "Dapplets Project",
