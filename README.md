@@ -2,7 +2,7 @@
 
 Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 
-## Installation Expansion 
+## Browser Extension Installation 
 
 1. Open the **Google Chrome** browser.
 
@@ -90,7 +90,9 @@ This is temporary, when the transaction is completed successfully the icon will 
 
 ![image](/assets/17.png)
 
-Done, your Twitter account is now linked to your Near.testnet account
+Done, your Twitter account is now linked to your Near.testnet account.
+
+Now you can delete the name of your NEAR wallet from Twitter profile username.
 
 ## Accepting donated tokens
 
