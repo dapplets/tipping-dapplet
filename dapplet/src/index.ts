@@ -262,6 +262,13 @@ export default class TwitterFeature {
   };
 
   onPostButtonExec = async (tweet, me) => {
+    const donationsAmount = Number(this.formatNear(me.donationsAmount));
+    const donation = Number(this.formatNear(me.amount));
+    const stepYocto = Number(this.formatNear(this._stepYocto));
+    const result = Number((donationsAmount + donation + stepYocto).toFixed(2));
+
+    if (result > 10) return me.disabled = true;
+
     if (
       lte(sum(me.donationsAmount, me.amount, this._stepYocto), this._maxAmountPerItem) &&
       lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
