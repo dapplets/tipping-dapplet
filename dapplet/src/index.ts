@@ -166,14 +166,16 @@ export default class TwitterFeature {
   onProfileButtonDefaultInit = async (profile, me) => {
     const username = await this.getCurrentUserAsync();
     const isMyProfile = profile.id.toLowerCase() === username?.toLowerCase();
+    const parsingNearAccount = this.parseNearId(profile.authorFullname, this._network);
+
     if (isMyProfile) {
       const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id, true);
       if (!nearAccount) {
         me.label = 'Link';
-        me.tooltip = 'Link account with NEAR wallet';
+        me.tooltip = `Link ${(parsingNearAccount ? parsingNearAccount + ' ' : '')}account with NEAR wallet`;
       } else {
         me.label = 'Unlink';
-        me.tooltip = 'Unlink account from NEAR wallet';
+        me.tooltip = `Unlink ${nearAccount} account from NEAR wallet`;
       }
       me.hidden = false;
     } else {
