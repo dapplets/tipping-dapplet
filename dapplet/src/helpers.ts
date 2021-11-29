@@ -33,3 +33,8 @@ export function equals(a: string, b: string): boolean {
 export function toFixedString(a: string, fractionDigits: number): string {
   return Number(a).toFixed(fractionDigits);
 }
+
+export async function getMilliseconds(seconds: Promise<number>): Promise<number> {
+  const getSeconds = await seconds;
+  return getSeconds * 1000;
+}

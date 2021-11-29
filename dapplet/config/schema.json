@@ -2,7 +2,8 @@
   "type": "object",
   "required": [
     "network",
-    "step"
+    "step",
+    "delay"
   ],
   "properties": {
     "network": {
@@ -12,6 +13,10 @@
     "step": {
       "type": "number",
       "title": "Donation increase step"
+    },
+    "delay": {
+      "type": "number",
+      "title": "Time before sending tip (in seconds)"
     }
   }
 }

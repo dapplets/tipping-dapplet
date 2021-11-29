@@ -2,13 +2,10 @@ import { } from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
-// import { PaymentRepository } from './repositories/PaymentRepository';
-// import { TippingsRepository } from './repositories/TippingsRepository';
-// import { TippingService } from './services/TippingService';
 import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
-import { equals, lte, sum } from './helpers';
+import { equals, getMilliseconds, lte, sum } from './helpers';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 
@@ -30,6 +27,7 @@ export default class TwitterFeature {
 
   private _stepYocto: string;
   private _network: NearNetwork;
+  private _debounceDelay: number;
   private _maxAmountPerItem = '10000000000000000000000000'; // 10 NEAR
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
@@ -46,9 +44,13 @@ export default class TwitterFeature {
   //       .catch((e) => this._overlay.send('donateToUser_undone', e)),
   // });
 
+  // Core.onAction(() => this._overlay.send(''));
+
+
   async activate(): Promise<void> {
     const step = await Core.storage.get('step');
     this._network = await Core.storage.get('network');
+    this._debounceDelay = await getMilliseconds(Core.storage.get('delay'));
 
     if (step <= 0) {
       throw new Error(
@@ -64,8 +66,6 @@ export default class TwitterFeature {
     }
 
     this._stepYocto = parseNearAmount(step.toString());
-
-    // Core.onAction(() => this._overlay.send(''));
 
     const { button, avatarBadge } = this.adapter.exports;
 
@@ -108,7 +108,7 @@ export default class TwitterFeature {
             amount: '0',
             donationsAmount: '0',
             nearAccount: '',
-            debouncedDonate: debounce(this.onDebounceDonate, 2000),
+            debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
             init: this.onPostButtonInit,
             exec: this.onPostButtonExec,
           },
@@ -130,6 +130,7 @@ export default class TwitterFeature {
   onProfileButtonClaimInit = async (profile, me) => {
     const username = await this.getCurrentUserAsync();
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
+
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
       const availableTokens = this.formatNear(tokens);
@@ -238,7 +239,10 @@ export default class TwitterFeature {
 
   onPostButtonInit = async (tweet, me) => {
     me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
-    me.label = equals(me.donationsAmount, '0') ? 'Tip' : this.formatNear(me.donationsAmount) + ' NEAR';
+    if (equals(me.donationsAmount, '0')) return me.label = 'Tip';
+
+    if (Number(this.formatNear(me.donationsAmount)) === 10) me.disabled = true;
+    me.label = this.formatNear(me.donationsAmount) + ' NEAR'
   };
 
   onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
