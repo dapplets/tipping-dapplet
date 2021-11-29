@@ -8,7 +8,7 @@ import NEAR_DARK_ICON from './icons/near-dark.svg';
 import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
-import { equals, lte, sum, toFixedString } from './helpers';
+import { equals, lte, sum } from './helpers';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 
@@ -108,7 +108,7 @@ export default class TwitterFeature {
             amount: '0',
             donationsAmount: '0',
             nearAccount: '',
-            debouncedDonate: debounce(this.onDebounceDonate, 1000),
+            debouncedDonate: debounce(this.onDebounceDonate, 2000),
             init: this.onPostButtonInit,
             exec: this.onPostButtonExec,
           },
@@ -132,8 +132,7 @@ export default class TwitterFeature {
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
-      const formatNearAmount = Core.near.utils.format.formatNearAmount(tokens);
-      const availableTokens = toFixedString(formatNearAmount, 2);
+      const availableTokens = this.formatNear(tokens);
       me.label = `Claim ${availableTokens} Ⓝ`;
       me.hidden = false;
     } else {
@@ -200,7 +199,7 @@ export default class TwitterFeature {
       } else {
         // link
         if (!nearAccount) {
-          alert('Add NEAR Account ID in your profile name before continue.');
+          alert('Add your near account ID to your profile name before continuing.');
         } else {
           await this.identityService.requestVerification(
             `twitter/${profile.id}`,
