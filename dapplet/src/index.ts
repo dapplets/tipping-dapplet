@@ -134,6 +134,8 @@ export default class TwitterFeature {
     if (isMyProfile) {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
       const availableTokens = this.formatNear(tokens);
+
+      if (Number(availableTokens) === 0) me.disabled = true;
       me.label = `Claim ${availableTokens} Ⓝ`;
       me.hidden = false;
     } else {
