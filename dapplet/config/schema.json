@@ -8,7 +8,11 @@
   "properties": {
     "network": {
       "type": "string",
-      "title": "Target network (testnet, mainnet)"
+      "title": "Target network",
+      "enum": [
+        "testnet",
+        "mainnet"
+      ]
     },
     "step": {
       "type": "number",
