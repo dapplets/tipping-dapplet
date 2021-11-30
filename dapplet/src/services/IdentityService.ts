@@ -1,16 +1,31 @@
+import { NearNetwork } from '../interfaces';
+
 type NearAccount = string;
 type ExternalAccount = string;
 
 export class IdentityService {
-  private contract = Core.contract('near', 'app.tipping.testnet', {
-    viewMethods: ['getNearAccount', 'getMinStakeAmount', 'getRequestStatus'],
-    changeMethods: ['requestVerification'],
-  });
-
+  private _contract: any;
   private _nearByExternal = new Map<ExternalAccount, NearAccount>();
 
-  public async getNearAccount(externalAccount: ExternalAccount, isNoCache: boolean = false): Promise<NearAccount> {
-    const contract = await this.contract;
+  constructor(network: NearNetwork) {
+    const address =
+      network === NearNetwork.TESTNET
+        ? 'app.tipping.testnet'
+        : network === NearNetwork.MAINNET
+        ? 'app.tipping.near'
+        : null;
+
+    if (address === null) throw new Error('Unsupported network');
+
+    this._contract = Core.contract('near', address, {
+      viewMethods: ['getNearAccount', 'getMinStakeAmount', 'getRequestStatus'],
+      changeMethods: ['requestVerification'],
+      network,
+    });
+  }
+
+  public async getNearAccount(externalAccount: ExternalAccount, isNoCache = false): Promise<NearAccount> {
+    const contract = await this._contract;
 
     // caching requests
     if (!this._nearByExternal.has(externalAccount) || isNoCache) {
@@ -21,7 +36,7 @@ export class IdentityService {
   }
 
   public async requestVerification(externalAccount: ExternalAccount, isUnlink: boolean, url: string): Promise<void> {
-    const contract = await this.contract;
+    const contract = await this._contract;
     const stake = await contract.getMinStakeAmount();
     const requestId = await contract.requestVerification({ externalAccount, isUnlink, url }, undefined, stake);
 

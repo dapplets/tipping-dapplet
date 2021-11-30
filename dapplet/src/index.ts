@@ -1,4 +1,4 @@
-import { } from '@dapplets/dapplet-extension';
+import {} from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
@@ -6,24 +6,17 @@ import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum } from './helpers';
+import { NearNetwork } from './interfaces';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
-
-enum NearNetwork {
-  MAINNET = 'mainnet',
-  TESTNET = 'testnet',
-}
 
 @Injectable
 export default class TwitterFeature {
   @Inject('twitter-adapter.dapplet-base.eth')
   public adapter: any;
 
-  // private paymentRepository = new PaymentRepository();
-  // private tippingsRepository = new TippingsRepository();
-  // private tippingService = new TippingService(this.tippingsRepository, this.paymentRepository);
-  private tippingService = new TippingContractService();
-  private identityService = new IdentityService();
+  private tippingService: TippingContractService;
+  private identityService: IdentityService;
 
   private _stepYocto: string;
   private _network: NearNetwork;
@@ -46,26 +39,29 @@ export default class TwitterFeature {
 
   // Core.onAction(() => this._overlay.send(''));
 
-
   async activate(): Promise<void> {
     const step = await Core.storage.get('step');
+    const delay = await Core.storage.get('delay');
     this._network = await Core.storage.get('network');
-    this._debounceDelay = await getMilliseconds(Core.storage.get('delay'));
 
     if (step <= 0) {
-      throw new Error(
-        'A donation step must be more than zero. ' + 'Change the step parameter in the dapplet settings.',
-      );
+      throw new Error('A donation step must be more than zero. Change the step parameter in the dapplet settings.');
+    }
+
+    if (delay <= 0) {
+      throw new Error('A delay must be greater than zero. Change the delay parameter in the dapplet settings.');
     }
 
     if (!(this._network === 'mainnet' || this._network === 'testnet')) {
       throw new Error(
-        'Only "mainnet" and "testnet" networks are supported. ' +
-        'Change the network parameter in the dapplet settings.',
+        'Only "mainnet" and "testnet" networks are supported. Change the network parameter in the dapplet settings.',
       );
     }
 
     this._stepYocto = parseNearAmount(step.toString());
+    this._debounceDelay = getMilliseconds(delay);
+    this.identityService = new IdentityService(this._network);
+    this.tippingService = new TippingContractService(this._network);
 
     const { button, avatarBadge } = this.adapter.exports;
 
@@ -172,7 +168,7 @@ export default class TwitterFeature {
       const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id, true);
       if (!nearAccount) {
         me.label = 'Link';
-        me.tooltip = `Link ${(parsingNearAccount ? parsingNearAccount + ' ' : '')}account with NEAR wallet`;
+        me.tooltip = `Link ${parsingNearAccount ? parsingNearAccount + ' ' : ''}account with NEAR wallet`;
       } else {
         me.label = 'Unlink';
         me.tooltip = `Unlink ${nearAccount} account from NEAR wallet`;
@@ -243,10 +239,10 @@ export default class TwitterFeature {
 
   onPostButtonInit = async (tweet, me) => {
     me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
-    if (equals(me.donationsAmount, '0')) return me.label = 'Tip';
+    if (equals(me.donationsAmount, '0')) return (me.label = 'Tip');
 
     if (Number(this.formatNear(me.donationsAmount)) === 10) me.disabled = true;
-    me.label = this.formatNear(me.donationsAmount) + ' NEAR'
+    me.label = this.formatNear(me.donationsAmount) + ' NEAR';
   };
 
   onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
@@ -271,7 +267,7 @@ export default class TwitterFeature {
     const stepYocto = Number(this.formatNear(this._stepYocto));
     const result = Number((donationsAmount + donation + stepYocto).toFixed(2));
 
-    if (result > 10) return me.disabled = true;
+    if (result > 10) return (me.disabled = true);
 
     if (
       lte(sum(me.donationsAmount, me.amount, this._stepYocto), this._maxAmountPerItem) &&

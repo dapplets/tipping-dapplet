@@ -34,7 +34,6 @@ export function toFixedString(a: string, fractionDigits: number): string {
   return Number(a).toFixed(fractionDigits);
 }
 
-export async function getMilliseconds(seconds: Promise<number>): Promise<number> {
-  const getSeconds = await seconds;
-  return getSeconds * 1000;
+export function getMilliseconds(seconds: number): number {
+  return seconds * 1000;
 }

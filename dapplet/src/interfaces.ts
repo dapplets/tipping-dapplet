@@ -8,3 +8,9 @@ export interface IPayment {
 	nearId: string;
 	payment: number;
 }
+
+export enum NearNetwork {
+	MAINNET = 'mainnet',
+	TESTNET = 'testnet',
+  }
+  
