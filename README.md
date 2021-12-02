@@ -92,7 +92,7 @@ This is temporary, when the transaction is completed successfully the icon will 
 
 Done, your Twitter account is now linked to your Near.testnet account.
 
-Now you can delete the name of your NEAR wallet from Twitter profile username.
+**⚠ Now you can delete the name of your NEAR wallet from Twitter profile username.**
 
 ## Accepting donated tokens
 
