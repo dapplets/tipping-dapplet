@@ -1,3 +1,4 @@
+import { sum } from '../helpers';
 import { NearNetwork } from '../interfaces';
 
 export class TippingContractService {
@@ -20,6 +21,7 @@ export class TippingContractService {
         'getTotalTipsByItemId',
         'getTotalTipsByExternalAccount',
         'getAvailableTipsByExternalAccount',
+        'calculateFee',
       ],
       changeMethods: ['sendTips', 'claimTokens'],
       network,
@@ -32,15 +34,17 @@ export class TippingContractService {
     return tipsAmount;
   }
 
-  async donateByTweet(externalAccount: string, itemId: string, amount: string): Promise<void> {
+  async donateByTweet(externalAccount: string, itemId: string, donationAmount: string): Promise<void> {
     const contract = await this._contract;
+    const donationFee = await contract.calculateFee({ donationAmount });
+    const total = sum(donationAmount, donationFee);
     await contract.sendTips(
       {
         recipientExternalAccount: externalAccount,
         itemId: itemId,
       },
       undefined,
-      amount,
+      total,
     );
   }
 

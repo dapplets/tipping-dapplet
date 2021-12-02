@@ -1,4 +1,4 @@
-import { } from '@dapplets/dapplet-extension';
+import {} from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
@@ -23,6 +23,8 @@ export default class TwitterFeature {
   private _debounceDelay: number;
   private _maxAmountPerItem = '10000000000000000000000000'; // 10 NEAR
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
+
+  refreshProfileButtonClaim: () => void | null = null;
 
   // private _overlay = Core.overlay({ name: 'overlay', title: 'Tipping Near' }).listen({
   //   getAllUserStat: () =>
@@ -80,7 +82,7 @@ export default class TwitterFeature {
           DEFAULT: {
             hidden: true,
             img: NEAR_DARK_ICON,
-            init: this.onProfileButtonDefaultInit,
+            init: this.onProfileButtonLinkInit,
             exec: this.onProfileButtonLinkExec,
           },
         }),
@@ -124,6 +126,8 @@ export default class TwitterFeature {
   }
 
   onProfileButtonClaimInit = async (profile, me) => {
+    this.refreshProfileButtonClaim = () => this.onProfileButtonClaimInit(profile, me);
+
     const username = await this.getCurrentUserAsync();
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
 
@@ -131,9 +135,12 @@ export default class TwitterFeature {
       const tokens = await this.tippingService.getAvailableTipsByExternalAccount('twitter/' + profile.id);
       const availableTokens = this.formatNear(tokens);
 
-      if (Number(availableTokens) === 0) me.disabled = true;
-      me.label = `Claim ${availableTokens} Ⓝ`;
-      me.hidden = false;
+      if (Number(availableTokens) !== 0) {
+        me.label = `Claim ${availableTokens} Ⓝ`;
+        me.hidden = false;
+      } else {
+        me.hidden = true;
+      }
     } else {
       me.hidden = true;
     }
@@ -143,7 +150,12 @@ export default class TwitterFeature {
     const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
     if (!nearAccount) return alert('You must link NEAR account before continue.');
     if (!isParticipant(nearAccount) && this._network === NearNetwork.MAINNET) {
-      return alert('Claim tokens is available only for participants in closed testing.');
+      return alert(
+        'As part of the closed testing, the withdrawal of tokens is available for ' +
+          'the first testers of the dapplet who have sent at least one transaction ' +
+          'on the testnet and feedback to Learn NEAR Club before November 25, 2021. ' +
+          'We will make it available to everyone soon. Stay tuned!',
+      );
     }
 
     try {
@@ -160,7 +172,7 @@ export default class TwitterFeature {
     }
   };
 
-  onProfileButtonDefaultInit = async (profile, me) => {
+  onProfileButtonLinkInit = async (profile, me) => {
     const username = await this.getCurrentUserAsync();
     const isMyProfile = profile.id.toLowerCase() === username?.toLowerCase();
     const parsingNearAccount = this.parseNearId(profile.authorFullname, this._network);
@@ -201,7 +213,13 @@ export default class TwitterFeature {
       } else {
         // link
         if (!nearAccount) {
-          alert('Add your near account ID to your profile name before continuing.');
+          const exampleWallet = this._network === NearNetwork.TESTNET ? 'yourwallet.testnet' : 'yourwallet.near';
+          alert(
+            'Add your NEAR account ID to your profile name in Twitter before continuing. ' +
+              'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
+              'After linking you can remove it back.\n' +
+              `For example: "${profile.authorFullname} (${exampleWallet})"\n`,
+          );
         } else {
           await this.identityService.requestVerification(
             `twitter/${profile.id}`,
@@ -215,7 +233,7 @@ export default class TwitterFeature {
     } finally {
       me.disabled = false;
       me.loading = false;
-      this.onProfileButtonDefaultInit(profile, me);
+      this.onProfileButtonLinkInit(profile, me);
     }
   };
 
@@ -239,11 +257,16 @@ export default class TwitterFeature {
   };
 
   onPostButtonInit = async (tweet, me) => {
-    me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
-    if (equals(me.donationsAmount, '0')) return (me.label = 'Tip');
+    if (tweet.id && tweet.authorUsername) {
+      me.hidden = false;
+      me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
+      if (equals(me.donationsAmount, '0')) return (me.label = 'Tip');
 
-    if (Number(this.formatNear(me.donationsAmount)) === 10) me.disabled = true;
-    me.label = this.formatNear(me.donationsAmount) + ' NEAR';
+      if (Number(this.formatNear(me.donationsAmount)) === 10) me.disabled = true;
+      me.label = this.formatNear(me.donationsAmount) + ' NEAR';
+    } else {
+      me.hidden = true;
+    }
   };
 
   onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
@@ -259,6 +282,7 @@ export default class TwitterFeature {
       me.disabled = false;
       me.amount = '0';
       me.label = equals(me.donationsAmount, '0') ? 'Tip' : this.formatNear(me.donationsAmount) + ' NEAR';
+      await this.refreshProfileButtonClaim?.();
     }
   };
 

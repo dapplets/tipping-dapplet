@@ -162,6 +162,11 @@ export function getAvailableTipsByExternalAccount(externalAccount: ExternalAccou
   return availableTipsByExternal.get(externalAccount, u128.Zero)!;
 }
 
+export function calculateFee(donationAmount: u128): u128 {
+  _active();
+  return u128.muldiv(donationAmount, u128.from(3), u128.from(100)); // 3%
+}
+
 // WRITE
 
 // Identity
@@ -215,7 +220,6 @@ export function changeMinStake(minStakeAmount: u128): void {
   storage.set<u128>(MIN_STAKE_AMOUNT_KEY, minStakeAmount);
   logging.log("Changed min stake: " + minStakeAmount.toString());
 }
-
 
 export function changeMaxAmountPerItem(maxAmountPerItem: u128): void {
   _active();
@@ -276,18 +280,32 @@ export function requestVerification(externalAccount: ExternalAccount, isUnlink: 
 export function sendTips(recipientExternalAccount: ExternalAccount, itemId: string): void {
   _active();
 
-  assert(Context.attachedDeposit > u128.Zero, "Tips amounts must be greater than zero");
-  assert(u128.add(totalTipsByItem.get(itemId, u128.Zero)!, Context.attachedDeposit) <= storage.get<u128>(MAX_AMOUNT_PER_ITEM_KEY, u128.Zero)! , "New total tips amount exceeds allowance");
-  assert(Context.attachedDeposit <= storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)! , "Tips amount exceeds allowance");
+  assert(u128.gt(Context.attachedDeposit, u128.Zero), "Tips amounts must be greater than zero");
+  assert(
+    u128.le(
+      u128.add(totalTipsByItem.get(itemId, u128.Zero)!, Context.attachedDeposit),
+      storage.get<u128>(MAX_AMOUNT_PER_ITEM_KEY, u128.Zero)!
+    ),
+    "New total tips amount exceeds allowance"
+  );
+
+  const donationAmount = u128.muldiv(Context.attachedDeposit, u128.from(100), u128.from(103));
+  const feeAmount = u128.sub(Context.attachedDeposit, donationAmount);
+
+  assert(
+    u128.le(donationAmount, storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!),
+    "Tips amount exceeds allowance"
+  );
+  assert(!u128.eq(feeAmount, u128.Zero), "Donation cannot be free");
 
   const nearAccount = nearByExternal.get(recipientExternalAccount);
 
   if (nearAccount) {
-    ContractPromiseBatch.create(nearAccount).transfer(Context.attachedDeposit);
+    ContractPromiseBatch.create(nearAccount).transfer(donationAmount);
     logging.log(
       Context.sender +
         " tips " +
-        Context.attachedDeposit.toString() +
+        donationAmount.toString() +
         " NEAR to " +
         recipientExternalAccount +
         " <=> " +
@@ -295,22 +313,24 @@ export function sendTips(recipientExternalAccount: ExternalAccount, itemId: stri
     );
   } else {
     const availableTips = availableTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
-    const newAvailableTips = u128.add(availableTips, Context.attachedDeposit);
+    const newAvailableTips = u128.add(availableTips, donationAmount);
     availableTipsByExternal.set(recipientExternalAccount, newAvailableTips);
-    logging.log(
-      Context.sender + " tips " + Context.attachedDeposit.toString() + " NEAR to " + recipientExternalAccount
-    );
+    logging.log(Context.sender + " tips " + donationAmount.toString() + " NEAR to " + recipientExternalAccount);
   }
 
   // update item stat
   const oldTotalTipsByItem = totalTipsByItem.get(itemId, u128.Zero)!;
-  const newTotalTipsByItem = u128.add(oldTotalTipsByItem, Context.attachedDeposit);
+  const newTotalTipsByItem = u128.add(oldTotalTipsByItem, donationAmount);
   totalTipsByItem.set(itemId, newTotalTipsByItem);
 
   // update user stat
   const oldTotalTipsByExternal = totalTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
-  const newTotalTipsByExternal = u128.add(oldTotalTipsByExternal, Context.attachedDeposit);
+  const newTotalTipsByExternal = u128.add(oldTotalTipsByExternal, donationAmount);
   totalTipsByExternal.set(recipientExternalAccount, newTotalTipsByExternal);
+
+  // transfer donation fee to owner
+  const owner = storage.get<NearAccount>(OWNER_ACCOUNT_KEY)!;
+  ContractPromiseBatch.create(owner).transfer(feeAmount);
 }
 
 export function claimTokens(): void {
