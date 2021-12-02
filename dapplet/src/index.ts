@@ -1,11 +1,11 @@
-import {} from '@dapplets/dapplet-extension';
+import { } from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_DARK_ICON from './icons/near-dark.svg';
 import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, lte, sum } from './helpers';
+import { equals, getMilliseconds, isParticipant, lte, sum } from './helpers';
 import { NearNetwork } from './interfaces';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
@@ -141,21 +141,22 @@ export default class TwitterFeature {
 
   onProfileButtonClaimExec = async (profile, me) => {
     const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
-    if (!nearAccount) {
-      alert('You must link NEAR account before continue.');
-    } else {
-      try {
-        me.disabled = true;
-        me.loading = true;
-        me.label = 'Waiting...';
-        await this.tippingService.claimTokens();
-      } catch (e) {
-        console.error(e);
-      } finally {
-        me.disabled = false;
-        me.loading = false;
-        this.onProfileButtonClaimInit(profile, me);
-      }
+    if (!nearAccount) return alert('You must link NEAR account before continue.');
+    if (!isParticipant(nearAccount) && this._network === NearNetwork.MAINNET) {
+      return alert('Claim tokens is available only for participants in closed testing.');
+    }
+
+    try {
+      me.disabled = true;
+      me.loading = true;
+      me.label = 'Waiting...';
+      await this.tippingService.claimTokens();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      me.disabled = false;
+      me.loading = false;
+      this.onProfileButtonClaimInit(profile, me);
     }
   };
 

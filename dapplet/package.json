@@ -1,6 +1,6 @@
 {
   "name": "tipping-near-dapplet",
-  "version": "0.1.9",
+  "version": "0.1.8",
   "description": "Tipping Dapplet, allowing you to send money to another person on Twitter",
   "main": "lib/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "author": "Dapplets Project",
   "license": "MIT",
   "devDependencies": {
-    "@dapplets/dapplet-extension": "^0.44.0-alpha.3",
+    "@dapplets/dapplet-extension": "^0.44.0-alpha.7",
     "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-image": "^2.0.6",
     "@rollup/plugin-json": "^4.1.0",

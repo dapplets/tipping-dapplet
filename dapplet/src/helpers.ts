@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { NEAR_ADDRESS, TESTERS_ADDRESSES } from '../config/TESTERS_ADDRESSES';
 
 export function sum(...values: string[]): string {
   let _sum = new BigNumber('0');
@@ -36,4 +37,11 @@ export function toFixedString(a: string, fractionDigits: number): string {
 
 export function getMilliseconds(seconds: number): number {
   return seconds * 1000;
+}
+
+
+export function isParticipant(user: string, isTest = false): string | undefined {
+  return isTest
+    ? TESTERS_ADDRESSES.find(name => name === user)
+    : NEAR_ADDRESS.find(name => name === user)
 }
