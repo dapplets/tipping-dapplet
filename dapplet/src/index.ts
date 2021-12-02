@@ -213,12 +213,12 @@ export default class TwitterFeature {
       } else {
         // link
         if (!nearAccount) {
-          const exampleWallet = (this._network === NearNetwork.TESTNET) ? 'yourwallet.testnet' : 'yourwallet.near';
+          const exampleWallet = this._network === NearNetwork.TESTNET ? 'yourwallet.testnet' : 'yourwallet.near';
           alert(
             'Add your NEAR account ID to your profile name in Twitter before continuing. ' +
               'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
               'After linking you can remove it back.\n' +
-              `For example: "${profile.authorFullname} (${exampleWallet})"\n`
+              `For example: "${profile.authorFullname} (${exampleWallet})"\n`,
           );
         } else {
           await this.identityService.requestVerification(
@@ -257,11 +257,16 @@ export default class TwitterFeature {
   };
 
   onPostButtonInit = async (tweet, me) => {
-    me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
-    if (equals(me.donationsAmount, '0')) return (me.label = 'Tip');
+    if (tweet.id && tweet.authorUsername) {
+      me.hidden = false;
+      me.donationsAmount = await this.tippingService.getTotalDonationByItem('tweet/' + tweet.id);
+      if (equals(me.donationsAmount, '0')) return (me.label = 'Tip');
 
-    if (Number(this.formatNear(me.donationsAmount)) === 10) me.disabled = true;
-    me.label = this.formatNear(me.donationsAmount) + ' NEAR';
+      if (Number(this.formatNear(me.donationsAmount)) === 10) me.disabled = true;
+      me.label = this.formatNear(me.donationsAmount) + ' NEAR';
+    } else {
+      me.hidden = true;
+    }
   };
 
   onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
