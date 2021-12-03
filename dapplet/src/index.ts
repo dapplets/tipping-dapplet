@@ -278,9 +278,9 @@ export default class TwitterFeature {
       const [domain, account] = externalAccount.split('/');
       if (
         confirm(
-          `You're tipping ${Core.near.utils.format.formatNearAmount(amount)} NEAR to "@${account}" at "${domain}".\n` +
-            `We will take an extra fee of ${Core.near.utils.format.formatNearAmount(fee)} NEAR for the project development.\n` +
-            `Proceed?`,
+          `You're tipping ${Core.near.utils.format.formatNearAmount(amount)} Ⓝ to "@${account}" at "${domain}".\n` +
+            `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` + 
+            `Thank you for your support!`
         )
       ) {
         await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, total);
