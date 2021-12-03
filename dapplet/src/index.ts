@@ -273,7 +273,18 @@ export default class TwitterFeature {
     try {
       me.loading = true;
       me.disabled = true;
-      await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, amount);
+      const fee = await this.tippingService.calculateFee(amount);
+      const total = sum(amount, fee);
+      const [domain, account] = externalAccount.split('/');
+      if (
+        confirm(
+          `You're tipping ${Core.near.utils.format.formatNearAmount(amount)} NEAR to "@${account}" at "${domain}".\n` +
+            `We will take an extra fee of ${Core.near.utils.format.formatNearAmount(fee)} NEAR for the project development.\n` +
+            `Proceed?`,
+        )
+      ) {
+        await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, total);
+      }
     } catch (e) {
       console.error(e);
     } finally {
