@@ -1,16 +1,16 @@
 {
   "main": {
-    "network": "testnet",
+    "network": "mainnet",
     "step": 0.05,
     "delay": 2
   },
   "test": {
-    "network": "testnet",
+    "network": "mainnet",
     "step": 0.05,
     "delay": 2
   },
   "dev": {
-    "network": "testnet",
+    "network": "mainnet",
     "step": 0.05,
     "delay": 2
   }
