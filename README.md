@@ -1,12 +1,14 @@
 # Tipping NEAR Dapplet Instructions
 
-Tipping dapplet allows you to donate Near-tokens to other Twitter users.
+Tipping dapplet allows you to donate Near-tokens to other Twitter users. 
+
+*Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.*
 
 ## Browser Extension Installation 
 
 1. Open the **Google Chrome** browser.
 
-2. Download the [**Dapplet Browser Extension**](https://github.com/dapplets/dapplet-extension/releases/download/v0.44.0-alpha.7/dapplet-extension.zip).
+2. Download the [**Dapplet Browser Extension**](https://github.com/dapplets/dapplet-extension/releases/latest).
 
 3. Open **chrome://extensions** in a new tab.
 	
