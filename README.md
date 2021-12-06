@@ -144,8 +144,9 @@ To do this, please follow the instructions below:
 4. Settings will open. Here you can change Donation increase step.
 ![image](/assets/23.png)
 
+## Contacts
 
-
+[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets) [Twitter]((https://twitter.com/dappletsproject))
 
 
 
