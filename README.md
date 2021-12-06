@@ -146,7 +146,7 @@ To do this, please follow the instructions below:
 
 ## Contacts
 
-[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets) [Twitter]((https://twitter.com/dappletsproject))
+[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets) [Twitter](https://twitter.com/dappletsproject)
 
 
 
