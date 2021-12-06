@@ -149,14 +149,14 @@ export default class TwitterFeature {
   onProfileButtonClaimExec = async (profile, me) => {
     const nearAccount = await this.identityService.getNearAccount('twitter/' + profile.id);
     if (!nearAccount) return alert('You must link NEAR account before continue.');
-    if (!isParticipant(nearAccount) && this._network === NearNetwork.MAINNET) {
-      return alert(
-        'As part of the closed testing, the withdrawal of tokens is available for ' +
-          'the first testers of the dapplet who have sent at least one transaction ' +
-          'on the testnet and feedback to Learn NEAR Club before November 25, 2021. ' +
-          'We will make it available to everyone soon. Stay tuned!',
-      );
-    }
+    // if (!isParticipant(nearAccount) && this._network === NearNetwork.MAINNET) {
+    //   return alert(
+    //     'As part of the closed testing, the withdrawal of tokens is available for ' +
+    //       'the first testers of the dapplet who have sent at least one transaction ' +
+    //       'on the testnet and feedback to Learn NEAR Club before November 25, 2021. ' +
+    //       'We will make it available to everyone soon. Stay tuned!',
+    //   );
+    // }
 
     try {
       me.disabled = true;
