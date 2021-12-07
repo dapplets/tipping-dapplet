@@ -4,6 +4,10 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 
 *Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.*
 
+## Video Tutorial
+
+[![](https://img.youtube.com/vi/DXWXUeydsRQ/0.jpg)](https://youtu.be/DXWXUeydsRQ "Click to play on YouTube")
+
 ## Browser Extension Installation 
 
 1. Open the **Google Chrome** browser.
