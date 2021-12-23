@@ -257,6 +257,10 @@ export function requestVerification(externalAccount: ExternalAccount, isUnlink: 
   if (isUnlink) {
     assert(externalByNear.contains(Context.sender), "The NEAR account doesn't have a linked account");
     assert(nearByExternal.contains(externalAccount), "The external account doesn't have a linked account");
+
+    // ToDo: 
+    // assert(nearByExternal.get(externalAccount) == Context.sender, "");
+    // assert(nearByExternal.get(Context.sender) == externalAccount, "");
   } else {
     assert(!externalByNear.contains(Context.sender), "The NEAR account already has a linked account");
     assert(!nearByExternal.contains(externalAccount), "The external account already has a linked account");
