@@ -16,7 +16,11 @@
     },
     "step": {
       "type": "number",
-      "title": "Donation increase step"
+      "title": "Donation increase step",
+      "maximum": 1,
+      "minimum": 0.05,
+      "multipleOf": 0.05,
+      "step": 0.05
     },
     "delay": {
       "type": "number",
