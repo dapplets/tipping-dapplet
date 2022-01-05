@@ -1,14 +1,22 @@
-# Tipping NEAR Dapplet Instructions
+![image](https://github.com/dapplets/tipping-dapplet/blob/master/assets/tipping-dapplet.jpg)
 
-Tipping dapplet allows you to donate Near-tokens to other Twitter users. 
+# Twitter Tipping Dapplet
 
-*Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.*
+**Twitter Tipping Dapplet** is a dapplet (an augmentation module for [Dapplets browser extension](https://dapplets.org)) that can connect your Twitter profile with your NEAR crypto wallet and send donations to any other Twitter user. Your own tweets can also receive donations from others right on Twitter page.
 
-## Video Tutorial
+This dapplet works as a tool for community managers, helping them to motivate and evolve community members. Useful or important tweets can now be rewarded financially. 
+
+# Disclaimer
+
+Tipping dapplet allows you to donate NEAR tokens to Twitter users. It charges an extra fee of 3% on each donation and 0.002 NEAR as one time fee for linking an accounts.
+
+Dapplet is designed to work in desktop Chromium browser. Working in the mobile browser is not guaranteed.
+
+# Video Tutorial
 
 [![](https://img.youtube.com/vi/DXWXUeydsRQ/0.jpg)](https://youtu.be/DXWXUeydsRQ "Click to play on YouTube")
 
-## Browser Extension Installation 
+# Browser extension installation guide
 
 1. Open the **Google Chrome** browser.
 
@@ -29,11 +37,11 @@ Tipping dapplet allows you to donate Near-tokens to other Twitter users.
 ![image](/assets/3.png)
 
 
-## Run the Dapplet
+# Run the Tipping Dapplet
 
 ### Open the [Twitter](https://twitter.com/home) page
 
-This Dapplet is created especially for **Twitter**. Please go to the official Twitter website and open the **Dapplets Extension**.
+This Dapplet is created especially for **Twitter.com**. Please go to the Twitter website and click on the extension icon to open the **Dapplets Extension**.
 
 1. Click on the extension
 2. Find **Tipping NEAR Dapplet** in the list of dapplets.
@@ -50,9 +58,9 @@ Now the dapplet is turned on. You will see two new icons in your Twitter profile
 
 **The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message: *«Add NEAR Account ID in your profile name before continue»*. This means that to connect your account you need to type *yourname.testnet* next to your name.
 
-## Wallet Connection
+# NEAR Wallet Connection
 
-To interact with the Tipping NEAR Dapplet, you need to connect a wallet.
+To interact with the Tipping Dapplet, you need to connect a wallet.
 
 1. Click on **Dapplets Extension** Icon. The overlay will open.
 
@@ -100,7 +108,7 @@ Done, your Twitter account is now linked to your Near.testnet account.
 
 **⚠ Now you can delete the name of your NEAR wallet from Twitter profile username.**
 
-## Accepting donated tokens
+# Accepting donated tokens
 
 If you already have tokens that were donated to you by other users, you can collect them by clicking:
 
@@ -116,7 +124,7 @@ Click **Allow** to accept the tokens donated to you.
 
 After this, the **Claim** button should change to 0 and the tokens should be added to your account.
 
-## Donating tokens to other users
+# Donating tokens to other users
 
 Look at the new icon that is now displayed next to any tweet, yours, or any other user’s:
 
@@ -133,7 +141,7 @@ Choose one of your own tweets, and donate a few tokens to yourself. When you do 
 
 Click **Allow** and the tokens will be sent. The counter will increase by the number of tokens you have donated. The maximum amount you can donate in one transaction is equal to 1 token. The maximum per one tweet - 10 tokens. 
 
-## Increasing the standard tipping amount
+# Increasing the default tipping amount
 
 At this moment, one click, or as we call it - step, is equal to 0.05 tokens. For your convenience, we’ve added the ability to change this number, higher or lower. 
 
@@ -148,7 +156,7 @@ To do this, please follow the instructions below:
 4. Settings will open. Here you can change Donation increase step.
 ![image](/assets/23.png)
 
-## Contacts
+# Contacts
 
 [Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets) [Twitter](https://twitter.com/dappletsproject)
 
