@@ -1,4 +1,4 @@
-![image](https://github.com/dapplets/tipping-dapplet/blob/master/assets/tipping-dapplet.jpg)
+![image](/assets/tipping-dapplet.jpg)
 
 # Twitter Tipping Dapplet
 
@@ -56,7 +56,7 @@ Now the dapplet is turned on. You will see two new icons in your Twitter profile
 
 **The first icon** shows the number of NEAR tokens that were donated to you, but which you have not received, as you have not yet connected your Twitter account to NEAR. If you click on this icon you will see the following message: *«You must link NEAR account before continue»*. To link our account let’s go to the second icon.
 
-**The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message: *«Add NEAR Account ID in your profile name before continue»*. This means that to connect your account you need to type *yourname.mainnet* next to your name.
+**The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message: *«Add NEAR Account ID in your profile name before continue»*. This means that to connect your account you need to type *yourname.near* next to your name.
 
 # NEAR Wallet Connection
 
@@ -71,30 +71,30 @@ To interact with the Tipping Dapplet, you need to connect a wallet.
 3. You don't have any wallets connected right now. 
 Click the **Connect** button.
 	![image](/assets/8.png)
-4. An overlay with available wallets will open. We will be using the **NEAR Wallet (Mainnet)**. 
+4. An overlay with available wallets will open. We will be using the **NEAR Wallet (near)**. 
 Click on it.
 	![image](/assets/9.png)
-5. A new [page](http://wallet.mainnet.near.org) will open. Click on the blue **Next** button, and then - on the blue **Connect** button
-	![image](/assets/10.png)
-	![image](/assets/11.png)
+5. A new [page](http://wallet.near.near.org) will open. Click on the blue **Next** button, and then - on the blue **Connect** button
+	![image](/assets/10.jpg)
+	![image](/assets/11.jpg)
 6. After this, the page will close and a new tab will open in the overlay. 
 Press the **Continue** button
-	![image](/assets/12.png)
+	![image](/assets/12.jpg)
 7. Done, you have connected your wallet
 
-## Yourname.mainnet connection
+## Yourname.near connection
 
 Now we will connect your Twitter profile to your NEAR account.
 
 1. Click **Edit Profile** on your Twitter profile page
-2. Under *name* add your *yourname.mainnet* profile.
+2. Under *name* add your *yourname.near* profile.
 	![image](/assets/13.png)
 3. Click **Save**
 4. Now that you’ve added your NEAR account name click **Link** (the second new icon in your Twitter Profile). An overlay will open.
 5. Choose the wallet we connected before by pressing the **Select** button
-	![image](/assets/14.png)
-6. A Near mainnet wallet page will open, it will ask you to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Allow** to accept.
-	![image](/assets/15.png)
+	![image](/assets/14.jpg)
+6. A Near near wallet page will open, it will ask you to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Allow** to accept.
+	![image](/assets/15.jpg)
 
 Go back to your Twitter Profile page. There, the Link icon has changed to:
 
@@ -104,7 +104,7 @@ This is temporary, when the transaction is completed successfully the icon will 
 
 ![image](/assets/17.png)
 
-Done, your Twitter account is now linked to your Near.mainnet account.
+Done, your Twitter account is now linked to your Near.near account.
 
 **⚠ Now you can delete the name of your NEAR wallet from Twitter profile username.**
 
@@ -118,7 +118,7 @@ The button will show how many tokens were donated to you at the moment, which yo
 
 When you click on the button a new page will open. 
 
-![image](/assets/19.png)
+![image](/assets/19.jpg)
 
 Click **Allow** to accept the tokens donated to you.
 
@@ -137,7 +137,7 @@ This icon has two functions:
 Every click on the button increases the total donation by 0.05 NEAR. The transaction has a delay, which allows you to click several times to increase the donation. You can try sending yourself some tokens to see how it works.
 
 Choose one of your own tweets, and donate a few tokens to yourself. When you do this, a page will open:
-![image](/assets/21.png)
+![image](/assets/21.jpg)
 
 Click **Allow** and the tokens will be sent. The counter will increase by the number of tokens you have donated. The maximum amount you can donate in one transaction is equal to 1 token. The maximum per one tweet - 10 tokens. 
 
