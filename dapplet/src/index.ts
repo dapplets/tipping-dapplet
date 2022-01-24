@@ -283,7 +283,12 @@ export default class TwitterFeature {
             `Thank you for your support!`
         )
       ) {
-        await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, total);
+        const txHash = await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, total);
+        const explorerUrl = this._network === 'mainnet' ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+        alert(
+          `Tipped ${Core.near.utils.format.formatNearAmount(amount)} $NEAR with @tippingdapplet. ` + 
+          `Tx link: ${explorerUrl}/transactions/${txHash}`
+        );
       }
     } catch (e) {
       console.error(e);

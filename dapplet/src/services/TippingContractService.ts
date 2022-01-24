@@ -40,9 +40,11 @@ export class TippingContractService {
     return donationFee;
   }
 
-  async donateByTweet(externalAccount: string, itemId: string, totalAmount: string): Promise<void> {
+  async donateByTweet(externalAccount: string, itemId: string, totalAmount: string): Promise<string> {
     const contract = await this._contract;
-    await contract.sendTips(
+    const rawResult = await contract.account.functionCall(
+      contract.contractId,
+      'sendTips',
       {
         recipientExternalAccount: externalAccount,
         itemId: itemId,
@@ -50,6 +52,7 @@ export class TippingContractService {
       undefined,
       totalAmount,
     );
+    return rawResult.transaction.hash;
   }
 
   async getAvailableTipsByExternalAccount(externalAccount: string): Promise<string> {
