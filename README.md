@@ -1,4 +1,4 @@
-![image](/assets/tipping-dapplet.jpg)
+![image](/assets/tipping-dapplet-cover.jpg)
 
 # Twitter Tipping Dapplet
 
