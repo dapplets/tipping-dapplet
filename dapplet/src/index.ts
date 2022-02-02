@@ -1,11 +1,14 @@
-import {} from '@dapplets/dapplet-extension';
+import { } from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
-import NEAR_DARK_ICON from './icons/near-dark.svg';
+import NEAR_BIG_ICON from './icons/near-big.svg';
+import NEAR_SMALL_ICON from './icons/near-small.svg';
+import NEAR_LINK_BLACK_ICON from './icons/near-link-black.svg';
+import NEAR_LINK_WHITE_ICON from './icons/near-link-white.svg';
 import { TippingContractService } from './services/TippingContractService';
 import { IdentityService } from './services/IdentityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, isParticipant, lte, sum } from './helpers';
+import { equals, getMilliseconds, lte, sum } from './helpers';
 import { NearNetwork } from './interfaces';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
@@ -81,14 +84,14 @@ export default class TwitterFeature {
         button({
           DEFAULT: {
             hidden: true,
-            img: NEAR_DARK_ICON,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
             init: this.onProfileButtonLinkInit,
             exec: this.onProfileButtonLinkExec,
           },
         }),
         avatarBadge({
           DEFAULT: {
-            img: NEAR_DARK_ICON,
+            img: NEAR_BIG_ICON,
             horizontal: 'right',
             vertical: 'bottom',
             hidden: true,
@@ -113,7 +116,7 @@ export default class TwitterFeature {
         }),
         avatarBadge({
           DEFAULT: {
-            img: NEAR_DARK_ICON,
+            img: NEAR_SMALL_ICON,
             horizontal: 'right',
             vertical: 'bottom',
             hidden: true,
@@ -216,9 +219,9 @@ export default class TwitterFeature {
           const exampleWallet = this._network === NearNetwork.TESTNET ? 'yourwallet.testnet' : 'yourwallet.near';
           alert(
             'Add your NEAR account ID to your profile name in Twitter before continuing. ' +
-              'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
-              'After linking you can remove it back.\n' +
-              `For example: "${profile.authorFullname} (${exampleWallet})"\n`,
+            'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
+            'After linking you can remove it back.\n' +
+            `For example: "${profile.authorFullname} (${exampleWallet})"\n`,
           );
         } else {
           await this.identityService.requestVerification(
@@ -279,14 +282,14 @@ export default class TwitterFeature {
       if (
         confirm(
           `You're tipping ${Core.near.utils.format.formatNearAmount(amount)} Ⓝ to "@${account}" at "${domain}".\n` +
-            `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` + 
-            `Thank you for your support!`
+          `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` +
+          `Thank you for your support!`
         )
       ) {
         const txHash = await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, total);
         const explorerUrl = this._network === 'mainnet' ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         alert(
-          `Tipped ${Core.near.utils.format.formatNearAmount(amount)} $NEAR with @tippingdapplet. ` + 
+          `Tipped ${Core.near.utils.format.formatNearAmount(amount)} $NEAR with @tippingdapplet. ` +
           `Tx link: ${explorerUrl}/transactions/${txHash}`
         );
       }
