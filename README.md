@@ -2,7 +2,7 @@
 
 # Twitter Tipping Dapplet
 
-**Twitter Tipping Dapplet** is a dapplet (an augmentation module for [Dapplets browser extension](https://dapplets.org)) that can connect your Twitter profile with your NEAR crypto wallet and send donations to any other Twitter user. Your own tweets can also receive donations from others right on Twitter page.
+**Twitter Tipping Dapplet** is a dapplet (an augmentation module for [Dapplets browser extension](https://github.com/dapplets/dapplet-extension/releases/latest)) that can connect your Twitter profile with your NEAR crypto wallet and send donations to any other Twitter user. Your own tweets can also receive donations from others right on Twitter page.
 
 This dapplet works as a tool for community managers, helping them to motivate and evolve community members. Useful or important tweets can now be rewarded financially. 
 
