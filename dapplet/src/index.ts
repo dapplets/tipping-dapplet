@@ -117,6 +117,7 @@ export default class TwitterFeature {
         avatarBadge({
           DEFAULT: {
             img: NEAR_SMALL_ICON,
+            basic: true,
             horizontal: 'right',
             vertical: 'bottom',
             hidden: true,
