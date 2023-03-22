@@ -27,12 +27,19 @@ test.beforeEach(async (t) => {
     initialBalance: NEAR.parse("30 N").toJSON(),
   });
 
-  // Deploy the contract.
+  // Deploy the contract
   await contract.deploy(process.argv[2]);
+
+  // Import CA contract
+  const caContract = await root.importContract({
+    mainnetContract: "connected-accounts.near",
+    blockId: 86_382_063,
+    withData: true,
+  });
 
   // Save state for test runs, it is unique for each test
   t.context.worker = worker;
-  t.context.accounts = { root, contract, alice, bob };
+  t.context.accounts = { root, contract, alice, bob, caContract };
 });
 
 test.afterEach(async (t) => {
@@ -44,33 +51,14 @@ test.afterEach(async (t) => {
 
 // ====== Global Objects ======
 
-// const nearOriginId = "near/mainnet";
+const nearOriginId = "near/mainnet";
 // const ethOriginId = "ethereum";
 
-// const ACCOUNT_1 = {
-//   id: "username",
-//   originId: "social_network",
-// };
-
-// const ACCOUNT_2 = {
-//   id: "username-2",
-//   originId: "social_network-2",
-// };
-
-// const ACCOUNT_3 = {
-//   id: "username-3",
-//   originId: "social_network-3",
-// };
-
-// const ACCOUNT_4 = {
-//   id: "username-4",
-//   originId: "social_network-4",
-// };
-
-// const ACCOUNT_5 = {
-//   id: "username-5",
-//   originId: "social_network",
-// };
+const ACCOUNT_1 = {
+  id: "username",
+  originId: "social_network",
+  itemId: "https://social_network.com/username/status/14920813",
+};
 
 // ======= TESTS =======
 
@@ -79,230 +67,211 @@ test("integration test", async (t) => {
   console.log("== TEST 1 ==: initialize contract");
   // ============
 
-  const STAKE = "1000000000000000000000"; // 0.001 NEAR
-  const { alice, bob, contract } = t.context.accounts;
+  const { alice, bob, contract, caContract } = t.context.accounts;
   console.log("alice.accountId", alice.accountId);
   await alice.call(contract, "initialize", {
     ownerAccountId: alice.accountId,
-    oracleAccountId: alice.accountId,
-    minStakeAmount: STAKE,
-    maxAmountPerItem: null,
-    maxAmountPerTip: null,
+    caContractAddress: "connected-accounts.near",
+    maxAmountPerItem: "10000000000000000000000000",
+    maxAmountPerTip: "1000000000000000000000000",
   });
 
   const ownerAccountId = await contract.view("getOwnerAccount", {});
-  const oracleAccountId = await contract.view("getOracleAccount", {});
-  const minStakeAmount = await contract.view("getMinStakeAmount", {});
+  const cAContractAddress = await contract.view("getCAContractAddress", {});
+  const maxAmountPerItem = await contract.view("getMaxAmountPerItem", {});
+  const cmaxAmountPerTip = await contract.view("getMaxAmountPerTip", {});
 
   t.is(ownerAccountId, alice.accountId);
-  t.is(oracleAccountId, alice.accountId);
-  t.is(minStakeAmount, STAKE);
+  t.is(cAContractAddress, "connected-accounts.near");
+  t.is(maxAmountPerItem, "10000000000000000000000000");
+  t.is(cmaxAmountPerTip, "1000000000000000000000000");
 
-  // ============ ALIASES =============
+  // ============ CA contract initialization =============
 
-  // const getCA = (accountId: string, originId: string, closeness?: number): Promise<any> =>
-  //   contract.view("getConnectedAccounts", {
-  //     accountId,
-  //     originId,
-  //     closeness,
-  //   });
+  // const STAKE = "1000000000000000000000"; // 0.001 NEAR
+  // await alice.call(caContract, "initialize", {
+  //   ownerAccountId: alice.accountId,
+  //   oracleAccountId: alice.accountId,
+  //   minStakeAmount: STAKE,
+  // });
 
-  // const getPRequests = (): Promise<number[]> => contract.view("getPendingRequests", {});
+  // const ownerAccountId_caContract = await caContract.view("getOwnerAccount", {});
+  // const oracleAccountId_caContract = await caContract.view("getOracleAccount", {});
+  // const minStakeAmount_caContract = await caContract.view("getMinStakeAmount", {});
 
-  // interface IVerificationRequest {
-  //   firstAccount: string;
-  //   secondAccount: string;
-  //   isUnlink: boolean;
-  //   firstProofUrl: string;
-  //   secondProofUrl: string;
-  //   transactionSender: string;
-  // }
-
-  // const getVRequest = (id: number): Promise<IVerificationRequest | null> =>
-  //   contract.view("getVerificationRequest", { id });
-
-  // const requestVerification = (
-  //   acc: NearAccount,
-  //   firstAccountId: string,
-  //   firstOriginId: string,
-  //   secondAccountId: string,
-  //   secondOriginId: string,
-  //   signature: any,
-  //   isUnlink: boolean,
-  //   statement?: string
-  // ): Promise<number> =>
-  //   acc.call(
-  //     contract,
-  //     "requestVerification",
-  //     {
-  //       firstAccountId,
-  //       firstOriginId,
-  //       secondAccountId,
-  //       secondOriginId,
-  //       signature,
-  //       isUnlink,
-  //       firstProofUrl: firstOriginId === "social_network" ? "https://example.com" : "",
-  //       secondProofUrl: secondOriginId === "social_network" ? "https://example.com" : "",
-  //       statement,
-  //     },
-  //     {
-  //       attachedDeposit:
-  //         firstOriginId !== "ethereum" && secondOriginId !== "ethereum"
-  //           ? NEAR.parse("0.001 N").toString()
-  //           : undefined,
-  //       gas:
-  //         firstOriginId === "ethereum" || secondOriginId === "ethereum"
-  //           ? "300000000000000"
-  //           : undefined,
-  //     }
-  //   );
-
-  // const aliceRequestVerification = (
-  //   firstAccountId: string,
-  //   firstOriginId: string,
-  //   secondAccountId: string,
-  //   secondOriginId: string,
-  //   signature: any,
-  //   isUnlink: boolean,
-  //   statement?: string
-  // ): Promise<number> =>
-  //   requestVerification(
-  //     alice,
-  //     firstAccountId,
-  //     firstOriginId,
-  //     secondAccountId,
-  //     secondOriginId,
-  //     signature,
-  //     isUnlink,
-  //     statement
-  //   );
-
-  // const bobRequestVerification = (
-  //   firstAccountId: string,
-  //   firstOriginId: string,
-  //   secondAccountId: string,
-  //   secondOriginId: string,
-  //   signature: any,
-  //   isUnlink: boolean,
-  //   statement?: string
-  // ): Promise<number> =>
-  //   requestVerification(
-  //     bob,
-  //     firstAccountId,
-  //     firstOriginId,
-  //     secondAccountId,
-  //     secondOriginId,
-  //     signature,
-  //     isUnlink,
-  //     statement
-  //   );
-
-  // const aliceApproveRequest = (requestId: number): Promise<void> =>
-  //   alice.call(contract, "approveRequest", { requestId });
-
-  // const bobApproveRequest = (requestId: number): Promise<void> =>
-  //   bob.call(contract, "approveRequest", { requestId });
-
-  // const aliceRejectRequest = (requestId: number): Promise<void> =>
-  //   alice.call(contract, "rejectRequest", { requestId });
-
-  // const bobRejectRequest = (requestId: number): Promise<void> =>
-  //   bob.call(contract, "rejectRequest", { requestId });
-
-  // const getStatus = (accountId: string, originId: string): Promise<boolean> =>
-  //   contract.view("getStatus", {
-  //     accountId,
-  //     originId,
-  //   });
-
-  // const aliceChangeStatus = (accountId: string, originId: string, isMain: true): Promise<void> =>
-  //   alice.call(contract, "changeStatus", {
-  //     accountId,
-  //     originId,
-  //     isMain,
-  //   });
-
-  // const bobChangeStatus = (accountId: string, originId: string, isMain: true): Promise<void> =>
-  //   bob.call(contract, "changeStatus", {
-  //     accountId,
-  //     originId,
-  //     isMain,
-  //   });
-
-  // const getMainAccount = (accountId: string, originId: string): Promise<string | null> =>
-  //   contract.view("getMainAccount", {
-  //     accountId,
-  //     originId,
-  //   });
-
-  // const getRequestStatus = (id: number): Promise<number> =>
-  //   contract.view("getRequestStatus", {
-  //     id,
-  //   });
-
-  // // ============ CONSTANTS ===========
-
-  // const gAliceID = alice.accountId + "/" + nearOriginId;
-  // const gBobID = bob.accountId + "/" + nearOriginId;
-  // const gAcc_1ID = ACCOUNT_1.id + "/" + ACCOUNT_1.originId;
-  // const gAcc_2ID = ACCOUNT_2.id + "/" + ACCOUNT_2.originId;
-  // const gAcc_3ID = ACCOUNT_3.id + "/" + ACCOUNT_3.originId;
-  // const gAcc_4ID = ACCOUNT_4.id + "/" + ACCOUNT_4.originId;
-  // const gAcc_5ID = ACCOUNT_5.id + "/" + ACCOUNT_5.originId;
-
-  // ==================================
-
-  const EXTERNAL_ACCOUNT_1 = "social_network/username";
+  // t.is(ownerAccountId_caContract, alice.accountId);
+  // t.is(oracleAccountId_caContract, alice.accountId);
+  // t.is(minStakeAmount_caContract, STAKE);
 
   // == TEST 2 ==
-  console.log("== TEST 2 ==: linked accounts must be empty");
+  console.log("== TEST 2 ==: send tips to twitter account without connected accounts");
   // ============
 
-  const externalAccount_2 = await contract.view("getExternalAccount", {
-    nearAccount: alice.accountId,
-  });
-  const nearAccount_2 = await contract.view("getNearAccount", {
-    externalAccount: EXTERNAL_ACCOUNT_1,
-  });
+  const tipAmount_2 = NEAR.parse("0.02 N").toString();
 
-  t.is(externalAccount_2, null);
-  t.is(nearAccount_2, null);
-
-  // == TEST 3 ==
-  console.log("== TEST 3 ==: pending requests must be empty");
-  // ============
-
-  const pendingRequests_3 = await contract.view("getPendingRequests");
-  t.deepEqual(pendingRequests_3, []);
-
-  const request_3 = await contract.view("getVerificationRequest", { id: 0 });
-  t.is(request_3, null);
-
-  // == TEST 4 ==
-  console.log("== TEST 4 ==: creates request");
-  // ============
-
-  const id_4 = await alice.call(
+  await alice.call(
     contract,
-    "requestVerification",
+    "sendTips",
     {
-      externalAccount: EXTERNAL_ACCOUNT_1,
-      isUnlink: false,
-      url: "https://example.com",
+      externalAccount: ACCOUNT_1.id,
+      originId: ACCOUNT_1.originId,
+      itemId: ACCOUNT_1.itemId,
     },
     {
-      attachedDeposit: NEAR.parse("0.001 N").toString(),
+      attachedDeposit: tipAmount_2,
+      gas: "300000000000000",
     }
   );
 
-  const pendingRequests_4 = await contract.view("getPendingRequests");
-  t.deepEqual(pendingRequests_4, [id_4]);
-
-  const request_4 = await contract.view("getVerificationRequest", { id: id_4 });
-  t.deepEqual(request_4, {
-    nearAccount: alice.accountId,
-    externalAccount: EXTERNAL_ACCOUNT_1,
-    isUnlink: false,
-    proofUrl: "https://example.com",
+  const totalTipsByItemId_2 = await contract.view("getTotalTipsByItemId", { itemId: ACCOUNT_1.itemId });
+  const totalTipsByAccount_2 = await contract.view("getTotalTipsByAccount", {
+    accountGlobalId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
   });
+  const availableTipsByAccount_2 = await contract.view("getAvailableTipsByAccount", {
+    accountGlobalId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
+  });
+
+  t.is(totalTipsByItemId_2, "19417475728155339805825");
+  t.is(totalTipsByAccount_2, "19417475728155339805825");
+  t.is(availableTipsByAccount_2, "19417475728155339805825");
+
+  // == TEST 3 ==
+  console.log("== TEST 3 ==: send tips to twitter account with connected accounts");
+  // ============
+
+  const tipAmount_3 = NEAR.parse("0.02 N").toString();
+
+  await alice.call(
+    contract,
+    "sendTips",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+    },
+    {
+      attachedDeposit: tipAmount_3,
+      gas: "300000000000000",
+    }
+  );
+
+  const totalTipsByItemId_3 = await contract.view("getTotalTipsByItemId", {
+    itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+  });
+  const totalTipsByAccount_3 = await contract.view("getTotalTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+  const availableTipsByAccount_3 = await contract.view("getAvailableTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+
+  t.is(totalTipsByItemId_3, "19417475728155339805825");
+  t.is(totalTipsByAccount_3, "19417475728155339805825");
+  t.is(availableTipsByAccount_3, "19417475728155339805825");
+
+  // == TEST 4 ==
+  console.log("== TEST 4 ==: set the wallet for autoclaim");
+  // ============
+
+  await alice.call(
+    contract,
+    "setWalletForAutoclaim",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      wallet: "nikter.near",
+    },
+    {
+      gas: "300000000000000",
+    }
+  );
+
+  // check:
+
+  await alice.call(
+    contract,
+    "sendTips",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+    },
+    {
+      attachedDeposit: tipAmount_3,
+      gas: "300000000000000",
+    }
+  );
+
+  const totalTipsByItemId_4 = await contract.view("getTotalTipsByItemId", {
+    itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+  });
+  const totalTipsByAccount_4 = await contract.view("getTotalTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+  const availableTipsByAccount_4 = await contract.view("getAvailableTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+
+  t.is(totalTipsByItemId_4, "38834951456310679611650");
+  t.is(totalTipsByAccount_4, "38834951456310679611650");
+  t.is(availableTipsByAccount_4, "19417475728155339805825");
+
+  // == TEST 5 ==
+  console.log("== TEST 5 ==: claim tips");
+  // ============
+
+  await alice.call(
+    contract,
+    "claimTokens",
+    { accountId: "teremovskii", originId: "twitter" },
+    {
+      gas: "300000000000000",
+    }
+  );
+
+  const totalTipsByItemId_5 = await contract.view("getTotalTipsByItemId", {
+    itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+  });
+  const totalTipsByAccount_5 = await contract.view("getTotalTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+  const availableTipsByAccount_5 = await contract.view("getAvailableTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+
+  t.is(totalTipsByItemId_5, "38834951456310679611650");
+  t.is(totalTipsByAccount_5, "38834951456310679611650");
+  t.is(availableTipsByAccount_5, "0");
+
+  // == TEST 6 ==
+  console.log("== TEST 6 ==: send tips with autoclaim");
+  // ============
+
+  await alice.call(
+    contract,
+    "sendTips",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      itemId: "https://twitter.com/teremovskii/status/1336",
+    },
+    {
+      attachedDeposit: tipAmount_3,
+      gas: "300000000000000",
+    }
+  );
+
+  const totalTipsByItemId_6 = await contract.view("getTotalTipsByItemId", {
+    itemId: "https://twitter.com/teremovskii/status/1336",
+  });
+  const totalTipsByAccount_6 = await contract.view("getTotalTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+  const availableTipsByAccount_6 = await contract.view("getAvailableTipsByAccount", {
+    accountGlobalId: "teremovskii/twitter",
+  });
+
+  t.is(totalTipsByItemId_6, "19417475728155339805825");
+  t.is(totalTipsByAccount_6, "58252427184466019417475");
+  t.is(availableTipsByAccount_6, "19417475728155339805825"); // Tips stay at the contract because alice.test.near is not in the Connected Accounts list.
 });

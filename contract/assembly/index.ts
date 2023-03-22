@@ -5,108 +5,77 @@ import {
   logging,
   u128,
   ContractPromiseBatch,
-  PersistentSet,
-  PersistentVector,
+  ContractPromise,
+  context,
 } from "near-sdk-core";
+import {
+  get_callback_result,
+  XCC_SUCCESS,
+  TGAS,
+  NO_DEPOSIT,
+  GetConnectedAccountsArgs,
+  Account,
+  NearAccount,
+  ExternalAccountName,
+  AccountGlobalId,
+  SendTipsToWalletCallbackArgs,
+  SetWalletForAutoclaimCallbackArgs,
+  ClaimTokensCallbackArgs,
+} from "./external";
 
-type NearAccount = string; // example: user.near, user.testnet
-type ExternalAccount = string; // example: twitter/user
+const NEAR_NETWORK = "mainnet"; //      !!! NETWORK TYPE !!!
+const senderOrigin = "near" + "/" + NEAR_NETWORK;
 
 //// MODELS
 
 // Common
 const OWNER_ACCOUNT_KEY = "a";
-const INIT_CONTRACT_KEY = "l";
-const ACTIVE_CONTRACT_KEY = "m";
+const INIT_CONTRACT_KEY = "b";
 
-// Identity
-
-const externalByNear = new PersistentUnorderedMap<NearAccount, ExternalAccount>("b");
-const nearByExternal = new PersistentUnorderedMap<ExternalAccount, NearAccount>("c");
-const ORACLE_ACCOUNT_KEY = "d";
-const MIN_STAKE_AMOUNT_KEY = "e";
-
-// Requests
-
-@nearBindgen
-export class VerificationRequest {
-  constructor(
-    public nearAccount: NearAccount,
-    public externalAccount: ExternalAccount,
-    public isUnlink: boolean,
-    public proofUrl: string
-  ) {}
-}
-
-const verificationRequests = new PersistentVector<VerificationRequest>("f");
-const pendingRequests = new PersistentSet<u32>("g");
-const approvedRequests = new PersistentSet<u32>("k");
+// Settings
+const CA_CONTRACT_KEY = "c";
 
 // Tipping
 
-const totalTipsByItem = new PersistentUnorderedMap<string, u128>("h");
-const totalTipsByExternal = new PersistentUnorderedMap<ExternalAccount, u128>("i");
-const availableTipsByExternal = new PersistentUnorderedMap<ExternalAccount, u128>("j");
+const totalTipsByItem = new PersistentUnorderedMap<string, u128>("d");
+const totalTipsByAccountGlobalId = new PersistentUnorderedMap<AccountGlobalId, u128>("e");
+const availableTipsByAccountGlobalId = new PersistentUnorderedMap<AccountGlobalId, u128>("f");
+const walletsForAutoclaim = new PersistentUnorderedMap<AccountGlobalId, AccountGlobalId>("g");
 
-const MAX_AMOUNT_PER_ITEM_KEY = "n";
-const MAX_AMOUNT_PER_TIP_KEY = "o";
+const MAX_AMOUNT_PER_ITEM_KEY = "h";
+const MAX_AMOUNT_PER_TIP_KEY = "k";
 
-// INITIALIZATION
+//// INITIALIZATION
 
 export function initialize(
   ownerAccountId: NearAccount,
-  oracleAccountId: NearAccount,
-  minStakeAmount: u128,
+  caContractAddress: string,
   maxAmountPerItem: u128,
   maxAmountPerTip: u128
 ): void {
   assert(storage.getPrimitive<bool>(INIT_CONTRACT_KEY, false) == false, "Contract already initialized");
 
   storage.set<NearAccount>(OWNER_ACCOUNT_KEY, ownerAccountId);
-  storage.set<NearAccount>(ORACLE_ACCOUNT_KEY, oracleAccountId);
-  storage.set<u128>(MIN_STAKE_AMOUNT_KEY, minStakeAmount);
+  storage.set<NearAccount>(CA_CONTRACT_KEY, caContractAddress);
   storage.set<u128>(MAX_AMOUNT_PER_ITEM_KEY, maxAmountPerItem);
   storage.set<u128>(MAX_AMOUNT_PER_TIP_KEY, maxAmountPerTip);
   storage.set<bool>(INIT_CONTRACT_KEY, true);
-  storage.set<bool>(ACTIVE_CONTRACT_KEY, true);
 
-  logging.log(
-    "Init contract with owner: " +
-      ownerAccountId +
-      ", oracle: " +
-      oracleAccountId +
-      " and min stake: " +
-      minStakeAmount.toString()
-  );
+  logging.log("Init contract with owner: " + ownerAccountId + "and Connected Accounts contract: " + caContractAddress);
 }
 
 //// READ
 
-// Identity
-
-export function getExternalAccount(nearAccount: NearAccount): ExternalAccount | null {
-  _active();
-  return externalByNear.get(nearAccount);
-}
-
-export function getNearAccount(externalAccount: ExternalAccount): NearAccount | null {
-  _active();
-  return nearByExternal.get(externalAccount);
-}
+// Settings
 
 export function getOwnerAccount(): NearAccount | null {
   _active();
   return storage.get<NearAccount>(OWNER_ACCOUNT_KEY);
 }
 
-export function getOracleAccount(): NearAccount | null {
+export function getCAContractAddress(): NearAccount | null {
   _active();
-  return storage.get<NearAccount>(ORACLE_ACCOUNT_KEY);
-}
-
-export function getMinStakeAmount(): u128 {
-  _active();
-  return storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero)!;
+  return storage.get<NearAccount>(CA_CONTRACT_KEY);
 }
 
 export function getMaxAmountPerItem(): u128 {
@@ -119,32 +88,6 @@ export function getMaxAmountPerTip(): u128 {
   return storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!;
 }
 
-// Requests
-
-export function getPendingRequests(): u32[] {
-  _active();
-  return pendingRequests.values();
-}
-
-export function getVerificationRequest(id: u32): VerificationRequest | null {
-  _active();
-  if (!verificationRequests.containsIndex(id)) return null;
-  return verificationRequests[id];
-}
-
-export function getRequestStatus(id: u32): u8 {
-  _active();
-  if (!verificationRequests.containsIndex(id)) {
-    return u8(0); // not found
-  } else if (pendingRequests.has(id)) {
-    return u8(1); // pending
-  } else if (approvedRequests.has(id)) {
-    return u8(2); // approved
-  } else {
-    return u8(3); // rejected
-  }
-}
-
 // Tipping
 
 export function getTotalTipsByItemId(itemId: string): u128 {
@@ -152,14 +95,14 @@ export function getTotalTipsByItemId(itemId: string): u128 {
   return totalTipsByItem.get(itemId, u128.Zero)!;
 }
 
-export function getTotalTipsByExternalAccount(externalAccount: ExternalAccount): u128 {
+export function getTotalTipsByAccount(accountGlobalId: AccountGlobalId): u128 {
   _active();
-  return totalTipsByExternal.get(externalAccount, u128.Zero)!;
+  return totalTipsByAccountGlobalId.get(accountGlobalId, u128.Zero)!;
 }
 
-export function getAvailableTipsByExternalAccount(externalAccount: ExternalAccount): u128 {
+export function getAvailableTipsByAccount(accountGlobalId: AccountGlobalId): u128 {
   _active();
-  return availableTipsByExternal.get(externalAccount, u128.Zero)!;
+  return availableTipsByAccountGlobalId.get(accountGlobalId, u128.Zero)!;
 }
 
 export function calculateFee(donationAmount: u128): u128 {
@@ -167,38 +110,9 @@ export function calculateFee(donationAmount: u128): u128 {
   return u128.muldiv(donationAmount, u128.from(3), u128.from(100)); // 3%
 }
 
-// WRITE
+//// WRITE
 
-// Identity
-
-export function approveRequest(requestId: u32): void {
-  _active();
-  _onlyOracle();
-  assert(verificationRequests.containsIndex(requestId), "Non-existent request ID");
-  assert(pendingRequests.has(requestId), "The request has already been processed");
-  const req = verificationRequests[requestId];
-
-  if (req.isUnlink) {
-    externalByNear.delete(req.nearAccount);
-    nearByExternal.delete(req.externalAccount);
-    logging.log("Accounts " + req.nearAccount + " and " + req.externalAccount + " are unlinked");
-  } else {
-    externalByNear.set(req.nearAccount, req.externalAccount);
-    nearByExternal.set(req.externalAccount, req.nearAccount);
-    logging.log("Accounts " + req.nearAccount + " and " + req.externalAccount + " are linked");
-  }
-
-  pendingRequests.delete(requestId);
-  approvedRequests.add(requestId);
-}
-
-export function rejectRequest(requestId: u32): void {
-  _active();
-  _onlyOracle();
-  assert(verificationRequests.containsIndex(requestId), "Non-existent request ID");
-  assert(pendingRequests.has(requestId), "The request has already been processed");
-  pendingRequests.delete(requestId);
-}
+// Settings
 
 export function changeOwnerAccount(newAccountId: NearAccount): void {
   _active();
@@ -207,18 +121,11 @@ export function changeOwnerAccount(newAccountId: NearAccount): void {
   logging.log("Changed owner: " + newAccountId);
 }
 
-export function changeOracleAccount(newAccountId: NearAccount): void {
+export function changeCAContract(newContractAddress: NearAccount): void {
   _active();
   _onlyOwner();
-  storage.set(ORACLE_ACCOUNT_KEY, newAccountId);
-  logging.log("Changed oracle: " + newAccountId);
-}
-
-export function changeMinStake(minStakeAmount: u128): void {
-  _active();
-  _onlyOwner();
-  storage.set<u128>(MIN_STAKE_AMOUNT_KEY, minStakeAmount);
-  logging.log("Changed min stake: " + minStakeAmount.toString());
+  storage.set(CA_CONTRACT_KEY, newContractAddress);
+  logging.log("Changed Connected Accounts contract: " + newContractAddress);
 }
 
 export function changeMaxAmountPerItem(maxAmountPerItem: u128): void {
@@ -235,56 +142,21 @@ export function changeMaxAmountPerTip(maxAmountPerTip: u128): void {
   logging.log("Changed max amount of one tip: " + maxAmountPerTip.toString());
 }
 
-export function unlinkAll(): void {
-  _active();
-  _onlyOwner();
-  externalByNear.clear();
-  nearByExternal.clear();
-}
-
-// Requests
-
-export function requestVerification(externalAccount: ExternalAccount, isUnlink: boolean, url: string): u32 {
-  _active();
-
-  assert(Context.sender == Context.predecessor, "Cross-contract calls is not allowed");
-  assert(
-    u128.ge(Context.attachedDeposit, storage.get<u128>(MIN_STAKE_AMOUNT_KEY, u128.Zero)!),
-    "Insufficient stake amount"
-  );
-
-  // ToDo: audit it
-  if (isUnlink) {
-    assert(externalByNear.contains(Context.sender), "The NEAR account doesn't have a linked account");
-    assert(nearByExternal.contains(externalAccount), "The external account doesn't have a linked account");
-
-    // ToDo:
-    // assert(nearByExternal.get(externalAccount) == Context.sender, "");
-    // assert(nearByExternal.get(Context.sender) == externalAccount, "");
-  } else {
-    assert(!externalByNear.contains(Context.sender), "The NEAR account already has a linked account");
-    assert(!nearByExternal.contains(externalAccount), "The external account already has a linked account");
-  }
-
-  const id = verificationRequests.push(new VerificationRequest(Context.sender, externalAccount, isUnlink, url));
-  pendingRequests.add(id);
-
-  const oracleAccount = storage.get<NearAccount>(ORACLE_ACCOUNT_KEY)!;
-  ContractPromiseBatch.create(oracleAccount).transfer(Context.attachedDeposit);
-
-  logging.log(
-    Context.sender + " requests to link " + externalAccount + " account. Proof ID: " + id.toString() + " URL: " + url
-  );
-
-  return id;
-}
-
 // Tipping
 
-export function sendTips(recipientExternalAccount: ExternalAccount, itemId: string): void {
+export function sendTips(externalAccount: ExternalAccountName, originId: string, itemId: string): void {
   _active();
+  logging.log(
+    `Sending tips: to ${externalAccount} on ${originId} for ${itemId} from ${Context.sender}. Amount: ${Context.attachedDeposit}`
+  );
+  assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
+
+  logging.log("Context.prepaidGas: " + Context.prepaidGas.toString());
 
   assert(u128.gt(Context.attachedDeposit, u128.Zero), "Tips amounts must be greater than zero");
+
+  logging.log("u128.gt(Context.attachedDeposit, u128.Zero): " + u128.gt(Context.attachedDeposit, u128.Zero).toString());
+
   assert(
     u128.le(
       u128.add(totalTipsByItem.get(itemId, u128.Zero)!, Context.attachedDeposit),
@@ -292,9 +164,12 @@ export function sendTips(recipientExternalAccount: ExternalAccount, itemId: stri
     ),
     "New total tips amount exceeds allowance"
   );
+  logging.log("After assertions: prepaid gas, tips amount Ok");
 
   const donationAmount = u128.muldiv(Context.attachedDeposit, u128.from(100), u128.from(103));
+  logging.log("donationAmount: " + donationAmount.toString());
   const feeAmount = u128.sub(Context.attachedDeposit, donationAmount);
+  logging.log("feeAmount: " + feeAmount.toString());
 
   assert(
     u128.le(donationAmount, storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!),
@@ -302,72 +177,282 @@ export function sendTips(recipientExternalAccount: ExternalAccount, itemId: stri
   );
   assert(!u128.eq(feeAmount, u128.Zero), "Donation cannot be free");
 
-  const nearAccount = nearByExternal.get(recipientExternalAccount);
+  logging.log("donation am and fee checked. Before getCAContractAddress");
 
-  if (nearAccount) {
-    ContractPromiseBatch.create(nearAccount).transfer(donationAmount);
-    logging.log(
-      Context.sender +
-        " tips " +
-        donationAmount.toString() +
-        " NEAR to " +
-        recipientExternalAccount +
-        " <=> " +
-        nearAccount
-    );
+  const cAContractAddress = getCAContractAddress();
+  logging.log(`cAContractAddress: ${cAContractAddress ? cAContractAddress : "null"}`);
+  const accountGlobalId = externalAccount + "/" + originId;
+  logging.log(`accountGlobalId: ${accountGlobalId}`);
+  if (cAContractAddress == null) {
+    _saveTipsInContract(accountGlobalId, donationAmount);
+    _finishTipping(accountGlobalId, itemId, donationAmount, feeAmount);
   } else {
-    const availableTips = availableTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
-    const newAvailableTips = u128.add(availableTips, donationAmount);
-    availableTipsByExternal.set(recipientExternalAccount, newAvailableTips);
-    logging.log(Context.sender + " tips " + donationAmount.toString() + " NEAR to " + recipientExternalAccount);
+    const callbackArgs = new SendTipsToWalletCallbackArgs(accountGlobalId, itemId, donationAmount, feeAmount);
+    _askForConnectionAccounts<SendTipsToWalletCallbackArgs>(
+      externalAccount,
+      originId,
+      cAContractAddress,
+      "sendTipsToWalletCallback",
+      callbackArgs
+    );
   }
-
-  // update item stat
-  const oldTotalTipsByItem = totalTipsByItem.get(itemId, u128.Zero)!;
-  const newTotalTipsByItem = u128.add(oldTotalTipsByItem, donationAmount);
-  totalTipsByItem.set(itemId, newTotalTipsByItem);
-
-  // update user stat
-  const oldTotalTipsByExternal = totalTipsByExternal.get(recipientExternalAccount, u128.Zero)!;
-  const newTotalTipsByExternal = u128.add(oldTotalTipsByExternal, donationAmount);
-  totalTipsByExternal.set(recipientExternalAccount, newTotalTipsByExternal);
-
-  // transfer donation fee to owner
-  const owner = storage.get<NearAccount>(OWNER_ACCOUNT_KEY)!;
-  ContractPromiseBatch.create(owner).transfer(feeAmount);
 }
 
-export function claimTokens(): void {
+export function sendTipsToWalletCallback(
+  accountGId: AccountGlobalId,
+  itemId: string,
+  donationAmount: u128,
+  feeAmount: u128
+): void {
   _active();
+  logging.log(
+    "accountId: " +
+      accountGId +
+      ", itemId: " +
+      itemId +
+      ", donationAmount: " +
+      donationAmount.toString() +
+      ", feeAmount: " +
+      feeAmount.toString()
+  );
+  const response = get_callback_result();
+  if (response.status == XCC_SUCCESS) {
+    const connectedAccounts = decode<Account[][] | null>(response.buffer);
+    if (connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0) {
+      logging.log(`The connected accounts list for ${accountGId} has been received.`);
+      const connectedAccountsGIds: AccountGlobalId[] = [];
+      for (let i = 0; i < connectedAccounts.length; i++) {
+        for (let k = 0; k < connectedAccounts[i].length; k++) {
+          connectedAccountsGIds.push(connectedAccounts[i][k].id);
+        }
+      }
+      const autoclaimWallet = walletsForAutoclaim.get(accountGId);
+      if (!autoclaimWallet) {
+        logging.log("A wallet for autoclaim is not determined.");
+        _saveTipsInContract(accountGId, donationAmount);
+      } else if (!connectedAccountsGIds.includes(autoclaimWallet + "/" + senderOrigin)) {
+        logging.log("A wallet for autoclaim is not in Connected Accounts list.");
+        _saveTipsInContract(accountGId, donationAmount);
+      } else {
+        ContractPromiseBatch.create(autoclaimWallet!).transfer(donationAmount);
+        logging.log(
+          Context.sender + " tips " + donationAmount.toString() + " NEAR to " + accountGId + " <=> " + autoclaimWallet!
+        );
+      }
+    } else {
+      logging.log(`The connected accounts list for ${accountGId} is empty.`);
+      _saveTipsInContract(accountGId, donationAmount);
+    }
+  } else {
+    logging.log("There was an error contacting Connected Accounts contract.");
+    _saveTipsInContract(accountGId, donationAmount);
+  }
+  _finishTipping(accountGId, itemId, donationAmount, feeAmount);
+}
 
-  const externalAccount = externalByNear.get(Context.sender);
-  assert(externalAccount != null, "You don't have any linked account.");
+export function setWalletForAutoclaim(
+  externalAccount: ExternalAccountName,
+  originId: string,
+  wallet: NearAccount
+): void {
+  _active();
+  assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
+  const walletForAutoclaim = walletsForAutoclaim.get(externalAccount);
+  assert(walletForAutoclaim == null, `Wallet for autoclaim has been already set.`);
+  const cAContractAddress = getCAContractAddress();
+  assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
+  const callbackArgs = new SetWalletForAutoclaimCallbackArgs(externalAccount, originId, wallet);
+  if (cAContractAddress)
+    _askForConnectionAccounts<SetWalletForAutoclaimCallbackArgs>(
+      externalAccount,
+      originId,
+      cAContractAddress,
+      "setWalletForAutoclaimCallback",
+      callbackArgs
+    );
+}
 
-  const availableTips = availableTipsByExternal.get(externalAccount!, u128.Zero)!;
-  assert(u128.gt(availableTips, u128.Zero), "No tips to withdraw.");
+export function setWalletForAutoclaimCallback(
+  accountId: ExternalAccountName,
+  originId: string,
+  wallet: NearAccount
+): void {
+  _active();
+  const response = get_callback_result();
+  assert(response.status == XCC_SUCCESS, "There was an error contacting Connected Accounts contract.");
+  const connectedAccounts = decode<Account[][] | null>(response.buffer);
+  assert(
+    connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0,
+    `The connected accounts list for ${accountId} is empty. Connect ${wallet}${
+      wallet == context.sender ? "" : ` and ${context.sender}`
+    } with ${accountId}.`
+  );
+  logging.log(`The connected accounts list for ${accountId} has been received.`);
+  const connectedAccountsGIds: AccountGlobalId[] = [];
+  for (let i = 0; i < connectedAccounts!.length; i++) {
+    for (let k = 0; k < connectedAccounts![i].length; k++) {
+      connectedAccountsGIds.push(connectedAccounts![i][k].id);
+    }
+  }
+  const accountGId = accountId + "/" + originId;
+  const autoclaimWallet = walletsForAutoclaim.get(accountGId);
+  const walletGId = wallet + "/" + senderOrigin;
+  assert(!autoclaimWallet, `A wallet for autoclaim is determined. It is ${autoclaimWallet!}`);
+  assert(
+    connectedAccountsGIds.includes(walletGId),
+    `${accountId} is not connected with the ${wallet} in the Connected Accounts service. Connect ${wallet} with ${accountId}.`
+  );
 
-  ContractPromiseBatch.create(Context.sender).transfer(availableTips);
-  availableTipsByExternal.set(externalAccount!, u128.Zero);
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  logging.log(Context.sender + " claimed " + availableTips.toString() + " NEAR from " + externalAccount!);
+  assert(
+    connectedAccountsGIds.includes(context.sender),
+    `${accountId} is not connected with the ${context.sender} in the Connected Accounts service. Connect ${context.sender} with ${accountId}.`
+  );
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  walletsForAutoclaim.set(accountGId, wallet);
+  logging.log(`${wallet} has been set for autoclaim from ${accountId}.`);
+}
+
+export function claimTokens(accountId: ExternalAccountName, originId: string): void {
+  _active();
+  assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
+
+  const cAContractAddress = getCAContractAddress();
+  assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
+  const callbackArgs = new ClaimTokensCallbackArgs(accountId, originId);
+  if (cAContractAddress) {
+    _askForConnectionAccounts(accountId, originId, cAContractAddress, "claimTokensCallback", callbackArgs);
+  }
+}
+
+export function claimTokensCallback(accountId: ExternalAccountName, originId: string): void {
+  _active();
+  const response = get_callback_result();
+  assert(response.status == XCC_SUCCESS, "There was an error contacting Connected Accounts contract.");
+
+  const connectedAccounts = decode<Account[][] | null>(response.buffer);
+  assert(
+    connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0,
+    `The connected accounts list for ${accountId} is empty. Connect ${context.sender} with ${accountId}.`
+  );
+  logging.log(`The connected accounts list for ${accountId} has been received.`);
+
+  const connectedAccountsGIds: AccountGlobalId[] = [];
+  for (let i = 0; i < connectedAccounts!.length; i++) {
+    for (let k = 0; k < connectedAccounts![i].length; k++) {
+      connectedAccountsGIds.push(connectedAccounts![i][k].id);
+    }
+  }
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  assert(
+    connectedAccountsGIds.includes(Context.sender + "/" + senderOrigin),
+    `You can claim tips from ${accountId} only by sending the transaction by the wallet from its Connected Accounts list.`
+  );
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  const accountGId = accountId + "/" + originId;
+  const autoclaimWallet = walletsForAutoclaim.get(accountGId);
+
+  // ATTENTION: If autoclaimWallet is not in CA, the Context.sender is set as new autoclaimWallet!!!
+  if (autoclaimWallet && connectedAccountsGIds.includes(autoclaimWallet)) {
+    _claim(accountGId, autoclaimWallet);
+  } else {
+    walletsForAutoclaim.set(accountGId, Context.sender);
+    logging.log(`${Context.sender} has been set for autoclaim from ${accountId}.`);
+    _claim(accountGId, Context.sender);
+  }
 }
 
 export function shutdown(): void {
   _onlyOwner();
-  storage.set<bool>(ACTIVE_CONTRACT_KEY, false);
+  storage.set<bool>(INIT_CONTRACT_KEY, false);
   logging.log("Shutdown occured");
 }
 
-// HELPERS
-
-function _onlyOracle(): void {
-  assert(storage.get<NearAccount>(ORACLE_ACCOUNT_KEY) == Context.sender, "Only oracle account can write");
-}
+//// HELPERS
 
 function _onlyOwner(): void {
   assert(storage.get<NearAccount>(OWNER_ACCOUNT_KEY) == Context.sender, "Only owner account can write");
 }
 
 function _active(): void {
-  assert(storage.getPrimitive<bool>(ACTIVE_CONTRACT_KEY, false) == true, "Contract inactive");
+  assert(storage.getPrimitive<bool>(INIT_CONTRACT_KEY, false) == true, "Contract inactive");
+}
+
+function _askForConnectionAccounts<T>(
+  accountId: ExternalAccountName,
+  originId: string,
+  cAContractAddress: string | null,
+  callbackName: string,
+  callbackArgs: T
+): void {
+  const args: GetConnectedAccountsArgs = new GetConnectedAccountsArgs(accountId, originId);
+  if (cAContractAddress && cAContractAddress != null) {
+    logging.log(
+      "accountId: " +
+        accountId +
+        ", originId: " +
+        originId +
+        ", cAContractAddress: " +
+        cAContractAddress +
+        ", callbackName: " +
+        callbackName
+    );
+    const promise: ContractPromise = ContractPromise.create(
+      cAContractAddress,
+      "getConnectedAccounts",
+      args.encode(),
+      20 * TGAS, // ToDo: perhaps need to increase
+      NO_DEPOSIT
+    );
+
+    const callbackPromise = promise.then(
+      Context.contractName,
+      callbackName,
+      callbackArgs,
+      20 * TGAS, // ToDo: perhaps need to increase
+      NO_DEPOSIT
+    );
+
+    callbackPromise.returnAsResult();
+  }
+}
+
+function _saveTipsInContract(accountGlobalId: AccountGlobalId, donationAmount: u128): void {
+  const availableTips = availableTipsByAccountGlobalId.get(accountGlobalId, u128.Zero)!;
+  const newAvailableTips = u128.add(availableTips, donationAmount);
+  availableTipsByAccountGlobalId.set(accountGlobalId, newAvailableTips);
+  logging.log(Context.sender + " tips " + donationAmount.toString() + " NEAR to " + accountGlobalId);
+}
+
+function _finishTipping(accountId: AccountGlobalId, itemId: string, donationAmount: u128, feeAmount: u128): void {
+  // update item stat
+  const oldTotalTipsByItem = totalTipsByItem.get(itemId, u128.Zero)!;
+  const newTotalTipsByItem = u128.add(oldTotalTipsByItem, donationAmount);
+  totalTipsByItem.set(itemId, newTotalTipsByItem);
+
+  // update user stat
+  const oldTotalTipsByExternal = totalTipsByAccountGlobalId.get(accountId, u128.Zero)!;
+  const newTotalTipsByExternal = u128.add(oldTotalTipsByExternal, donationAmount);
+  totalTipsByAccountGlobalId.set(accountId, newTotalTipsByExternal);
+
+  // transfer donation fee to owner
+  const owner = storage.get<NearAccount>(OWNER_ACCOUNT_KEY)!;
+  ContractPromiseBatch.create(owner).transfer(feeAmount);
+}
+
+function _claim(from: AccountGlobalId, to: NearAccount): void {
+  const availableTips = availableTipsByAccountGlobalId.get(from, u128.Zero)!;
+  assert(u128.gt(availableTips, u128.Zero), "No tips to withdraw.");
+
+  ContractPromiseBatch.create(to).transfer(availableTips);
+  availableTipsByAccountGlobalId.set(from, u128.Zero);
+
+  logging.log(to + " claimed " + availableTips.toString() + " NEAR from " + from);
 }
