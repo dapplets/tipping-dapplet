@@ -23,7 +23,7 @@ import {
   ClaimTokensCallbackArgs,
 } from "./external";
 
-const NEAR_NETWORK = "mainnet"; //      !!! NETWORK TYPE !!!
+const NEAR_NETWORK = "testnet"; //      !!! NETWORK TYPE !!!
 const senderOrigin = "near" + "/" + NEAR_NETWORK;
 
 //// MODELS
@@ -146,16 +146,16 @@ export function changeMaxAmountPerTip(maxAmountPerTip: u128): void {
 
 export function sendTips(externalAccount: ExternalAccountName, originId: string, itemId: string): void {
   _active();
-  logging.log(
-    `Sending tips: to ${externalAccount} on ${originId} for ${itemId} from ${Context.sender}. Amount: ${Context.attachedDeposit}`
-  );
+  // logging.log(
+  //   `Sending tips: to ${externalAccount} on ${originId} for ${itemId} from ${Context.sender}. Amount: ${Context.attachedDeposit}`
+  // );
   assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
 
-  logging.log("Context.prepaidGas: " + Context.prepaidGas.toString());
+  // logging.log("Context.prepaidGas: " + Context.prepaidGas.toString());
 
   assert(u128.gt(Context.attachedDeposit, u128.Zero), "Tips amounts must be greater than zero");
 
-  logging.log("u128.gt(Context.attachedDeposit, u128.Zero): " + u128.gt(Context.attachedDeposit, u128.Zero).toString());
+  // logging.log("u128.gt(Context.attachedDeposit, u128.Zero): " + u128.gt(Context.attachedDeposit, u128.Zero).toString());
 
   assert(
     u128.le(
@@ -164,12 +164,12 @@ export function sendTips(externalAccount: ExternalAccountName, originId: string,
     ),
     "New total tips amount exceeds allowance"
   );
-  logging.log("After assertions: prepaid gas, tips amount Ok");
+  // logging.log("After assertions: prepaid gas, tips amount Ok");
 
   const donationAmount = u128.muldiv(Context.attachedDeposit, u128.from(100), u128.from(103));
-  logging.log("donationAmount: " + donationAmount.toString());
+  // logging.log("donationAmount: " + donationAmount.toString());
   const feeAmount = u128.sub(Context.attachedDeposit, donationAmount);
-  logging.log("feeAmount: " + feeAmount.toString());
+  // logging.log("feeAmount: " + feeAmount.toString());
 
   assert(
     u128.le(donationAmount, storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!),
@@ -177,12 +177,12 @@ export function sendTips(externalAccount: ExternalAccountName, originId: string,
   );
   assert(!u128.eq(feeAmount, u128.Zero), "Donation cannot be free");
 
-  logging.log("donation am and fee checked. Before getCAContractAddress");
+  // logging.log("donation am and fee checked. Before getCAContractAddress");
 
   const cAContractAddress = getCAContractAddress();
-  logging.log(`cAContractAddress: ${cAContractAddress ? cAContractAddress : "null"}`);
+  // logging.log(`cAContractAddress: ${cAContractAddress ? cAContractAddress : "null"}`);
   const accountGlobalId = externalAccount + "/" + originId;
-  logging.log(`accountGlobalId: ${accountGlobalId}`);
+  // logging.log(`accountGlobalId: ${accountGlobalId}`);
   if (cAContractAddress == null) {
     _saveTipsInContract(accountGlobalId, donationAmount);
     _finishTipping(accountGlobalId, itemId, donationAmount, feeAmount);
@@ -319,7 +319,6 @@ export function setWalletForAutoclaimCallback(
 export function claimTokens(accountId: ExternalAccountName, originId: string): void {
   _active();
   assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
-
   const cAContractAddress = getCAContractAddress();
   assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
   const callbackArgs = new ClaimTokensCallbackArgs(accountId, originId);
@@ -332,7 +331,6 @@ export function claimTokensCallback(accountId: ExternalAccountName, originId: st
   _active();
   const response = get_callback_result();
   assert(response.status == XCC_SUCCESS, "There was an error contacting Connected Accounts contract.");
-
   const connectedAccounts = decode<Account[][] | null>(response.buffer);
   assert(
     connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0,
@@ -394,16 +392,16 @@ function _askForConnectionAccounts<T>(
 ): void {
   const args: GetConnectedAccountsArgs = new GetConnectedAccountsArgs(accountId, originId);
   if (cAContractAddress && cAContractAddress != null) {
-    logging.log(
-      "accountId: " +
-        accountId +
-        ", originId: " +
-        originId +
-        ", cAContractAddress: " +
-        cAContractAddress +
-        ", callbackName: " +
-        callbackName
-    );
+    // logging.log(
+    //   "accountId: " +
+    //     accountId +
+    //     ", originId: " +
+    //     originId +
+    //     ", cAContractAddress: " +
+    //     cAContractAddress +
+    //     ", callbackName: " +
+    //     callbackName
+    // );
     const promise: ContractPromise = ContractPromise.create(
       cAContractAddress,
       "getConnectedAccounts",
