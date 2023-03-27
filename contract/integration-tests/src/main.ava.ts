@@ -130,10 +130,14 @@ test("integration test", async (t) => {
   const availableTipsByAccount_2 = await contract.view("getAvailableTipsByAccount", {
     accountGlobalId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
   });
+  const walletForAutoclaim_2 = await contract.view("getWalletForAutoclaim", {
+    accountGId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
+  });
 
   t.is(totalTipsByItemId_2, "19417475728155339805825");
   t.is(totalTipsByAccount_2, "19417475728155339805825");
   t.is(availableTipsByAccount_2, "19417475728155339805825");
+  t.is(walletForAutoclaim_2, null);
 
   // == TEST 3 ==
   console.log("== TEST 3 ==: send tips to twitter account with connected accounts");
@@ -164,10 +168,14 @@ test("integration test", async (t) => {
   const availableTipsByAccount_3 = await contract.view("getAvailableTipsByAccount", {
     accountGlobalId: "teremovskii/twitter",
   });
+  const walletForAutoclaim_3 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
 
   t.is(totalTipsByItemId_3, "19417475728155339805825");
   t.is(totalTipsByAccount_3, "19417475728155339805825");
   t.is(availableTipsByAccount_3, "19417475728155339805825");
+  t.is(walletForAutoclaim_3, null);
 
   // == TEST 4 ==
   console.log("== TEST 4 ==: set the wallet for autoclaim");
@@ -211,10 +219,14 @@ test("integration test", async (t) => {
   const availableTipsByAccount_4 = await contract.view("getAvailableTipsByAccount", {
     accountGlobalId: "teremovskii/twitter",
   });
+  const walletForAutoclaim_4 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
 
   t.is(totalTipsByItemId_4, "38834951456310679611650");
   t.is(totalTipsByAccount_4, "38834951456310679611650");
   t.is(availableTipsByAccount_4, "19417475728155339805825");
+  t.is(walletForAutoclaim_4, "nikter.near");
 
   // == TEST 5 ==
   console.log("== TEST 5 ==: claim tips");
@@ -238,10 +250,14 @@ test("integration test", async (t) => {
   const availableTipsByAccount_5 = await contract.view("getAvailableTipsByAccount", {
     accountGlobalId: "teremovskii/twitter",
   });
+  const walletForAutoclaim_5 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
 
   t.is(totalTipsByItemId_5, "38834951456310679611650");
   t.is(totalTipsByAccount_5, "38834951456310679611650");
   t.is(availableTipsByAccount_5, "0");
+  t.is(walletForAutoclaim_5, "alice.test.near");
 
   // == TEST 6 ==
   console.log("== TEST 6 ==: send tips with autoclaim");
@@ -270,8 +286,110 @@ test("integration test", async (t) => {
   const availableTipsByAccount_6 = await contract.view("getAvailableTipsByAccount", {
     accountGlobalId: "teremovskii/twitter",
   });
+  const walletForAutoclaim_6 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
 
   t.is(totalTipsByItemId_6, "19417475728155339805825");
   t.is(totalTipsByAccount_6, "58252427184466019417475");
   t.is(availableTipsByAccount_6, "19417475728155339805825"); // Tips stay at the contract because alice.test.near is not in the Connected Accounts list.
+  t.is(walletForAutoclaim_6, "alice.test.near");
+
+  // == TEST 7 ==
+  console.log("== TEST 7 ==: delete wallet for autoclaim by inself");
+  // ============
+  await alice.call(
+    contract,
+    "deleteWalletForAutoclaim",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+    },
+    {
+      gas: "300000000000000",
+    }
+  );
+  const walletForAutoclaim_7 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
+  t.is(walletForAutoclaim_7, null);
+
+  // == TEST 8 ==
+  console.log("== TEST 8 ==: delete wallet for autoclaim by wallet from CA");
+  // ============
+
+  await alice.call(
+    contract,
+    "setWalletForAutoclaim",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      wallet: "nikter.near",
+    },
+    {
+      gas: "300000000000000",
+    }
+  );
+
+  const walletForAutoclaim_8 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
+
+  t.is(walletForAutoclaim_8, "nikter.near");
+
+  await alice.call(
+    contract,
+    "deleteWalletForAutoclaim",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+    },
+    {
+      gas: "300000000000000",
+    }
+  );
+
+  const walletForAutoclaim_8_1 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
+
+  t.is(walletForAutoclaim_8_1, null);
+
+  // == TEST 9 ==
+  console.log("== TEST 9 ==: change wallet for autoclaim");
+  // ============
+
+  await alice.call(
+    contract,
+    "claimTokens",
+    { accountId: "teremovskii", originId: "twitter" },
+    {
+      gas: "300000000000000",
+    }
+  );
+
+  const walletForAutoclaim_9 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
+
+  t.is(walletForAutoclaim_9, alice.accountId);
+
+  await alice.call(
+    contract,
+    "setWalletForAutoclaim",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      wallet: "nikter.near",
+    },
+    {
+      gas: "300000000000000",
+    }
+  );
+
+  const walletForAutoclaim_9_1 = await contract.view("getWalletForAutoclaim", {
+    accountGId: "teremovskii/twitter",
+  });
+
+  t.is(walletForAutoclaim_9_1, "nikter.near");
 });

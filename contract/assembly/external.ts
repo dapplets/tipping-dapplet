@@ -52,6 +52,11 @@ export class SetWalletForAutoclaimCallbackArgs {
 }
 
 @nearBindgen
+export class DeleteWalletForAutoclaimCallbackArgs {
+  constructor(public accountId: ExternalAccountName, public originId: string) {}
+}
+
+@nearBindgen
 export class ClaimTokensCallbackArgs {
   constructor(public accountId: ExternalAccountName, public originId: string) {}
 }

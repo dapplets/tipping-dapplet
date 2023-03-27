@@ -6,7 +6,6 @@ import {
   u128,
   ContractPromiseBatch,
   ContractPromise,
-  context,
 } from "near-sdk-core";
 import {
   get_callback_result,
@@ -20,6 +19,7 @@ import {
   AccountGlobalId,
   SendTipsToWalletCallbackArgs,
   SetWalletForAutoclaimCallbackArgs,
+  DeleteWalletForAutoclaimCallbackArgs,
   ClaimTokensCallbackArgs,
 } from "./external";
 
@@ -40,7 +40,7 @@ const CA_CONTRACT_KEY = "c";
 const totalTipsByItem = new PersistentUnorderedMap<string, u128>("d");
 const totalTipsByAccountGlobalId = new PersistentUnorderedMap<AccountGlobalId, u128>("e");
 const availableTipsByAccountGlobalId = new PersistentUnorderedMap<AccountGlobalId, u128>("f");
-const walletsForAutoclaim = new PersistentUnorderedMap<AccountGlobalId, AccountGlobalId>("g");
+const walletsForAutoclaim = new PersistentUnorderedMap<AccountGlobalId, NearAccount>("g");
 
 const MAX_AMOUNT_PER_ITEM_KEY = "h";
 const MAX_AMOUNT_PER_TIP_KEY = "k";
@@ -108,6 +108,11 @@ export function getAvailableTipsByAccount(accountGlobalId: AccountGlobalId): u12
 export function calculateFee(donationAmount: u128): u128 {
   _active();
   return u128.muldiv(donationAmount, u128.from(3), u128.from(100)); // 3%
+}
+
+export function getWalletForAutoclaim(accountGId: AccountGlobalId): NearAccount | null {
+  _active();
+  return walletsForAutoclaim.get(accountGId);
 }
 
 //// WRITE
@@ -257,8 +262,6 @@ export function setWalletForAutoclaim(
 ): void {
   _active();
   assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
-  const walletForAutoclaim = walletsForAutoclaim.get(externalAccount);
-  assert(walletForAutoclaim == null, `Wallet for autoclaim has been already set.`);
   const cAContractAddress = getCAContractAddress();
   assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
   const callbackArgs = new SetWalletForAutoclaimCallbackArgs(externalAccount, originId, wallet);
@@ -284,7 +287,7 @@ export function setWalletForAutoclaimCallback(
   assert(
     connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0,
     `The connected accounts list for ${accountId} is empty. Connect ${wallet}${
-      wallet == context.sender ? "" : ` and ${context.sender}`
+      wallet == Context.sender ? "" : ` and ${Context.sender}`
     } with ${accountId}.`
   );
   logging.log(`The connected accounts list for ${accountId} has been received.`);
@@ -295,9 +298,7 @@ export function setWalletForAutoclaimCallback(
     }
   }
   const accountGId = accountId + "/" + originId;
-  const autoclaimWallet = walletsForAutoclaim.get(accountGId);
   const walletGId = wallet + "/" + senderOrigin;
-  assert(!autoclaimWallet, `A wallet for autoclaim is determined. It is ${autoclaimWallet!}`);
   assert(
     connectedAccountsGIds.includes(walletGId),
     `${accountId} is not connected with the ${wallet} in the Connected Accounts service. Connect ${wallet} with ${accountId}.`
@@ -306,14 +307,73 @@ export function setWalletForAutoclaimCallback(
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   assert(
-    connectedAccountsGIds.includes(context.sender),
-    `${accountId} is not connected with the ${context.sender} in the Connected Accounts service. Connect ${context.sender} with ${accountId}.`
+    connectedAccountsGIds.includes(Context.sender + "/" + senderOrigin),
+    `${accountId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountId}.`
   );
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  const autoclaimWallet = walletsForAutoclaim.get(accountGId);
   walletsForAutoclaim.set(accountGId, wallet);
-  logging.log(`${wallet} has been set for autoclaim from ${accountId}.`);
+  logging.log(
+    `${wallet} has been set ${
+      autoclaimWallet ? "instead of " + autoclaimWallet + " " : ""
+    }for autoclaim from ${accountId}.`
+  );
+}
+
+export function deleteWalletForAutoclaim(externalAccount: ExternalAccountName, originId: string): void {
+  _active();
+  const walletForAutoclaim = walletsForAutoclaim.get(externalAccount + "/" + originId);
+  assert(walletForAutoclaim != null, `Wallet for autoclaim has not been set yet.`);
+  if (walletForAutoclaim == Context.sender) {
+    walletsForAutoclaim.delete(externalAccount + "/" + originId);
+    return;
+  }
+  assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
+  const cAContractAddress = getCAContractAddress();
+  assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
+  const callbackArgs = new DeleteWalletForAutoclaimCallbackArgs(externalAccount, originId);
+  if (cAContractAddress)
+    _askForConnectionAccounts<DeleteWalletForAutoclaimCallbackArgs>(
+      externalAccount,
+      originId,
+      cAContractAddress,
+      "deleteWalletForAutoclaimCallback",
+      callbackArgs
+    );
+}
+
+export function deleteWalletForAutoclaimCallback(accountId: ExternalAccountName, originId: string): void {
+  _active();
+  const response = get_callback_result();
+  assert(response.status == XCC_SUCCESS, "There was an error contacting Connected Accounts contract.");
+  const connectedAccounts = decode<Account[][] | null>(response.buffer);
+  const accountGId = accountId + "/" + originId;
+  const autoclaimWallet = walletsForAutoclaim.get(accountGId);
+  assert(
+    connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0,
+    `The connected accounts list for ${accountId} is empty. Sign the transaction by ${autoclaimWallet!} to stop autoclaim to it.`
+  );
+  logging.log(`The connected accounts list for ${accountId} has been received.`);
+  const connectedAccountsGIds: AccountGlobalId[] = [];
+  for (let i = 0; i < connectedAccounts!.length; i++) {
+    for (let k = 0; k < connectedAccounts![i].length; k++) {
+      connectedAccountsGIds.push(connectedAccounts![i][k].id);
+    }
+  }
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  assert(
+    connectedAccountsGIds.includes(Context.sender + "/" + senderOrigin),
+    `${accountId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountId}.`
+  );
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  walletsForAutoclaim.delete(accountGId);
+  logging.log(`${autoclaimWallet!} has been unset from autoclaim to ${accountId}.`);
 }
 
 export function claimTokens(accountId: ExternalAccountName, originId: string): void {
@@ -334,7 +394,7 @@ export function claimTokensCallback(accountId: ExternalAccountName, originId: st
   const connectedAccounts = decode<Account[][] | null>(response.buffer);
   assert(
     connectedAccounts != null && connectedAccounts.length != 0 && connectedAccounts[0].length != 0,
-    `The connected accounts list for ${accountId} is empty. Connect ${context.sender} with ${accountId}.`
+    `The connected accounts list for ${accountId} is empty. Connect ${Context.sender} with ${accountId}.`
   );
   logging.log(`The connected accounts list for ${accountId} has been received.`);
 
