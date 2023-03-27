@@ -1,4 +1,4 @@
-import { } from '@dapplets/dapplet-extension';
+import {} from '@dapplets/dapplet-extension';
 import WHITE_ICON from './icons/money-twiter-light.svg';
 import DARK_ICON from './icons/money-twiter-dark.svg';
 import NEAR_BIG_ICON from './icons/near-big.svg';
@@ -220,9 +220,9 @@ export default class TwitterFeature {
           const exampleWallet = this._network === NearNetwork.TESTNET ? 'yourwallet.testnet' : 'yourwallet.near';
           alert(
             'Add your NEAR account ID to your profile name in Twitter before continuing. ' +
-            'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
-            'After linking you can remove it back.\n' +
-            `For example: "${profile.authorFullname} (${exampleWallet})"\n`,
+              'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
+              'After linking you can remove it back.\n' +
+              `For example: "${profile.authorFullname} (${exampleWallet})"\n`,
           );
         } else {
           await this.identityService.requestVerification(
@@ -283,15 +283,16 @@ export default class TwitterFeature {
       if (
         confirm(
           `You're tipping ${Core.near.utils.format.formatNearAmount(amount)} Ⓝ to "@${account}" at "${domain}".\n` +
-          `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` +
-          `Thank you for your support!`
+            `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` +
+            `Thank you for your support!`,
         )
       ) {
         const txHash = await this.tippingService.donateByTweet(externalAccount, 'tweet/' + tweetId, total);
-        const explorerUrl = this._network === 'mainnet' ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+        const explorerUrl =
+          this._network === 'mainnet' ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         alert(
           `Tipped ${Core.near.utils.format.formatNearAmount(amount)} $NEAR with @tippingdapplet. ` +
-          `Tx link: ${explorerUrl}/transactions/${txHash}`
+            `Tx link: ${explorerUrl}/transactions/${txHash}`,
         );
       }
     } catch (e) {
@@ -319,7 +320,7 @@ export default class TwitterFeature {
       lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
     ) {
       me.amount = sum(me.amount, this._stepYocto);
-      me.label = this.formatNear(sum(me.donationsAmount, me.amount)) + ' NEAR';
+      me.label = this.formatNear(me.donationsAmount) + ' + ' + this.formatNear(me.amount) + ' NEAR';
     }
 
     const externalAccount = 'twitter/' + tweet.authorUsername;
