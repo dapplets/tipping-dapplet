@@ -39,9 +39,6 @@ export function getMilliseconds(seconds: number): number {
   return seconds * 1000;
 }
 
-
 export function isParticipant(user: string, isTest = false): string | undefined {
-  return isTest
-    ? TESTERS_ADDRESSES.find(name => name === user)
-    : NEAR_ADDRESS.find(name => name === user)
+  return isTest ? TESTERS_ADDRESSES.find((name) => name === user) : NEAR_ADDRESS.find((name) => name === user);
 }

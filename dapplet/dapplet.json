@@ -7,7 +7,7 @@
     "$ref": "package.json#/version"
   },
   "type": "FEATURE",
-  "title": "Tipping NEAR Dapplet",
+  "title": "NEW Tipping NEAR Dapplet with CA",
   "description": {
     "$ref": "package.json#/description"
   },

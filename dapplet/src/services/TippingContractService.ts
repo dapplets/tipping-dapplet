@@ -1,36 +1,44 @@
-import { sum } from '../helpers';
-import { NearNetwork } from '../interfaces';
+import { NearNetworks } from '../interfaces';
 
 export class TippingContractService {
   private _contract: any;
 
-  constructor(network: NearNetwork) {
+  constructor(network: NearNetworks) {
     const address =
-      network === NearNetwork.TESTNET
-        ? 'app.tipping.testnet'
-        : network === NearNetwork.MAINNET
-        ? 'app.tipping.near'
-        : null;
+      network === NearNetworks.Testnet
+        ? 'dev-1679584536742-83217475458076'
+        : // : network === NearNetworks.Mainnet
+          // ? ''
+          null;
 
     if (address === null) throw new Error('Unsupported network');
 
     this._contract = Core.contract('near', address, {
       viewMethods: [
-        'getNearAccount',
-        'getMinStakeAmount',
+        'getMaxAmountPerItem',
+        'getMaxAmountPerTip',
         'getTotalTipsByItemId',
-        'getTotalTipsByExternalAccount',
-        'getAvailableTipsByExternalAccount',
+        'getTotalTipsByAccount',
+        'getAvailableTipsByAccount',
         'calculateFee',
+        'getWalletForAutoclaim',
       ],
-      changeMethods: ['sendTips', 'claimTokens'],
+      changeMethods: ['sendTips', 'claimTokens', 'setWalletForAutoclaim', 'deleteWalletForAutoclaim'],
       network,
     });
   }
 
-  async getTotalDonationByItem(itemId: string): Promise<string> {
+  // VIEW
+
+  async getTotalTipsByItemId(itemId: string): Promise<string> {
     const contract = await this._contract;
     const tipsAmount = await contract.getTotalTipsByItemId({ itemId: itemId });
+    return tipsAmount;
+  }
+
+  async getAvailableTipsByAccount(accountGlobalId: string): Promise<string> {
+    const contract = await this._contract;
+    const tipsAmount = await contract.getAvailableTipsByAccount({ accountGlobalId });
     return tipsAmount;
   }
 
@@ -40,29 +48,70 @@ export class TippingContractService {
     return donationFee;
   }
 
-  async donateByTweet(externalAccount: string, itemId: string, totalAmount: string): Promise<string> {
+  async getWalletForAutoclaim(accountGId: string): Promise<string | null> {
+    const contract = await this._contract;
+    console.log('### inside getWalletForAutoclaim(accountGId: string) in dapplet');
+    const walletForAutoclaim = await contract.getWalletForAutoclaim({ accountGId });
+    console.log('### walletForAutoclaim', walletForAutoclaim);
+    return walletForAutoclaim;
+  }
+
+  // CALL
+
+  async sendTips(externalAccount: string, originId: string, itemId: string, totalAmount: string): Promise<string> {
     const contract = await this._contract;
     const rawResult = await contract.account.functionCall(
       contract.contractId,
       'sendTips',
       {
-        recipientExternalAccount: externalAccount,
-        itemId: itemId,
+        externalAccount,
+        originId,
+        itemId,
       },
-      undefined,
+      '300000000000000',
       totalAmount,
     );
     return rawResult.transaction.hash;
   }
 
-  async getAvailableTipsByExternalAccount(externalAccount: string): Promise<string> {
+  async claimTokens(accountId: string, originId: string): Promise<string> {
     const contract = await this._contract;
-    const tipsAmount = await contract.getAvailableTipsByExternalAccount({ externalAccount });
-    return tipsAmount;
+    const rawResult = await contract.account.functionCall(
+      contract.contractId,
+      'claimTokens',
+      {
+        accountId,
+        originId,
+      },
+      '300000000000000',
+    );
+    return rawResult.transaction.hash;
   }
 
-  async claimTokens(): Promise<void> {
+  async setWalletForAutoclaim(externalAccount: string, originId: string, wallet: string): Promise<void> {
     const contract = await this._contract;
-    await contract.claimTokens();
+    await contract.account.functionCall(
+      contract.contractId,
+      'setWalletForAutoclaim',
+      {
+        externalAccount,
+        originId,
+        wallet,
+      },
+      '300000000000000',
+    );
+  }
+
+  async deleteWalletForAutoclaim(externalAccount: string, originId: string): Promise<void> {
+    const contract = await this._contract;
+    await contract.account.functionCall(
+      contract.contractId,
+      'deleteWalletForAutoclaim',
+      {
+        externalAccount,
+        originId,
+      },
+      '300000000000000',
+    );
   }
 }
