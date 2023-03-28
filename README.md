@@ -18,6 +18,18 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 # Browser extension installation guide
 
+### For Microsoft Edge Browser
+
+1. Extension can be found and installed through the extension store.
+
+![image](/assets/0_1.png)
+
+2. Search for 'Dapplets' or use this [link](https://microsoftedge.microsoft.com/addons/detail/dapplets/icpdagldaielgidgdiaanollkfgdclop?hl=en-GB) 
+
+![image](/assets/1_1.png)
+
+### For Google Chrome Browser
+
 1. Open the **Google Chrome** browser.
 
 2. Download the [**Dapplet Browser Extension**](https://github.com/dapplets/dapplet-extension/releases/latest).
