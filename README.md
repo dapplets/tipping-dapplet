@@ -74,49 +74,25 @@ Now the dapplet is turned on. You will see two new icons in your Twitter profile
 
 **The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message:
 
-![image](/assets/00_1.png)
+![image](/assets/0000.png)
 
 This means that to connect your account you need to type *yourname.near* next to your name.
-
-# NEAR Wallet Connection
-
-To interact with the Tipping Dapplet, you need to connect a wallet.
-
-1. Click on **Dapplets Extension** Icon. The overlay will open.
-
-2. Select the **Wallets** Tab.
-	
-	![image](/assets/7.png)
-
-3. You don't have any wallets connected right now. 
-Click the **Connect** button.
-	![image](/assets/8.png)
-4. An overlay with available wallets will open. We will be using the **NEAR Wallet (near)**. 
-Click on it.
-	![image](/assets/9.png)
-5. A new [page](http://wallet.near.near.org) will open. Click on the blue **Next** button, and then - on the blue **Connect** button
-	![image](/assets/10.jpg)
-	![image](/assets/11.jpg)
-6. After this, the page will close and a new tab will open in the overlay. 
-Press the **Continue** button
-	![image](/assets/12.jpg)
-7. Done, you have connected your wallet
 
 ## Yourname.near connection
 
 Now we will connect your Twitter profile to your NEAR account.
 
 1. Click **Edit Profile** on your Twitter profile page
-2. Under *name* add your *yourname.near* profile.
-	![image](/assets/13.png)
+2. Under *name* add your *yourname.near* profile. You will receive tokens to this address.
+	![image](/assets/001.png)
 3. Click **Save**
 4. Now that you’ve added your NEAR account name click **Link** (the second new icon in your Twitter Profile). An overlay will open.
-5. Choose the wallet we connected before by pressing the **Select** button
-	![image](/assets/14.jpg)
+![image](/assets/002.png)
+5. Now lets use NEAR Wallet you entered in profile earlier
+	![image](/assets/003.png)
 6. A Near near wallet page will open, it will ask you to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Allow** to accept.
 	![image](/assets/15.jpg)
-
-Go back to your Twitter Profile page. There, the Link icon has changed to:
+Now lets use  to your Tw you entered in profile earlier There, the Link icon has changed to:
 
 ![image](/assets/16.png)
 
