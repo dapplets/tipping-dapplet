@@ -147,10 +147,10 @@ To do this, please follow the instructions below:
 2. Find **Tipping NEAR Dapplet**
 3. Click on the *Gear Wheel*
 	
-	![image](/assets/22.png)
+	![image](/assets/004.png)
 
 4. Settings will open. Here you can change Donation increase step.
-![image](/assets/23.png)
+![image](/assets/005.png)
 
 # Contacts
 
