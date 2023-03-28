@@ -70,7 +70,11 @@ Now the dapplet is turned on. You will see two new icons in your Twitter profile
 
 **The first icon** shows the number of NEAR tokens that were donated to you, but which you have not received, as you have not yet connected your Twitter account to NEAR. If you click on this icon you will see the following message: *«You must link NEAR account before continue»*. To link our account let’s go to the second icon.
 
-**The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message: *«Add NEAR Account ID in your profile name before continue»*. This means that to connect your account you need to type *yourname.near* next to your name.
+**The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message:
+
+![image](/assets/00_1.png)
+
+This means that to connect your account you need to type *yourname.near* next to your name.
 
 # NEAR Wallet Connection
 
