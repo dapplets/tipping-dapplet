@@ -28,7 +28,8 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 ![image](/assets/1_1.png)
 
-### For Google Chrome Browser
+<details>
+<summary>For Google Chrome Browser</summary>
 
 1. Open the **Google Chrome** browser.
 
@@ -47,7 +48,7 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 ![image](/assets/2.png)
 
 ![image](/assets/3.png)
-
+</details>
 
 # Run the Tipping Dapplet
 
