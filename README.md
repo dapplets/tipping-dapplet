@@ -96,10 +96,10 @@ Now we will connect your Twitter profile to your NEAR account.
 
 	![image](/assets/11.jpg)
 
-7. You will be asked to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Allow** to accept.
+7. You will be asked to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Approve** to accept.
 	![image](/assets/15.jpg)
 
-Now lets use  to your Tw you entered in profile earlier There, the Link icon has changed to:
+Go back to your Twitter Profile page. There, the Link icon has changed to:
 
 ![image](/assets/16.png)
 
@@ -107,7 +107,7 @@ This is temporary, when the transaction is completed successfully the icon will 
 
 ![image](/assets/17.png)
 
-Done, your Twitter account is now linked to your Near.near account.
+Done, your Twitter account is now linked to Yournamen.near account.
 
 **⚠ Now you can delete the name of your NEAR wallet from Twitter profile username.**
 
