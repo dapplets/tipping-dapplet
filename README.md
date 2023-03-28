@@ -55,12 +55,14 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 This Dapplet is created especially for **Twitter.com**. Please go to the Twitter website and click on the extension icon to open the **Dapplets Extension**.
 
-1. Click on the extension
+1. Click on the extension. Click mustache button to open the list of dapplets.
+
+	![image](/assets/4_1.png)
+
 2. Find **Tipping NEAR Dapplet** in the list of dapplets.
-	![image](/assets/4.png)
 3. Click on the switch to activate it.
 	
-	![image](/assets/5.png)
+	![image](/assets/5_1.png)
 
 Now the dapplet is turned on. You will see two new icons in your Twitter profile.
 
