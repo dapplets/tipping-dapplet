@@ -125,7 +125,7 @@ When you click on the button a new page will open.
 
 Click **Allow** to accept the tokens donated to you.
 
-After this, the **Claim** button should change to 0 and the tokens should be added to your account.
+After this tokens will be transfered to your account. **Claim** button will disappear and all new tips will automatically be sent to your linked account.
 
 # Donating tokens to other users
 
@@ -139,7 +139,8 @@ This icon has two functions:
 
 Every click on the button increases the total donation by 0.05 NEAR. The transaction has a delay, which allows you to click several times to increase the donation. You can try sending yourself some tokens to see how it works.
 
-Choose one of your own tweets, and donate a few tokens to yourself. When you do this, a page will open:
+Choose one of your own tweets, and donate a few tokens to yourself. When you do this, a wallet page will open:
+
 ![image](/assets/21.jpg)
 
 Click **Allow** and the tokens will be sent. The counter will increase by the number of tokens you have donated. The maximum amount you can donate in one transaction is equal to 1 token. The maximum per one tweet - 10 tokens. 
@@ -162,7 +163,7 @@ To do this, please follow the instructions below:
 
 # Contacts
 
-[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets) [Twitter](https://twitter.com/dappletsproject)
+[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets)
 
 
 
