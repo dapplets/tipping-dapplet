@@ -30,7 +30,7 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 
 <details>
-<summary>###For Google Chrome Browser</summary>
+<summary>For Google Chrome Browser</summary>
 
 1. Open the **Google Chrome** browser.
 
@@ -68,7 +68,7 @@ This Dapplet is created especially for **Twitter.com**. Please go to the Twitter
 
 Now the dapplet is turned on. You will see two new icons in your Twitter profile.
 
-![image](/assets/6.png)
+![image](/assets/000.png)
 
 **The first icon** shows the number of NEAR tokens that were donated to you, but which you have not received, as you have not yet connected your Twitter account to NEAR. If you click on this icon you will see the following message: *«You must link NEAR account before continue»*. To link our account let’s go to the second icon.
 
