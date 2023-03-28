@@ -28,8 +28,9 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 ![image](/assets/1_1.png)
 
+
 <details>
-<summary>For Google Chrome Browser</summary>
+<summary>###For Google Chrome Browser</summary>
 
 1. Open the **Google Chrome** browser.
 
