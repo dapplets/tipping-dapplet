@@ -14,7 +14,7 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 # Video Tutorial
 
-[![](https://img.youtube.com/vi/DXWXUeydsRQ/0.jpg)](https://youtu.be/DXWXUeydsRQ "Click to play on YouTube")
+[![](https://img.youtube.com/vi/DXWXUeydsRQ/0.jpg)](https://www.youtube.com/watch?v=pNCsSWvoqPE "Click to play on YouTube")
 
 # Browser extension installation guide
 
