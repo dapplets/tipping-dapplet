@@ -74,6 +74,7 @@ test("integration test", async (t) => {
     caContractAddress: "connected-accounts.near",
     maxAmountPerItem: "10000000000000000000000000",
     maxAmountPerTip: "1000000000000000000000000",
+    network: "mainnet",
   });
 
   const ownerAccountId = await contract.view("getOwnerAccount", {});

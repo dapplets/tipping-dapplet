@@ -23,9 +23,6 @@ import {
   ClaimTokensCallbackArgs,
 } from "./external";
 
-const NEAR_NETWORK = "testnet"; //      !!! NETWORK TYPE !!!
-const senderOrigin = "near" + "/" + NEAR_NETWORK;
-
 //// MODELS
 
 // Common
@@ -34,6 +31,8 @@ const INIT_CONTRACT_KEY = "b";
 
 // Settings
 const CA_CONTRACT_KEY = "c";
+const NEAR_NETWORK = "m";
+const senderOrigin = "n";
 
 // Tipping
 
@@ -51,7 +50,8 @@ export function initialize(
   ownerAccountId: NearAccount,
   caContractAddress: string,
   maxAmountPerItem: u128,
-  maxAmountPerTip: u128
+  maxAmountPerTip: u128,
+  network: string
 ): void {
   assert(storage.getPrimitive<bool>(INIT_CONTRACT_KEY, false) == false, "Contract already initialized");
 
@@ -60,7 +60,8 @@ export function initialize(
   storage.set<u128>(MAX_AMOUNT_PER_ITEM_KEY, maxAmountPerItem);
   storage.set<u128>(MAX_AMOUNT_PER_TIP_KEY, maxAmountPerTip);
   storage.set<bool>(INIT_CONTRACT_KEY, true);
-
+  storage.set<string>(NEAR_NETWORK, network);
+  storage.set<string>(senderOrigin, "near/" + network);
   logging.log("Init contract with owner: " + ownerAccountId + "and Connected Accounts contract: " + caContractAddress);
 }
 
@@ -151,17 +152,8 @@ export function changeMaxAmountPerTip(maxAmountPerTip: u128): void {
 
 export function sendTips(externalAccount: ExternalAccountName, originId: string, itemId: string): void {
   _active();
-  // logging.log(
-  //   `Sending tips: to ${externalAccount} on ${originId} for ${itemId} from ${Context.sender}. Amount: ${Context.attachedDeposit}`
-  // );
   assert(Context.prepaidGas >= 50 * TGAS, "Please attach at least 50 Tgas"); // ToDo: perhaps need to increase
-
-  // logging.log("Context.prepaidGas: " + Context.prepaidGas.toString());
-
   assert(u128.gt(Context.attachedDeposit, u128.Zero), "Tips amounts must be greater than zero");
-
-  // logging.log("u128.gt(Context.attachedDeposit, u128.Zero): " + u128.gt(Context.attachedDeposit, u128.Zero).toString());
-
   assert(
     u128.le(
       u128.add(totalTipsByItem.get(itemId, u128.Zero)!, Context.attachedDeposit),
@@ -169,12 +161,9 @@ export function sendTips(externalAccount: ExternalAccountName, originId: string,
     ),
     "New total tips amount exceeds allowance"
   );
-  // logging.log("After assertions: prepaid gas, tips amount Ok");
 
   const donationAmount = u128.muldiv(Context.attachedDeposit, u128.from(100), u128.from(103));
-  // logging.log("donationAmount: " + donationAmount.toString());
   const feeAmount = u128.sub(Context.attachedDeposit, donationAmount);
-  // logging.log("feeAmount: " + feeAmount.toString());
 
   assert(
     u128.le(donationAmount, storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!),
@@ -182,12 +171,8 @@ export function sendTips(externalAccount: ExternalAccountName, originId: string,
   );
   assert(!u128.eq(feeAmount, u128.Zero), "Donation cannot be free");
 
-  // logging.log("donation am and fee checked. Before getCAContractAddress");
-
   const cAContractAddress = getCAContractAddress();
-  // logging.log(`cAContractAddress: ${cAContractAddress ? cAContractAddress : "null"}`);
   const accountGlobalId = externalAccount + "/" + originId;
-  // logging.log(`accountGlobalId: ${accountGlobalId}`);
   if (cAContractAddress == null) {
     _saveTipsInContract(accountGlobalId, donationAmount);
     _finishTipping(accountGlobalId, itemId, donationAmount, feeAmount);
@@ -235,7 +220,9 @@ export function sendTipsToWalletCallback(
       if (!autoclaimWallet) {
         logging.log("A wallet for autoclaim is not determined.");
         _saveTipsInContract(accountGId, donationAmount);
-      } else if (!connectedAccountsGIds.includes(autoclaimWallet + "/" + senderOrigin)) {
+      } else if (
+        !connectedAccountsGIds.includes(autoclaimWallet + "/" + (storage.get<string>(senderOrigin, "") as string))
+      ) {
         logging.log("A wallet for autoclaim is not in Connected Accounts list.");
         _saveTipsInContract(accountGId, donationAmount);
       } else {
@@ -298,7 +285,7 @@ export function setWalletForAutoclaimCallback(
     }
   }
   const accountGId = accountId + "/" + originId;
-  const walletGId = wallet + "/" + senderOrigin;
+  const walletGId = wallet + "/" + (storage.get<string>(senderOrigin, "") as string);
   assert(
     connectedAccountsGIds.includes(walletGId),
     `${accountId} is not connected with the ${wallet} in the Connected Accounts service. Connect ${wallet} with ${accountId}.`
@@ -306,10 +293,10 @@ export function setWalletForAutoclaimCallback(
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  assert(
-    connectedAccountsGIds.includes(Context.sender + "/" + senderOrigin),
-    `${accountId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountId}.`
-  );
+  // assert(
+  //   connectedAccountsGIds.includes(Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string)),
+  //   `${accountId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountId}.`
+  // );
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -365,10 +352,10 @@ export function deleteWalletForAutoclaimCallback(accountId: ExternalAccountName,
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  assert(
-    connectedAccountsGIds.includes(Context.sender + "/" + senderOrigin),
-    `${accountId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountId}.`
-  );
+  // assert(
+  //   connectedAccountsGIds.includes(Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string)),
+  //   `${accountId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountId}.`
+  // );
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -407,10 +394,10 @@ export function claimTokensCallback(accountId: ExternalAccountName, originId: st
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  assert(
-    connectedAccountsGIds.includes(Context.sender + "/" + senderOrigin),
-    `You can claim tips from ${accountId} only by sending the transaction by the wallet from its Connected Accounts list.`
-  );
+  // assert(
+  //   connectedAccountsGIds.includes(Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string)),
+  //   `You can claim tips from ${accountId} only by sending the transaction by the wallet from its Connected Accounts list.`
+  // );
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -452,16 +439,6 @@ function _askForConnectionAccounts<T>(
 ): void {
   const args: GetConnectedAccountsArgs = new GetConnectedAccountsArgs(accountId, originId);
   if (cAContractAddress && cAContractAddress != null) {
-    // logging.log(
-    //   "accountId: " +
-    //     accountId +
-    //     ", originId: " +
-    //     originId +
-    //     ", cAContractAddress: " +
-    //     cAContractAddress +
-    //     ", callbackName: " +
-    //     callbackName
-    // );
     const promise: ContractPromise = ContractPromise.create(
       cAContractAddress,
       "getConnectedAccounts",
