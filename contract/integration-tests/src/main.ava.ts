@@ -258,7 +258,7 @@ test("integration test", async (t) => {
   t.is(totalTipsByItemId_5, "38834951456310679611650");
   t.is(totalTipsByAccount_5, "38834951456310679611650");
   t.is(availableTipsByAccount_5, "0");
-  t.is(walletForAutoclaim_5, "alice.test.near");
+  t.is(walletForAutoclaim_5, "nikter.near");
 
   // == TEST 6 ==
   console.log("== TEST 6 ==: send tips with autoclaim");
@@ -293,11 +293,11 @@ test("integration test", async (t) => {
 
   t.is(totalTipsByItemId_6, "19417475728155339805825");
   t.is(totalTipsByAccount_6, "58252427184466019417475");
-  t.is(availableTipsByAccount_6, "19417475728155339805825"); // Tips stay at the contract because alice.test.near is not in the Connected Accounts list.
-  t.is(walletForAutoclaim_6, "alice.test.near");
+  t.is(availableTipsByAccount_6, "0");
+  t.is(walletForAutoclaim_6, "nikter.near");
 
   // == TEST 7 ==
-  console.log("== TEST 7 ==: delete wallet for autoclaim by inself");
+  console.log("== TEST 7 ==: delete wallet for autoclaim by wallet from CA");
   // ============
   await alice.call(
     contract,
@@ -316,17 +316,27 @@ test("integration test", async (t) => {
   t.is(walletForAutoclaim_7, null);
 
   // == TEST 8 ==
-  console.log("== TEST 8 ==: delete wallet for autoclaim by wallet from CA");
+  console.log("== TEST 8 ==: delete wallet for autoclaim by inself");
   // ============
 
   await alice.call(
     contract,
-    "setWalletForAutoclaim",
+    "sendTips",
     {
       externalAccount: "teremovskii",
       originId: "twitter",
-      wallet: "nikter.near",
+      itemId: "https://twitter.com/teremovskii/status/1336",
     },
+    {
+      attachedDeposit: tipAmount_3,
+      gas: "300000000000000",
+    }
+  );
+
+  await alice.call(
+    contract,
+    "claimTokens",
+    { accountId: "teremovskii", originId: "twitter" },
     {
       gas: "300000000000000",
     }
@@ -336,7 +346,7 @@ test("integration test", async (t) => {
     accountGId: "teremovskii/twitter",
   });
 
-  t.is(walletForAutoclaim_8, "nikter.near");
+  t.is(walletForAutoclaim_8, alice.accountId);
 
   await alice.call(
     contract,
@@ -359,6 +369,20 @@ test("integration test", async (t) => {
   // == TEST 9 ==
   console.log("== TEST 9 ==: change wallet for autoclaim");
   // ============
+
+  await alice.call(
+    contract,
+    "sendTips",
+    {
+      externalAccount: "teremovskii",
+      originId: "twitter",
+      itemId: "https://twitter.com/teremovskii/status/1336",
+    },
+    {
+      attachedDeposit: tipAmount_3,
+      gas: "300000000000000",
+    }
+  );
 
   await alice.call(
     contract,
