@@ -14,9 +14,23 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 # Video Tutorial
 
-[![](https://img.youtube.com/vi/DXWXUeydsRQ/0.jpg)](https://youtu.be/DXWXUeydsRQ "Click to play on YouTube")
+[![](https://img.youtube.com/vi/DXWXUeydsRQ/0.jpg)](https://www.youtube.com/watch?v=pNCsSWvoqPE "Click to play on YouTube")
 
 # Browser extension installation guide
+
+### For Microsoft Edge Browser
+
+1. Extension can be found and installed through the extension store.
+
+![image](/assets/0_1.png)
+
+2. Search for 'Dapplets' or use this [link](https://microsoftedge.microsoft.com/addons/detail/dapplets/icpdagldaielgidgdiaanollkfgdclop?hl=en-GB) 
+
+![image](/assets/1_1.png)
+
+
+<details>
+<summary>For Google Chrome Browser</summary>
 
 1. Open the **Google Chrome** browser.
 
@@ -35,7 +49,7 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 ![image](/assets/2.png)
 
 ![image](/assets/3.png)
-
+</details>
 
 # Run the Tipping Dapplet
 
@@ -43,57 +57,46 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 This Dapplet is created especially for **Twitter.com**. Please go to the Twitter website and click on the extension icon to open the **Dapplets Extension**.
 
-1. Click on the extension
+1. Click on the extension. Click mustache button to open the list of dapplets.
+
+	![image](/assets/4_1.png)
+
 2. Find **Tipping NEAR Dapplet** in the list of dapplets.
-	![image](/assets/4.png)
 3. Click on the switch to activate it.
 	
-	![image](/assets/5.png)
+	![image](/assets/5_1.png)
 
 Now the dapplet is turned on. You will see two new icons in your Twitter profile.
 
-![image](/assets/6.png)
+![image](/assets/000.png)
 
 **The first icon** shows the number of NEAR tokens that were donated to you, but which you have not received, as you have not yet connected your Twitter account to NEAR. If you click on this icon you will see the following message: *«You must link NEAR account before continue»*. To link our account let’s go to the second icon.
 
-**The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message: *«Add NEAR Account ID in your profile name before continue»*. This means that to connect your account you need to type *yourname.near* next to your name.
+**The second icon** shows if your Twitter account is connected to NEAR. If you click on the icon you will see the following message:
 
-# NEAR Wallet Connection
+![image](/assets/0000.png)
 
-To interact with the Tipping Dapplet, you need to connect a wallet.
-
-1. Click on **Dapplets Extension** Icon. The overlay will open.
-
-2. Select the **Wallets** Tab.
-	
-	![image](/assets/7.png)
-
-3. You don't have any wallets connected right now. 
-Click the **Connect** button.
-	![image](/assets/8.png)
-4. An overlay with available wallets will open. We will be using the **NEAR Wallet (near)**. 
-Click on it.
-	![image](/assets/9.png)
-5. A new [page](http://wallet.near.near.org) will open. Click on the blue **Next** button, and then - on the blue **Connect** button
-	![image](/assets/10.jpg)
-	![image](/assets/11.jpg)
-6. After this, the page will close and a new tab will open in the overlay. 
-Press the **Continue** button
-	![image](/assets/12.jpg)
-7. Done, you have connected your wallet
+This means that to connect your account you need to type *yourname.near* next to your name.
 
 ## Yourname.near connection
 
 Now we will connect your Twitter profile to your NEAR account.
 
 1. Click **Edit Profile** on your Twitter profile page
-2. Under *name* add your *yourname.near* profile.
-	![image](/assets/13.png)
+2. Under *name* add your *yourname.near* profile. You will receive tokens to this address.
+	![image](/assets/001.png)
 3. Click **Save**
 4. Now that you’ve added your NEAR account name click **Link** (the second new icon in your Twitter Profile). An overlay will open.
-5. Choose the wallet we connected before by pressing the **Select** button
-	![image](/assets/14.jpg)
-6. A Near near wallet page will open, it will ask you to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Allow** to accept.
+![image](/assets/002.png)
+5. Now lets use NEAR Wallet you entered in profile earlier
+	![image](/assets/003.png)
+
+6. A Near near wallet page will open. Press **Next** and **Connect** to proceed to transaction.
+	![image](/assets/10.jpg)
+
+	![image](/assets/11.jpg)
+
+7. You will be asked to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Approve** to accept.
 	![image](/assets/15.jpg)
 
 Go back to your Twitter Profile page. There, the Link icon has changed to:
@@ -104,7 +107,7 @@ This is temporary, when the transaction is completed successfully the icon will 
 
 ![image](/assets/17.png)
 
-Done, your Twitter account is now linked to your Near.near account.
+Done, your Twitter account is now linked to Yournamen.near account.
 
 **⚠ Now you can delete the name of your NEAR wallet from Twitter profile username.**
 
@@ -122,7 +125,7 @@ When you click on the button a new page will open.
 
 Click **Allow** to accept the tokens donated to you.
 
-After this, the **Claim** button should change to 0 and the tokens should be added to your account.
+After this tokens will be transfered to your account. **Claim** button will disappear and all new tips will automatically be sent to your linked account.
 
 # Donating tokens to other users
 
@@ -136,7 +139,8 @@ This icon has two functions:
 
 Every click on the button increases the total donation by 0.05 NEAR. The transaction has a delay, which allows you to click several times to increase the donation. You can try sending yourself some tokens to see how it works.
 
-Choose one of your own tweets, and donate a few tokens to yourself. When you do this, a page will open:
+Choose one of your own tweets, and donate a few tokens to yourself. When you do this, a wallet page will open:
+
 ![image](/assets/21.jpg)
 
 Click **Allow** and the tokens will be sent. The counter will increase by the number of tokens you have donated. The maximum amount you can donate in one transaction is equal to 1 token. The maximum per one tweet - 10 tokens. 
@@ -151,14 +155,15 @@ To do this, please follow the instructions below:
 2. Find **Tipping NEAR Dapplet**
 3. Click on the *Gear Wheel*
 	
-	![image](/assets/22.png)
+![image](/assets/004.png)
 
 4. Settings will open. Here you can change Donation increase step.
-![image](/assets/23.png)
+
+![image](/assets/005.png)
 
 # Contacts
 
-[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets) [Twitter](https://twitter.com/dappletsproject)
+[Web](https://dapplets.org) [Docs](https://docs.dapplets.org) [GitHub](https://github.com/dapplets) [Discord](https://discord.gg/YcxbkcyjMV) [Telegram](t.me/dapplets)
 
 
 
