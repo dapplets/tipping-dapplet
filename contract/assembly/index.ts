@@ -346,7 +346,7 @@ export function claimTokensCallback(accountGId: AccountGlobalId): void {
 
   // assert(
   //   connectedAccountsGIds.includes(Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string)),
-  //   `You can claim tips from ${accountId} only by sending the transaction by the wallet from its Connected Accounts list.`
+  //   `You can claim tips from ${accountGId} only by sending the transaction by the wallet from its Connected Accounts list.`
   // );
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
