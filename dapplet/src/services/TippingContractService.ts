@@ -6,7 +6,7 @@ export class TippingContractService {
   constructor(network: NearNetworks) {
     const address =
       network === NearNetworks.Testnet
-        ? 'dev-1679584536742-83217475458076'
+        ? 'dev-1680593274075-24217258210681'
         : // : network === NearNetworks.Mainnet
           // ? ''
           null;
@@ -50,9 +50,7 @@ export class TippingContractService {
 
   async getWalletForAutoclaim(accountGId: string): Promise<string | null> {
     const contract = await this._contract;
-    console.log('### inside getWalletForAutoclaim(accountGId: string) in dapplet');
     const walletForAutoclaim = await contract.getWalletForAutoclaim({ accountGId });
-    console.log('### walletForAutoclaim', walletForAutoclaim);
     return walletForAutoclaim;
   }
 
@@ -68,7 +66,7 @@ export class TippingContractService {
         originId,
         itemId,
       },
-      '300000000000000',
+      '50000000000000',
       totalAmount,
     );
     return rawResult.transaction.hash;
@@ -83,7 +81,7 @@ export class TippingContractService {
         accountId,
         originId,
       },
-      '300000000000000',
+      '100000000000000',
     );
     return rawResult.transaction.hash;
   }
@@ -98,7 +96,7 @@ export class TippingContractService {
         originId,
         wallet,
       },
-      '300000000000000',
+      '100000000000000',
     );
   }
 
@@ -111,7 +109,7 @@ export class TippingContractService {
         externalAccount,
         originId,
       },
-      '300000000000000',
+      '100000000000000',
     );
   }
 }

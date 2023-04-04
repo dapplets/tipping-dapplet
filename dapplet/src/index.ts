@@ -218,8 +218,6 @@ export default class TippingDapplet {
           }
         });
       }
-      console.log('pendingRequest', pendingRequest);
-      console.log('madeRequestId', madeRequestId);
       if (walletForAutoclaim) {
         me.hidden = false;
         me.label = 'Unlink';
@@ -308,11 +306,7 @@ export default class TippingDapplet {
               type: `${websiteNameLowerCase}/near-${this._network}`,
               user: fullname,
             };
-            console.log('args', args);
-            console.log('condition', condition);
             await Core.connectedAccounts.requestVerification(args, condition);
-            // await this.updateAll();
-            console.log('finish');
           }
         }
       }
@@ -429,16 +423,12 @@ export default class TippingDapplet {
   onPostAvatarBadgeInit = async (post, me) => {
     try {
       const { websiteName } = await this.getCurrentUserAsync();
-      console.log('ctx?.authorUsername', post?.authorUsername);
-      console.log('websiteName', websiteName);
-      console.log('me', me);
       this._initWidgetFunctioins[[websiteName, post.id, 'post/badge'].join('/')] = () =>
         this.onPostAvatarBadgeInit(post, me);
       if (post?.authorUsername && websiteName) {
         const nearAccount = await this.tippingService.getWalletForAutoclaim(
           post.authorUsername + '/' + websiteName.toLowerCase(),
         );
-        console.log('nearAccount', nearAccount);
         if (nearAccount) {
           me.tooltip = nearAccount;
           me.nearAccount = nearAccount;
@@ -492,7 +482,6 @@ export default class TippingDapplet {
   waitForCAVerificationRequestResolve = async (id: number): Promise<any> => {
     try {
       const requestStatus = await Core.connectedAccounts.getRequestStatus(id);
-      console.log('requestStatus', requestStatus);
       if (requestStatus === 'pending') {
         await new Promise((res) => setTimeout(res, 5000));
         return this.waitForCAVerificationRequestResolve(id);
