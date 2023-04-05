@@ -33,7 +33,7 @@ test.beforeEach(async (t) => {
   // Import CA contract
   const caContract = await root.importContract({
     mainnetContract: "connected-accounts.near",
-    blockId: 86_382_063,
+    blockId: 88884919,
     withData: true,
   });
 
@@ -51,14 +51,16 @@ test.afterEach(async (t) => {
 
 // ====== Global Objects ======
 
-const nearOriginId = "near/mainnet";
-// const ethOriginId = "ethereum";
-
 const ACCOUNT_1 = {
   id: "username",
   originId: "social_network",
   itemId: "https://social_network.com/username/status/14920813",
 };
+const globalIdAcc_1 = ACCOUNT_1.id + "/" + ACCOUNT_1.originId;
+const globalIdTwitterUser_1 = "teremovskii/twitter";
+const twitterUserItemId_1 = "https://twitter.com/teremovskii/status/1336406078574256135";
+const twitterUserItemId_2 = "https://twitter.com/teremovskii/status/1336";
+const user_wallet = "nikter.near";
 
 // ======= TESTS =======
 
@@ -67,8 +69,7 @@ test("integration test", async (t) => {
   console.log("== TEST 1 ==: initialize contract");
   // ============
 
-  const { alice, bob, contract, caContract } = t.context.accounts;
-  console.log("alice.accountId", alice.accountId);
+  const { alice, contract } = t.context.accounts;
   await alice.call(contract, "initialize", {
     ownerAccountId: alice.accountId,
     caContractAddress: "connected-accounts.near",
@@ -114,8 +115,7 @@ test("integration test", async (t) => {
     contract,
     "sendTips",
     {
-      externalAccount: ACCOUNT_1.id,
-      originId: ACCOUNT_1.originId,
+      accountGId: globalIdAcc_1,
       itemId: ACCOUNT_1.itemId,
     },
     {
@@ -126,13 +126,13 @@ test("integration test", async (t) => {
 
   const totalTipsByItemId_2 = await contract.view("getTotalTipsByItemId", { itemId: ACCOUNT_1.itemId });
   const totalTipsByAccount_2 = await contract.view("getTotalTipsByAccount", {
-    accountGlobalId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
+    accountGlobalId: globalIdAcc_1,
   });
   const availableTipsByAccount_2 = await contract.view("getAvailableTipsByAccount", {
-    accountGlobalId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
+    accountGlobalId: globalIdAcc_1,
   });
   const walletForAutoclaim_2 = await contract.view("getWalletForAutoclaim", {
-    accountGId: ACCOUNT_1.id + "/" + ACCOUNT_1.originId,
+    accountGId: globalIdAcc_1,
   });
 
   t.is(totalTipsByItemId_2, "19417475728155339805825");
@@ -150,9 +150,8 @@ test("integration test", async (t) => {
     contract,
     "sendTips",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+      accountGId: globalIdTwitterUser_1,
+      itemId: twitterUserItemId_1,
     },
     {
       attachedDeposit: tipAmount_3,
@@ -161,16 +160,16 @@ test("integration test", async (t) => {
   );
 
   const totalTipsByItemId_3 = await contract.view("getTotalTipsByItemId", {
-    itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+    itemId: twitterUserItemId_1,
   });
   const totalTipsByAccount_3 = await contract.view("getTotalTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const availableTipsByAccount_3 = await contract.view("getAvailableTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const walletForAutoclaim_3 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(totalTipsByItemId_3, "19417475728155339805825");
@@ -186,9 +185,8 @@ test("integration test", async (t) => {
     contract,
     "setWalletForAutoclaim",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      wallet: "nikter.near",
+      accountGId: globalIdTwitterUser_1,
+      wallet: user_wallet,
     },
     {
       gas: "300000000000000",
@@ -201,9 +199,8 @@ test("integration test", async (t) => {
     contract,
     "sendTips",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+      accountGId: globalIdTwitterUser_1,
+      itemId: twitterUserItemId_1,
     },
     {
       attachedDeposit: tipAmount_3,
@@ -212,22 +209,22 @@ test("integration test", async (t) => {
   );
 
   const totalTipsByItemId_4 = await contract.view("getTotalTipsByItemId", {
-    itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+    itemId: twitterUserItemId_1,
   });
   const totalTipsByAccount_4 = await contract.view("getTotalTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const availableTipsByAccount_4 = await contract.view("getAvailableTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const walletForAutoclaim_4 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(totalTipsByItemId_4, "38834951456310679611650");
   t.is(totalTipsByAccount_4, "38834951456310679611650");
   t.is(availableTipsByAccount_4, "19417475728155339805825");
-  t.is(walletForAutoclaim_4, "nikter.near");
+  t.is(walletForAutoclaim_4, user_wallet);
 
   // == TEST 5 ==
   console.log("== TEST 5 ==: claim tips");
@@ -236,29 +233,29 @@ test("integration test", async (t) => {
   await alice.call(
     contract,
     "claimTokens",
-    { accountId: "teremovskii", originId: "twitter" },
+    { accountGId: globalIdTwitterUser_1 },
     {
       gas: "300000000000000",
     }
   );
 
   const totalTipsByItemId_5 = await contract.view("getTotalTipsByItemId", {
-    itemId: "https://twitter.com/teremovskii/status/1336406078574256135",
+    itemId: twitterUserItemId_1,
   });
   const totalTipsByAccount_5 = await contract.view("getTotalTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const availableTipsByAccount_5 = await contract.view("getAvailableTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const walletForAutoclaim_5 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(totalTipsByItemId_5, "38834951456310679611650");
   t.is(totalTipsByAccount_5, "38834951456310679611650");
   t.is(availableTipsByAccount_5, "0");
-  t.is(walletForAutoclaim_5, "nikter.near");
+  t.is(walletForAutoclaim_5, user_wallet);
 
   // == TEST 6 ==
   console.log("== TEST 6 ==: send tips with autoclaim");
@@ -268,9 +265,8 @@ test("integration test", async (t) => {
     contract,
     "sendTips",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      itemId: "https://twitter.com/teremovskii/status/1336",
+      accountGId: globalIdTwitterUser_1,
+      itemId: twitterUserItemId_2,
     },
     {
       attachedDeposit: tipAmount_3,
@@ -279,22 +275,22 @@ test("integration test", async (t) => {
   );
 
   const totalTipsByItemId_6 = await contract.view("getTotalTipsByItemId", {
-    itemId: "https://twitter.com/teremovskii/status/1336",
+    itemId: twitterUserItemId_2,
   });
   const totalTipsByAccount_6 = await contract.view("getTotalTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const availableTipsByAccount_6 = await contract.view("getAvailableTipsByAccount", {
-    accountGlobalId: "teremovskii/twitter",
+    accountGlobalId: globalIdTwitterUser_1,
   });
   const walletForAutoclaim_6 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(totalTipsByItemId_6, "19417475728155339805825");
   t.is(totalTipsByAccount_6, "58252427184466019417475");
   t.is(availableTipsByAccount_6, "0");
-  t.is(walletForAutoclaim_6, "nikter.near");
+  t.is(walletForAutoclaim_6, user_wallet);
 
   // == TEST 7 ==
   console.log("== TEST 7 ==: delete wallet for autoclaim by wallet from CA");
@@ -303,15 +299,14 @@ test("integration test", async (t) => {
     contract,
     "deleteWalletForAutoclaim",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
+      accountGId: globalIdTwitterUser_1,
     },
     {
       gas: "300000000000000",
     }
   );
   const walletForAutoclaim_7 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
   t.is(walletForAutoclaim_7, null);
 
@@ -323,9 +318,8 @@ test("integration test", async (t) => {
     contract,
     "sendTips",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      itemId: "https://twitter.com/teremovskii/status/1336",
+      accountGId: globalIdTwitterUser_1,
+      itemId: twitterUserItemId_2,
     },
     {
       attachedDeposit: tipAmount_3,
@@ -336,14 +330,14 @@ test("integration test", async (t) => {
   await alice.call(
     contract,
     "claimTokens",
-    { accountId: "teremovskii", originId: "twitter" },
+    { accountGId: globalIdTwitterUser_1 },
     {
       gas: "300000000000000",
     }
   );
 
   const walletForAutoclaim_8 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(walletForAutoclaim_8, alice.accountId);
@@ -352,8 +346,7 @@ test("integration test", async (t) => {
     contract,
     "deleteWalletForAutoclaim",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
+      accountGId: globalIdTwitterUser_1,
     },
     {
       gas: "300000000000000",
@@ -361,7 +354,7 @@ test("integration test", async (t) => {
   );
 
   const walletForAutoclaim_8_1 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(walletForAutoclaim_8_1, null);
@@ -374,9 +367,8 @@ test("integration test", async (t) => {
     contract,
     "sendTips",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      itemId: "https://twitter.com/teremovskii/status/1336",
+      accountGId: globalIdTwitterUser_1,
+      itemId: twitterUserItemId_2,
     },
     {
       attachedDeposit: tipAmount_3,
@@ -384,17 +376,10 @@ test("integration test", async (t) => {
     }
   );
 
-  await alice.call(
-    contract,
-    "claimTokens",
-    { accountId: "teremovskii", originId: "twitter" },
-    {
-      gas: "300000000000000",
-    }
-  );
+  await alice.call(contract, "claimTokens", { accountGId: globalIdTwitterUser_1 }, { gas: "300000000000000" });
 
   const walletForAutoclaim_9 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
   t.is(walletForAutoclaim_9, alice.accountId);
@@ -403,9 +388,8 @@ test("integration test", async (t) => {
     contract,
     "setWalletForAutoclaim",
     {
-      externalAccount: "teremovskii",
-      originId: "twitter",
-      wallet: "nikter.near",
+      accountGId: globalIdTwitterUser_1,
+      wallet: user_wallet,
     },
     {
       gas: "300000000000000",
@@ -413,8 +397,8 @@ test("integration test", async (t) => {
   );
 
   const walletForAutoclaim_9_1 = await contract.view("getWalletForAutoclaim", {
-    accountGId: "teremovskii/twitter",
+    accountGId: globalIdTwitterUser_1,
   });
 
-  t.is(walletForAutoclaim_9_1, "nikter.near");
+  t.is(walletForAutoclaim_9_1, user_wallet);
 });

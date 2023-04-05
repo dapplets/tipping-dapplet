@@ -32,8 +32,13 @@ export class Account {
 }
 
 @nearBindgen
-export class GetConnectedAccountsArgs {
-  constructor(public accountId: ExternalAccountName, public originId: string, public closeness: i8 = -1) {}
+export class GetCANetArgs {
+  constructor(public accountGId: AccountGlobalId) {}
+}
+
+@nearBindgen
+export class AreConnectedArgs {
+  constructor(public accountGId1: AccountGlobalId, public accountGId2: AccountGlobalId) {}
 }
 
 @nearBindgen
@@ -48,12 +53,12 @@ export class SendTipsToWalletCallbackArgs {
 
 @nearBindgen
 export class SetWalletForAutoclaimCallbackArgs {
-  constructor(public accountId: ExternalAccountName, public originId: string, public wallet: NearAccount) {}
+  constructor(public accountGId: AccountGlobalId, public wallet: NearAccount) {}
 }
 
 @nearBindgen
 export class DeleteWalletForAutoclaimCallbackArgs {
-  constructor(public accountId: ExternalAccountName, public originId: string) {}
+  constructor(public accountGId: AccountGlobalId) {}
 }
 
 @nearBindgen
