@@ -12,7 +12,6 @@ import {
   XCC_SUCCESS,
   TGAS,
   NO_DEPOSIT,
-  Account,
   NearAccount,
   ExternalAccountName,
   AccountGlobalId,

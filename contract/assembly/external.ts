@@ -27,11 +27,6 @@ export class AccountState {
 }
 
 @nearBindgen
-export class Account {
-  constructor(public id: AccountGlobalId, public status: AccountState) {}
-}
-
-@nearBindgen
 export class GetCANetArgs {
   constructor(public accountGId: AccountGlobalId) {}
 }
