@@ -161,7 +161,8 @@ export default class TippingDapplet {
         );
         return;
       }
-      const tokens = await this.tippingService.getAvailableTipsByAccount(profile.id + '/' + websiteName.toLowerCase());
+      const accountGId = profile.id + '/' + websiteName.toLowerCase();
+      const tokens = await this.tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = this.formatNear(tokens);
       me.disabled = true;
       me.loading = true;
@@ -175,7 +176,7 @@ export default class TippingDapplet {
           'You have connected accounts: ' + nearAccountsFromCA.join(', ') + '. Login with one of them to continue.',
         );
       } else {
-        const txHash = await this.tippingService.claimTokens(profile.id, websiteName.toLowerCase());
+        const txHash = await this.tippingService.claimTokens(accountGId);
         const explorerUrl =
           this._network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         alert(
@@ -261,15 +262,14 @@ export default class TippingDapplet {
     const { websiteName, fullname, img } = await this.getCurrentUserAsync();
     const websiteNameLowerCase = websiteName.toLowerCase();
     try {
-      const walletForAutoclaim = await this.tippingService.getWalletForAutoclaim(
-        profile.id + '/' + websiteName.toLowerCase(),
-      );
+      const accountGId = profile.id + '/' + websiteName.toLowerCase();
+      const walletForAutoclaim = await this.tippingService.getWalletForAutoclaim(accountGId);
       me.disabled = true;
       me.loading = true;
       me.label = 'Waiting...';
       if (walletForAutoclaim) {
         // unlink
-        await this.tippingService.deleteWalletForAutoclaim(profile.id, websiteName.toLowerCase());
+        await this.tippingService.deleteWalletForAutoclaim(accountGId);
       } else {
         // link
         if (!parsiedNearAccount) {
@@ -377,8 +377,7 @@ export default class TippingDapplet {
         )
       ) {
         const txHash = await this.tippingService.sendTips(
-          externalAccount,
-          websiteName.toLowerCase(),
+          externalAccount + '/' + websiteName.toLowerCase(),
           'tweet/' + tweetId,
           total,
         );

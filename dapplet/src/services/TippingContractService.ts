@@ -56,14 +56,13 @@ export class TippingContractService {
 
   // CALL
 
-  async sendTips(externalAccount: string, originId: string, itemId: string, totalAmount: string): Promise<string> {
+  async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
     const contract = await this._contract;
     const rawResult = await contract.account.functionCall(
       contract.contractId,
       'sendTips',
       {
-        externalAccount,
-        originId,
+        accountGId,
         itemId,
       },
       '50000000000000',
@@ -72,42 +71,39 @@ export class TippingContractService {
     return rawResult.transaction.hash;
   }
 
-  async claimTokens(accountId: string, originId: string): Promise<string> {
+  async claimTokens(accountGId: string): Promise<string> {
     const contract = await this._contract;
     const rawResult = await contract.account.functionCall(
       contract.contractId,
       'claimTokens',
       {
-        accountId,
-        originId,
+        accountGId,
       },
       '100000000000000',
     );
     return rawResult.transaction.hash;
   }
 
-  async setWalletForAutoclaim(externalAccount: string, originId: string, wallet: string): Promise<void> {
+  async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<void> {
     const contract = await this._contract;
     await contract.account.functionCall(
       contract.contractId,
       'setWalletForAutoclaim',
       {
-        externalAccount,
-        originId,
+        accountGId,
         wallet,
       },
       '100000000000000',
     );
   }
 
-  async deleteWalletForAutoclaim(externalAccount: string, originId: string): Promise<void> {
+  async deleteWalletForAutoclaim(accountGId: string): Promise<void> {
     const contract = await this._contract;
     await contract.account.functionCall(
       contract.contractId,
       'deleteWalletForAutoclaim',
       {
-        externalAccount,
-        originId,
+        accountGId,
       },
       '100000000000000',
     );
