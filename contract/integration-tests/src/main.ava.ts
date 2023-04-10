@@ -88,23 +88,6 @@ test("integration test", async (t) => {
   t.is(maxAmountPerItem, "10000000000000000000000000");
   t.is(cmaxAmountPerTip, "1000000000000000000000000");
 
-  // ============ CA contract initialization =============
-
-  // const STAKE = "1000000000000000000000"; // 0.001 NEAR
-  // await alice.call(caContract, "initialize", {
-  //   ownerAccountId: alice.accountId,
-  //   oracleAccountId: alice.accountId,
-  //   minStakeAmount: STAKE,
-  // });
-
-  // const ownerAccountId_caContract = await caContract.view("getOwnerAccount", {});
-  // const oracleAccountId_caContract = await caContract.view("getOracleAccount", {});
-  // const minStakeAmount_caContract = await caContract.view("getMinStakeAmount", {});
-
-  // t.is(ownerAccountId_caContract, alice.accountId);
-  // t.is(oracleAccountId_caContract, alice.accountId);
-  // t.is(minStakeAmount_caContract, STAKE);
-
   // == TEST 2 ==
   console.log("== TEST 2 ==: send tips to twitter account without connected accounts");
   // ============

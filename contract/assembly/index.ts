@@ -30,8 +30,7 @@ const INIT_CONTRACT_KEY = "b";
 
 // Settings
 const CA_CONTRACT_KEY = "c";
-const NEAR_NETWORK = "m";
-const senderOrigin = "n";
+const SENDER_ORIGIN_KEY = "n";
 
 // Tipping
 
@@ -59,8 +58,7 @@ export function initialize(
   storage.set<u128>(MAX_AMOUNT_PER_ITEM_KEY, maxAmountPerItem);
   storage.set<u128>(MAX_AMOUNT_PER_TIP_KEY, maxAmountPerTip);
   storage.set<bool>(INIT_CONTRACT_KEY, true);
-  storage.set<string>(NEAR_NETWORK, network);
-  storage.set<string>(senderOrigin, "near/" + network);
+  storage.set<string>(SENDER_ORIGIN_KEY, "near/" + network);
   logging.log("Init contract with owner: " + ownerAccountId + "and Connected Accounts contract: " + caContractAddress);
 }
 
@@ -217,7 +215,7 @@ export function setWalletForAutoclaimCallback(accountGId: ExternalAccountName, w
     } with ${accountGId}.`
   );
   logging.log(`The connected accounts list for ${accountGId} has been received.`);
-  const walletGId = wallet + "/" + (storage.get<string>(senderOrigin, "") as string);
+  const walletGId = wallet + "/" + (storage.get<string>(SENDER_ORIGIN_KEY, "") as string);
   assert(
     connectedAccountsGIds && connectedAccountsGIds.includes(walletGId),
     `${accountGId} is not connected with the ${wallet} in the Connected Accounts service. Connect ${wallet} with ${accountGId}.`
@@ -225,7 +223,7 @@ export function setWalletForAutoclaimCallback(accountGId: ExternalAccountName, w
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! HIDE FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   assert(
     connectedAccountsGIds &&
-      connectedAccountsGIds.includes(Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string)),
+      connectedAccountsGIds.includes(Context.sender + "/" + (storage.get<string>(SENDER_ORIGIN_KEY, "") as string)),
     `${accountGId} is not connected with the ${Context.sender} in the Connected Accounts service. Connect ${Context.sender} with ${accountGId}.`
   );
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -251,7 +249,7 @@ export function deleteWalletForAutoclaim(accountGId: AccountGlobalId): void {
   assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
   const callbackArgs = new DeleteWalletForAutoclaimCallbackArgs(accountGId);
   if (cAContractAddress) {
-    const senderGId = Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string);
+    const senderGId = Context.sender + "/" + (storage.get<string>(SENDER_ORIGIN_KEY, "") as string);
     const args: AreConnectedArgs = new AreConnectedArgs(accountGId, senderGId);
     const promise: ContractPromise = ContractPromise.create(
       cAContractAddress,
@@ -299,7 +297,7 @@ export function claimTokens(accountGId: AccountGlobalId): void {
   assert(cAContractAddress != null, "Connected Accounts contract is not specified.");
   const callbackArgs = new ClaimTokensCallbackArgs(accountGId);
   if (cAContractAddress) {
-    const senderGId = Context.sender + "/" + (storage.get<string>(senderOrigin, "") as string);
+    const senderGId = Context.sender + "/" + (storage.get<string>(SENDER_ORIGIN_KEY, "") as string);
     const args: AreConnectedArgs = new AreConnectedArgs(accountGId, senderGId);
     const promise: ContractPromise = ContractPromise.create(
       cAContractAddress,
