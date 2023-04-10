@@ -146,22 +146,18 @@ export default class TippingDapplet {
 
   onProfileButtonClaimExec = async (profile, me) => {
     const { websiteName } = await this.getCurrentUserAsync();
+    const accountGId = profile.id + '/' + websiteName.toLowerCase();
     try {
-      const connectedAccounts = await Core.connectedAccounts.getConnectedAccounts(
-        profile.id,
-        websiteName.toLowerCase(),
-      );
+      const connectedAccounts = await Core.connectedAccounts.getNet(accountGId);
       const nearAccountsFromCA = connectedAccounts
-        .flat()
-        .filter((ca) => ca.id.indexOf('near/testnet') !== -1)
-        .map((a) => a.id.split('/')[0]);
+        .filter((id) => id.indexOf('near/testnet') !== -1)
+        .map((id) => id.split('/')[0]);
       if (nearAccountsFromCA.length === 0) {
         alert(
           'You must link your NEAR account to your Twitter account using the Connected Accounts service. Click |⋈ Link| button to continue.',
         );
         return;
       }
-      const accountGId = profile.id + '/' + websiteName.toLowerCase();
       const tokens = await this.tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = this.formatNear(tokens);
       me.disabled = true;
@@ -194,16 +190,15 @@ export default class TippingDapplet {
 
   onProfileButtonLinkInit = async (profile, me) => {
     const { username, websiteName } = await this.getCurrentUserAsync();
+    const accountGId = username + '/' + websiteName.toLowerCase();
     const isMyProfile = profile.id.toLowerCase() === username?.toLowerCase();
     const parsedNearAccount = this.parseNearId(profile.authorFullname, this._network);
 
     if (isMyProfile) {
       this._initWidgetFunctions[[websiteName, username, 'link'].join('/')] = () =>
         this.onProfileButtonLinkInit(profile, me);
-      const connectedAccounts = await Core.connectedAccounts.getConnectedAccounts(username, 'twitter');
-      const walletForAutoclaim = await this.tippingService.getWalletForAutoclaim(
-        username + '/' + websiteName.toLowerCase(),
-      );
+      const connectedAccounts = await Core.connectedAccounts.getNet(accountGId);
+      const walletForAutoclaim = await this.tippingService.getWalletForAutoclaim(accountGId);
       const pendingRequestsIds = await Core.connectedAccounts.getPendingRequests();
       let pendingRequest = null;
       let madeRequestId = -1;
@@ -211,9 +206,8 @@ export default class TippingDapplet {
         const requests = await Promise.all(
           pendingRequestsIds.map((pendingRequest) => Core.connectedAccounts.getVerificationRequest(pendingRequest)),
         );
-        const gId = username + '/' + websiteName.toLowerCase();
         requests.forEach((request, i) => {
-          if (request.firstAccount === gId || request.secondAccount === gId) {
+          if (request.firstAccount === accountGId || request.secondAccount === accountGId) {
             pendingRequest = request;
             madeRequestId = pendingRequestsIds[i];
           }
@@ -243,7 +237,7 @@ export default class TippingDapplet {
           );
           this.executeInitWidgetFunctions();
         }
-      } else if (connectedAccounts?.[0]?.[0]) {
+      } else if (connectedAccounts && connectedAccounts.length > 1) {
         me.hidden = true;
       } else {
         me.label = 'Link';
