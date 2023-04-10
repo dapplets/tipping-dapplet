@@ -26,8 +26,8 @@ export default class TippingDapplet {
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
   private _isWaitForCAPendingVRequest = false;
-  private _initWidgetFunctioins: { [name: string]: () => Promise<void> } = {};
-  executeInitWidgetFunctions = () => Promise.all(Object.values(this._initWidgetFunctioins).map((fn) => fn()));
+  private _initWidgetFunctions: { [name: string]: () => Promise<void> } = {};
+  executeInitWidgetFunctions = () => Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
 
   async activate(): Promise<void> {
     await this.pasteWidgets();
@@ -129,7 +129,7 @@ export default class TippingDapplet {
     const { username, websiteName } = await this.getCurrentUserAsync();
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
-      this._initWidgetFunctioins[[websiteName, username, 'claim'].join('/')] = () =>
+      this._initWidgetFunctions[[websiteName, username, 'claim'].join('/')] = () =>
         this.onProfileButtonClaimInit(profile, me);
       const tokens = await this.tippingService.getAvailableTipsByAccount(profile.id + '/' + websiteName.toLowerCase());
       const availableTokens = this.formatNear(tokens);
@@ -198,7 +198,7 @@ export default class TippingDapplet {
     const parsedNearAccount = this.parseNearId(profile.authorFullname, this._network);
 
     if (isMyProfile) {
-      this._initWidgetFunctioins[[websiteName, username, 'link'].join('/')] = () =>
+      this._initWidgetFunctions[[websiteName, username, 'link'].join('/')] = () =>
         this.onProfileButtonLinkInit(profile, me);
       const connectedAccounts = await Core.connectedAccounts.getConnectedAccounts(username, 'twitter');
       const walletForAutoclaim = await this.tippingService.getWalletForAutoclaim(
@@ -322,7 +322,7 @@ export default class TippingDapplet {
   onProfileAvatarBadgeInit = async (profile, me) => {
     const { websiteName } = await this.getCurrentUserAsync();
     const nearAccount = await this.tippingService.getWalletForAutoclaim(profile.id + '/' + websiteName.toLowerCase());
-    this._initWidgetFunctioins[[websiteName, profile.id, 'profile/badge'].join('/')] = () =>
+    this._initWidgetFunctions[[websiteName, profile.id, 'profile/badge'].join('/')] = () =>
       this.onProfileAvatarBadgeInit(profile, me);
     if (nearAccount) {
       me.hidden = false;
@@ -345,7 +345,7 @@ export default class TippingDapplet {
 
   onPostButtonInit = async (post, me) => {
     const { websiteName } = await this.getCurrentUserAsync();
-    this._initWidgetFunctioins[[websiteName, post.id, 'post/button'].join('/')] = () => this.onPostButtonInit(post, me);
+    this._initWidgetFunctions[[websiteName, post.id, 'post/button'].join('/')] = () => this.onPostButtonInit(post, me);
     if (post.id && post.authorUsername) {
       me.hidden = false;
       me.donationsAmount = await this.tippingService.getTotalTipsByItemId('tweet/' + post.id);
@@ -422,7 +422,7 @@ export default class TippingDapplet {
   onPostAvatarBadgeInit = async (post, me) => {
     try {
       const { websiteName } = await this.getCurrentUserAsync();
-      this._initWidgetFunctioins[[websiteName, post.id, 'post/badge'].join('/')] = () =>
+      this._initWidgetFunctions[[websiteName, post.id, 'post/badge'].join('/')] = () =>
         this.onPostAvatarBadgeInit(post, me);
       if (post?.authorUsername && websiteName) {
         const nearAccount = await this.tippingService.getWalletForAutoclaim(
