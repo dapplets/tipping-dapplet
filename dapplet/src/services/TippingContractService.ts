@@ -1,19 +1,11 @@
 import { NearNetworks } from '../interfaces';
+import { connectWallet } from './identityService';
 
 export class TippingContractService {
   private _contract: any;
 
-  constructor(network: NearNetworks) {
-    const address =
-      network === NearNetworks.Testnet
-        ? 'dev-1680593274075-24217258210681'
-        : // : network === NearNetworks.Mainnet
-          // ? ''
-          null;
-
-    if (address === null) throw new Error('Unsupported network');
-
-    this._contract = Core.contract('near', address, {
+  constructor(private _network: NearNetworks, private _address: string) {
+    this._contract = Core.contract('near', this._address, {
       viewMethods: [
         'getMaxAmountPerItem',
         'getMaxAmountPerTip',
@@ -24,7 +16,7 @@ export class TippingContractService {
         'getWalletForAutoclaim',
       ],
       changeMethods: ['sendTips', 'claimTokens', 'setWalletForAutoclaim', 'deleteWalletForAutoclaim'],
-      network,
+      network: this._network,
     });
   }
 
@@ -57,6 +49,7 @@ export class TippingContractService {
   // CALL
 
   async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
+    await connectWallet(this._network);
     const contract = await this._contract;
     const rawResult = await contract.account.functionCall(
       contract.contractId,
@@ -72,6 +65,7 @@ export class TippingContractService {
   }
 
   async claimTokens(accountGId: string): Promise<string> {
+    await connectWallet(this._network);
     const contract = await this._contract;
     const rawResult = await contract.account.functionCall(
       contract.contractId,
@@ -85,6 +79,7 @@ export class TippingContractService {
   }
 
   async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<void> {
+    await connectWallet(this._network);
     const contract = await this._contract;
     await contract.account.functionCall(
       contract.contractId,
@@ -98,6 +93,7 @@ export class TippingContractService {
   }
 
   async deleteWalletForAutoclaim(accountGId: string): Promise<void> {
+    await connectWallet(this._network);
     const contract = await this._contract;
     await contract.account.functionCall(
       contract.contractId,
