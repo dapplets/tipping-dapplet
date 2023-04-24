@@ -1,10 +1,22 @@
 import { CARequestStatus, NearNetworks, TConnectedAccountsVerificationRequestInfo } from '../interfaces';
+import { getCurrentUserAsync } from '../helpers';
 
-export const connectWallet = async (network: NearNetworks): Promise<string> => {
+export const getSession = async (network: NearNetworks, contractId: string) => {
   const prevSessions = await Core.sessions();
   const walletOrigin = createNearOrigin(network);
   const prevSession = prevSessions.find((x) => x.authMethod === walletOrigin);
-  const session = prevSession ?? (await Core.login({ authMethods: [walletOrigin] }));
+  return (
+    prevSession ??
+    (await Core.login({
+      authMethods: [walletOrigin],
+      secureLogin: 'required',
+      contractId,
+    }))
+  );
+};
+
+export const connectWallet = async (network: NearNetworks, contractId: string): Promise<string> => {
+  const session = await getSession(network, contractId);
   const wallet = await session.wallet();
   return wallet.accountId;
 };
@@ -19,29 +31,42 @@ export const getNearAccountsFromCa = async (accountGId: string, network: string)
 };
 
 export const makeNewCAConnection = async (
-  accountId: string,
-  accountFullname: string,
-  accountImage: string,
-  websiteName: string,
+  adapter: any,
   walletAccountId: string,
-  walletNetwork: NearNetworks,
-): Promise<void> => {
+  walletNetwork: string,
+): Promise<CARequestStatus> => {
+  const { username, fullname, websiteName, img } = await getCurrentUserAsync(adapter);
   const websiteNameLowerCase = websiteName.toLowerCase();
   const args = {
-    firstAccountId: accountId,
+    firstAccountId: username,
     firstOriginId: websiteNameLowerCase,
-    firstAccountImage: accountImage,
+    firstAccountImage: img,
     secondAccountId: walletAccountId,
     secondOriginId: createNearOrigin(walletNetwork),
     secondAccountImage: null,
     isUnlink: false,
-    firstProofUrl: 'https://' + websiteNameLowerCase + '.com/' + accountId,
+    firstProofUrl: 'https://' + websiteNameLowerCase + '.com/' + username,
   };
   const condition = {
     type: `${websiteNameLowerCase}/near-${walletNetwork}`,
-    user: accountFullname,
+    user: fullname,
   };
   await Core.connectedAccounts.requestVerification(args, condition);
+  const accountGId = createAccountGlobalId(username, websiteName);
+  const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId);
+  if (pendingRequestId !== -1 && pendingRequest) {
+    const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
+    alert(
+      'Connection of ' +
+        pendingRequest.firstAccount.split('/')[0] +
+        ' and ' +
+        pendingRequest.secondAccount.split('/')[0] +
+        ' has been ' +
+        requestStatus,
+    );
+    return requestStatus;
+  }
+  return makeNewCAConnection(adapter, walletAccountId, walletNetwork); // ToDo: improve if it's possible
 };
 
 export const getCAPendingRequest = async (

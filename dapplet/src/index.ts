@@ -11,14 +11,12 @@ import {
   createAccountGlobalId,
   getNearAccountsFromCa,
   makeNewCAConnection,
-  getCAPendingRequest,
-  waitForCAVerificationRequestResolve,
 } from './services/identityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, lte, sum, parseNearId, formatNear } from './helpers';
-import { ICurrentUser, NearNetworks } from './interfaces';
+import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
+import { NearNetworks } from './interfaces';
 
-const { parseNearAmount } = Core.near.utils.format;
+const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'dev-1680593274075-24217258210681';
 const TIPPING_MAINNET_CONTRACT_ADDRESS = null;
 
@@ -27,6 +25,7 @@ export default class TippingDapplet {
   @Inject('twitter-adapter.dapplet-base.eth')
   public adapter: any;
 
+  private _$: any;
   private _network: NearNetworks;
   private _tippingContractAddress: string;
   private _tippingService: TippingContractService;
@@ -36,22 +35,12 @@ export default class TippingDapplet {
   private _maxAmountPerItem = '10000000000000000000000000'; // 10 NEAR
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
-  private _isWaitForCAPendingVRequest = false;
   private _initWidgetFunctions: { [name: string]: () => Promise<void> } = {};
   executeInitWidgetFunctions = () => Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
 
   async activate(): Promise<void> {
     await this.pasteWidgets();
-    Core.onConnectedAccountsUpdate(async () => {
-      const network = await Core.getPreferredConnectedAccountsNetwork();
-      if (network !== this._network) {
-        this.adapter.detachConfig();
-        this.pasteWidgets();
-      } else {
-        this.executeInitWidgetFunctions();
-      }
-    });
-    Core.onWalletsUpdate(this.executeInitWidgetFunctions);
+    Core.onWalletsUpdate(this.pasteWidgets);
   }
 
   async pasteWidgets() {
@@ -78,23 +67,36 @@ export default class TippingDapplet {
     this._debounceDelay = getMilliseconds(delay);
 
     const { button, avatarBadge } = this.adapter.exports;
-    this.adapter.attachConfig({
+    const { $ } = this.adapter.attachConfig({
       PROFILE: () => [
         button({
+          id: 'bindButton',
           DEFAULT: {
             hidden: true,
             img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-            tooltip: 'Claim tokens',
+            tooltip: 'Bind tipping wallet',
             init: this.onProfileButtonClaimInit,
             exec: this.onProfileButtonClaimExec,
           },
         }),
         button({
+          id: 'rebindButton',
           DEFAULT: {
+            tooltip: 'Rebind tipping wallet',
             hidden: true,
             img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-            init: this.onProfileButtonLinkInit,
-            exec: this.onProfileButtonLinkExec,
+            init: this.onProfileButtonRebindInit,
+            exec: this.onProfileButtonRebindExec,
+          },
+        }),
+        button({
+          id: 'unbindButton',
+          DEFAULT: {
+            tooltip: 'Unbind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonUnbindInit,
+            exec: this.onProfileButtonUnbindExec,
           },
         }),
         avatarBadge({
@@ -135,167 +137,279 @@ export default class TippingDapplet {
         }),
       ],
     });
+    this._$ = $;
   }
 
   onProfileButtonClaimInit = async (profile, me) => {
-    const { username, websiteName } = await this.getCurrentUserAsync();
+    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       this._initWidgetFunctions[[websiteName, username, 'claim'].join('/')] = () =>
         this.onProfileButtonClaimInit(profile, me);
       const accountGId = createAccountGlobalId(profile.id, websiteName);
+      const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+      if (walletForAutoclaim) {
+        me.hidden = true;
+        return;
+      }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = formatNear(tokens);
-      if (Number(availableTokens) !== 0) {
-        me.label = `Claim ${availableTokens} Ⓝ`;
-        me.hidden = false;
-      } else {
-        me.hidden = true;
-      }
+      me.label = `Claim${Number(availableTokens) === 0 ? '' : ' and get ' + availableTokens + ' Ⓝ'}`;
+      me.disabled = false;
+      me.loading = false;
+      me.hidden = false;
     } else {
       me.hidden = true;
     }
   };
 
   onProfileButtonClaimExec = async (profile, me) => {
-    const { websiteName } = await this.getCurrentUserAsync();
+    me.disabled = true;
+    me.loading = true;
+    me.label = 'Waiting...';
+    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
+    let nearAccountsFromCA: string[];
+    let walletAccountId = '';
     try {
-      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      walletAccountId = await connectWallet(this._network, this._tippingContractAddress);
       if (nearAccountsFromCA.length === 0) {
         alert(
-          'You must link your NEAR account to your Twitter account using the Connected Accounts service. Click |⋈ Link| button to continue.',
+          'We use the Connected Accounts service to verify user ownership of social media' +
+            ' accounts and wallets. The service is based on the NEAR smart contract.' +
+            ' Connected Accounts allow you to link accounts decentralized and identify' +
+            ' yourself and other users on various web resources. More details can be found here:\n' +
+            ' https://github.com/dapplets/connected-accounts-assembly',
         );
-        return;
+        try {
+          const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
+          if (requestStatus === 'rejected') {
+            return this.executeInitWidgetFunctions();
+          }
+        } catch (err) {
+          console.log(err); // ToDo: problems in CA
+          return this.executeInitWidgetFunctions();
+        }
+      } else if (!nearAccountsFromCA.includes(walletAccountId)) {
+        if (
+          !confirm(
+            'You are logged in with ' +
+              walletAccountId +
+              ', that is not connected with @' +
+              username +
+              ' ' +
+              websiteName +
+              ' account. You can login with already connected wallets (' +
+              nearAccountsFromCA.join(', ') +
+              ') or connect ' +
+              walletAccountId +
+              ' to @' +
+              username +
+              '. Do you want to make a new connection?',
+          )
+        )
+          return this.executeInitWidgetFunctions();
+        alert(
+          'We use the Connected Accounts service to verify user ownership of social media' +
+            ' accounts and wallets. The service is based on the NEAR smart contract.' +
+            ' Connected Accounts allow you to link accounts decentralized and identify' +
+            ' yourself and other users on various web resources. More details can be found here:\n' +
+            ' https://github.com/dapplets/connected-accounts-assembly',
+        );
+        try {
+          const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
+          if (requestStatus === 'rejected') {
+            return this.executeInitWidgetFunctions();
+          }
+        } catch (err) {
+          console.log(err); // ToDo: problems in CA
+          return this.executeInitWidgetFunctions();
+        }
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
-      const availableTokens = formatNear(tokens);
-      me.disabled = true;
-      me.loading = true;
-      me.label = 'Waiting...';
-      const walletAccountId = await connectWallet(this._network);
-      if (!nearAccountsFromCA.includes(walletAccountId)) {
-        alert(
-          'You have connected accounts: ' + nearAccountsFromCA.join(', ') + '. Login with one of them to continue.',
-        );
-      } else {
+      const availableTokens = Number(formatNearAmount(tokens, 4));
+      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      if (!availableTokens) {
+        if (confirm(`You are setting ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?')) {
+          const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
+          const explorerUrl =
+            this._network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+          alert(
+            `Claimed ${walletAccountId} as a tipping wallet with @tippingdapplet. ` +
+              `Tx link: ${explorerUrl}/transactions/${txHash}`,
+          );
+        }
+      } else if (
+        confirm(
+          `You are claiming ${availableTokens.toFixed(
+            2,
+          )} $NEAR and setting ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?',
+        )
+      ) {
         const txHash = await this._tippingService.claimTokens(accountGId);
         const explorerUrl =
           this._network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         alert(
-          `Claimed ${availableTokens} $NEAR with @tippingdapplet. ` + `Tx link: ${explorerUrl}/transactions/${txHash}`,
+          `Claimed ${availableTokens.toFixed(2)} $NEAR to ${walletAccountId} with @tippingdapplet. ` +
+            `Tx link: ${explorerUrl}/transactions/${txHash}`,
         );
       }
     } catch (e) {
       console.error(e);
     } finally {
-      me.disabled = false;
-      me.loading = false;
       this.executeInitWidgetFunctions();
     }
   };
 
-  onProfileButtonLinkInit = async (profile, me) => {
-    const { username, websiteName } = await this.getCurrentUserAsync();
-    const accountGId = createAccountGlobalId(username, websiteName);
-    const isMyProfile = profile.id.toLowerCase() === username?.toLowerCase();
-    const parsedNearAccount = parseNearId(profile.authorFullname, this._network);
-
+  onProfileButtonUnbindInit = async (profile, me) => {
+    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
-      this._initWidgetFunctions[[websiteName, username, 'link'].join('/')] = () =>
-        this.onProfileButtonLinkInit(profile, me);
-
+      this._initWidgetFunctions[[websiteName, username, 'unbind'].join('/')] = () =>
+        this.onProfileButtonUnbindInit(profile, me);
+      const accountGId = createAccountGlobalId(profile.id, websiteName);
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
-      if (walletForAutoclaim) {
-        me.hidden = false;
-        me.label = 'Unlink';
-        me.tooltip = `Disable autoclaim from @${username} to ${walletForAutoclaim} NEAR wallet.`;
-        me.hidden = false;
-        return;
-      }
-
-      const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId);
-      if (pendingRequestId !== -1 && pendingRequest) {
-        if (!this._isWaitForCAPendingVRequest) {
-          this._isWaitForCAPendingVRequest = true;
-          me.label = 'Waiting...';
-          me.hidden = false;
-          const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
-          this._isWaitForCAPendingVRequest = false;
-          alert(
-            (pendingRequest.isUnlink ? 'Disconnection of ' : 'Connection of ') +
-              pendingRequest.firstAccount.split('/')[0] +
-              ' and ' +
-              pendingRequest.secondAccount.split('/')[0] +
-              ' has been ' +
-              requestStatus,
-          );
-          this.executeInitWidgetFunctions();
-        }
-        return;
-      }
-
-      const connectedAccounts = await Core.connectedAccounts.getNet(accountGId);
-      if (connectedAccounts && connectedAccounts.length > 1) {
-        me.hidden = true;
-      } else {
-        me.label = 'Link';
-        me.tooltip = `Link ${
-          parsedNearAccount ? parsedNearAccount + ' ' : ''
-        }account to @${username} using Connected Accounts smart contract`;
-        me.hidden = false;
-      }
+      me.label = 'Unbind';
+      me.disabled = false;
+      me.loading = false;
+      me.hidden = !walletForAutoclaim;
     } else {
       me.hidden = true;
     }
   };
 
-  onProfileButtonLinkExec = async (profile: { id: string; authorFullname: string }, me) => {
-    const { username, fullname, websiteName, img } = await this.getCurrentUserAsync();
-    const parsiedNearAccount = parseNearId(fullname, this._network);
+  onProfileButtonUnbindExec = async (profile, me) => {
+    me.disabled = true;
+    me.loading = true;
+    me.label = 'Waiting...';
+    this._$(profile, 'rebindButton').disabled = true;
+    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
-      const accountGId = createAccountGlobalId(username, websiteName);
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
-      me.disabled = true;
-      me.loading = true;
-      me.label = 'Waiting...';
-      if (walletForAutoclaim) {
-        // unlink
-        await this._tippingService.deleteWalletForAutoclaim(accountGId);
+      const walletAccountId = await connectWallet(this._network, this._tippingContractAddress);
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
+        if (confirm(`You are unbinding ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?')) {
+          await this._tippingService.deleteWalletForAutoclaim(accountGId);
+          alert(`${walletForAutoclaim} was unbinded from @${username} in @tippingdapplet`);
+        }
       } else {
-        // link
-        if (!parsiedNearAccount) {
-          const exampleWallet = this._network === NearNetworks.Testnet ? 'yourwallet.testnet' : 'yourwallet.near';
-          alert(
-            `Before you continue, add your NEAR account ID to your ${websiteName} profile name. ` +
-              'This is necessary for Oracle so that it can make sure that you own this Twitter account. ' +
-              'After linking you can remove it back.\n' +
-              `For example: "${fullname} (${exampleWallet})"\n`,
-          );
-        } else {
-          const walletAccountId = await connectWallet(this._network);
-          if (parsiedNearAccount !== walletAccountId) {
-            alert(
-              `Check the wallet in your ${websiteName} profile name. ` +
-                'It should be the same as you use for login. Now you logged in with ' +
-                `${walletAccountId}, and the wallet in your profile is ${parsiedNearAccount}.`,
-            );
-          } else {
-            await makeNewCAConnection(username, fullname, img, websiteName, walletAccountId, this._network);
+        if (
+          confirm(
+            `You are logged in with ${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
+              `You can login with ${walletForAutoclaim} ${
+                nearAccountsFromCA.length !== 0
+                  ? ' or with already connected wallets (' + nearAccountsFromCA.join(', ') + ')'
+                  : ''
+              } or connect ${walletAccountId} to @${username}. Do you want to make a new connection?`,
+          )
+        ) {
+          try {
+            const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
+            if (requestStatus === 'rejected') {
+              return this.executeInitWidgetFunctions();
+            }
+          } catch (err) {
+            console.log(err); // ToDo: problems in CA
+            return this.executeInitWidgetFunctions();
+          }
+          if (confirm(`You are unbinding ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?')) {
+            await this._tippingService.deleteWalletForAutoclaim(accountGId);
+            alert(`${walletForAutoclaim} was unbinded from @${username} in @tippingdapplet`);
           }
         }
       }
     } catch (e) {
       console.error(e);
     } finally {
+      this.executeInitWidgetFunctions();
+    }
+  };
+
+  onProfileButtonRebindInit = async (profile, me) => {
+    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
+    if (isMyProfile) {
+      this._initWidgetFunctions[[websiteName, username, 'rebind'].join('/')] = () =>
+        this.onProfileButtonRebindInit(profile, me);
+      const accountGId = createAccountGlobalId(profile.id, websiteName);
+      const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+      me.label = 'Rebind';
       me.disabled = false;
       me.loading = false;
+      me.hidden = !walletForAutoclaim;
+    } else {
+      me.hidden = true;
+    }
+  };
+
+  onProfileButtonRebindExec = async (profile, me) => {
+    me.disabled = true;
+    me.loading = true;
+    me.label = 'Waiting...';
+    this._$(profile, 'unbindButton').disabled = true;
+    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const accountGId = createAccountGlobalId(profile.id, websiteName);
+    try {
+      const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+      const walletAccountId = await connectWallet(this._network, this._tippingContractAddress);
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      if (walletForAutoclaim === walletAccountId) {
+        alert(
+          `${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login to it in the extension.`,
+        );
+      } else if (nearAccountsFromCA.includes(walletAccountId)) {
+        if (
+          confirm(
+            `You are binding ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
+              '\nContinue?',
+          )
+        ) {
+          await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
+          alert(`${walletAccountId} was binded to @${username} in @tippingdapplet`);
+        }
+      } else {
+        if (
+          confirm(
+            `You are logged in with ${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
+              `You can login with ${walletForAutoclaim} ${
+                nearAccountsFromCA.length !== 0
+                  ? ' or with already connected wallets (' + nearAccountsFromCA.join(', ') + ')'
+                  : ''
+              } or connect ${walletAccountId} to @${username}. Do you want to make a new connection?`,
+          )
+        ) {
+          try {
+            const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
+            if (requestStatus === 'rejected') {
+              return this.executeInitWidgetFunctions();
+            }
+          } catch (err) {
+            console.log(err); // ToDo: problems in CA
+            return this.executeInitWidgetFunctions();
+          }
+          if (
+            confirm(
+              `You are binding ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
+                '\nContinue?',
+            )
+          ) {
+            await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
+            alert(`${walletAccountId} was binded to @${username} in @tippingdapplet`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
       this.executeInitWidgetFunctions();
     }
   };
 
   onProfileAvatarBadgeInit = async (profile, me) => {
-    const { websiteName } = await this.getCurrentUserAsync();
+    const { websiteName } = await getCurrentUserAsync(this.adapter);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     const nearAccount = await this._tippingService.getWalletForAutoclaim(accountGId);
     this._initWidgetFunctions[[websiteName, profile.id, 'profile/badge'].join('/')] = () =>
@@ -320,7 +434,7 @@ export default class TippingDapplet {
   };
 
   onPostButtonInit = async (post, me) => {
-    const { websiteName } = await this.getCurrentUserAsync();
+    const { websiteName } = await getCurrentUserAsync(this.adapter);
     this._initWidgetFunctions[[websiteName, post.id, 'post/button'].join('/')] = () => this.onPostButtonInit(post, me);
     if (post.id && post.authorUsername) {
       me.hidden = false;
@@ -339,7 +453,7 @@ export default class TippingDapplet {
   onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
     const tweetGId = 'tweet/' + tweetId;
     try {
-      const { websiteName } = await this.getCurrentUserAsync();
+      const { websiteName } = await getCurrentUserAsync(this.adapter);
       const accountGId = createAccountGlobalId(externalAccount, websiteName);
       me.loading = true;
       me.disabled = true;
@@ -395,7 +509,7 @@ export default class TippingDapplet {
 
   onPostAvatarBadgeInit = async (post, me) => {
     try {
-      const { websiteName } = await this.getCurrentUserAsync();
+      const { websiteName } = await getCurrentUserAsync(this.adapter);
       this._initWidgetFunctions[[websiteName, post.id, 'post/badge'].join('/')] = () =>
         this.onPostAvatarBadgeInit(post, me);
       if (post?.authorUsername && websiteName) {
@@ -425,17 +539,4 @@ export default class TippingDapplet {
       throw new Error('Unsupported network');
     }
   };
-
-  async getCurrentUserAsync(): Promise<ICurrentUser> {
-    for (let i = 0; i < 10; i++) {
-      try {
-        const user: ICurrentUser = this.adapter.getCurrentUser();
-        return user;
-      } catch (e) {
-        console.error(e);
-      }
-      await new Promise((res) => setTimeout(res, 500));
-    }
-    return { websiteName: '' };
-  }
 }

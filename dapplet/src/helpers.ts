@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { NEAR_ADDRESS, TESTERS_ADDRESSES } from '../config/TESTERS_ADDRESSES';
-import { NearNetworks } from './interfaces';
+import { ICurrentUser, NearNetworks } from './interfaces';
 
 export function sum(...values: string[]): string {
   let _sum = new BigNumber('0');
@@ -56,3 +56,16 @@ export function formatNear(amount: string): string {
   const { formatNearAmount } = Core.near.utils.format;
   return Number(formatNearAmount(amount, 4)).toFixed(2);
 }
+
+export const getCurrentUserAsync = async (adapter: any): Promise<ICurrentUser> => {
+  for (let i = 0; i < 10; i++) {
+    try {
+      const user: ICurrentUser = adapter.getCurrentUser();
+      return user;
+    } catch (e) {
+      console.error(e);
+    }
+    await new Promise((res) => setTimeout(res, 500));
+  }
+  return { websiteName: '' };
+};
