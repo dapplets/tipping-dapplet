@@ -57,7 +57,7 @@ export function formatNear(amount: string): string {
   return Number(formatNearAmount(amount, 4)).toFixed(2);
 }
 
-export const getCurrentUserAsync = async (adapter: any): Promise<ICurrentUser> => {
+export const getCurrentUserAsync = async (adapter: { getCurrentUser: () => ICurrentUser }): Promise<ICurrentUser> => {
   for (let i = 0; i < 10; i++) {
     try {
       const user: ICurrentUser = adapter.getCurrentUser();

@@ -21,11 +21,11 @@ const TIPPING_TESTNET_CONTRACT_ADDRESS = 'dev-1680593274075-24217258210681';
 const TIPPING_MAINNET_CONTRACT_ADDRESS = null;
 
 @Injectable
-export default class TippingDapplet {
+export default class {
   @Inject('twitter-adapter.dapplet-base.eth')
-  public adapter: any;
+  public adapter;
 
-  private _$: any;
+  private _$;
   private _network: NearNetworks;
   private _tippingContractAddress: string;
   private _tippingService: TippingContractService;
@@ -40,7 +40,19 @@ export default class TippingDapplet {
 
   async activate(): Promise<void> {
     await this.pasteWidgets();
-    Core.onWalletsUpdate(this.pasteWidgets);
+    Core.onConnectedAccountsUpdate(async () => {
+      const network = await Core.getPreferredConnectedAccountsNetwork();
+      if (network !== this._network) {
+        this.adapter.detachConfig();
+        this.pasteWidgets();
+      } else {
+        this.executeInitWidgetFunctions();
+      }
+    });
+    Core.onWalletsUpdate(() => {
+      this._tippingService = new TippingContractService(this._network, this._tippingContractAddress);
+      this.executeInitWidgetFunctions();
+    });
   }
 
   async pasteWidgets() {
@@ -450,7 +462,7 @@ export default class TippingDapplet {
     }
   };
 
-  onDebounceDonate = async (me: any, externalAccount: string, tweetId: string, amount: string) => {
+  onDebounceDonate = async (me, externalAccount: string, tweetId: string, amount: string) => {
     const tweetGId = 'tweet/' + tweetId;
     try {
       const { websiteName } = await getCurrentUserAsync(this.adapter);
