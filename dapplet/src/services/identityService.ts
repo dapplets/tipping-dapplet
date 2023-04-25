@@ -30,10 +30,27 @@ export const getNearAccountsFromCa = async (accountGId: string, network: string)
   return connectedAccounts.filter((id) => id.indexOf(walletOrigin) !== -1).map((id) => id.split('/')[0]);
 };
 
-export const makeNewCAConnection = async (
+export const connectNewAccount = async (
   adapter: any,
   walletAccountId: string,
-  walletNetwork: string,
+  network: NearNetworks,
+): Promise<boolean> => {
+  try {
+    const requestStatus = await makeNewCAConnection(adapter, walletAccountId, network);
+    if (requestStatus === 'rejected') {
+      return false;
+    }
+  } catch (err) {
+    console.log(err); // ToDo: problems in CA
+    return false;
+  }
+  return true;
+};
+
+const makeNewCAConnection = async (
+  adapter: any,
+  walletAccountId: string,
+  walletNetwork: NearNetworks,
 ): Promise<CARequestStatus> => {
   const { username, fullname, websiteName, img } = await getCurrentUserAsync(adapter);
   const websiteNameLowerCase = websiteName.toLowerCase();

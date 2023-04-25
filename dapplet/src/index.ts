@@ -10,7 +10,7 @@ import {
   connectWallet,
   createAccountGlobalId,
   getNearAccountsFromCa,
-  makeNewCAConnection,
+  connectNewAccount,
 } from './services/identityService';
 import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
@@ -180,27 +180,25 @@ export default class {
     me.label = 'Waiting...';
     const { username, websiteName } = await getCurrentUserAsync(this.adapter);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
-    let nearAccountsFromCA: string[];
-    let walletAccountId = '';
     try {
-      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
-      walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
-      if (nearAccountsFromCA.length === 0) {
-        alert(messages.aboutCA);
-        await this.connectNewAccount(walletAccountId);
-      } else if (!nearAccountsFromCA.includes(walletAccountId)) {
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
+      const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+      if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (
+          nearAccountsFromCA.length !== 0 &&
           !confirm(
             messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
           )
-        )
+        ) {
           return this.executeInitWidgetFunctions();
-        alert(messages.aboutCA);
-        await this.connectNewAccount(walletAccountId);
+        } else {
+          alert(messages.aboutCA);
+          const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
+          if (!isConnected) return this.executeInitWidgetFunctions();
+        }
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
-      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (!availableTokens) {
         if (confirm(messages.settingTippingWallet(walletAccountId))) {
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
@@ -262,7 +260,8 @@ export default class {
             }),
           )
         ) {
-          await this.connectNewAccount(walletAccountId);
+          const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
+          if (!isConnected) return this.executeInitWidgetFunctions();
           if (confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
             alert(messages.unbinded(walletForAutoclaim, username));
@@ -323,7 +322,8 @@ export default class {
             }),
           )
         ) {
-          await this.connectNewAccount(walletAccountId);
+          const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
+          if (!isConnected) return this.executeInitWidgetFunctions();
           if (confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
             alert(messages.binded(walletAccountId, username));
@@ -452,18 +452,6 @@ export default class {
       window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
     } else {
       throw new Error('Unsupported network');
-    }
-  };
-
-  connectNewAccount = async (walletAccountId: string): Promise<void[] | void> => {
-    try {
-      const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this.network);
-      if (requestStatus === 'rejected') {
-        return this.executeInitWidgetFunctions();
-      }
-    } catch (err) {
-      console.log(err); // ToDo: problems in CA
-      return this.executeInitWidgetFunctions();
     }
   };
 }
