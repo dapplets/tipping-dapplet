@@ -1,78 +1,69 @@
 import { NearNetworks } from '../interfaces';
 import { getSession } from './identityService';
+import * as packageInfo from '../../package.json';
 
-export class TippingContractService {
+class TippingContractService {
   private _contract: any;
+  static viewMethods = [
+    'getMaxAmountPerItem',
+    'getMaxAmountPerTip',
+    'getTotalTipsByItemId',
+    'getTotalTipsByAccount',
+    'getAvailableTipsByAccount',
+    'calculateFee',
+    'getWalletForAutoclaim',
+  ];
+  static changeMethods = ['sendTips', 'claimTokens', 'setWalletForAutoclaim', 'deleteWalletForAutoclaim'];
 
   constructor(private _network: NearNetworks, private _address: string) {}
 
   // CREATE CONTRACT
 
-  async createContractForViewRequests() {
+  private async _createContractForViewRequests(): Promise<any> {
     this._contract = await Core.contract('near', this._address, {
-      viewMethods: [
-        'getMaxAmountPerItem',
-        'getMaxAmountPerTip',
-        'getTotalTipsByItemId',
-        'getTotalTipsByAccount',
-        'getAvailableTipsByAccount',
-        'calculateFee',
-        'getWalletForAutoclaim',
-      ],
-      changeMethods: ['sendTips', 'claimTokens', 'setWalletForAutoclaim', 'deleteWalletForAutoclaim'],
+      viewMethods: TippingContractService.viewMethods,
+      changeMethods: TippingContractService.changeMethods,
       network: this._network,
     });
+    console.log('1 manifest.name', this._contract.account._app === packageInfo?.name);
     return this._contract;
   }
 
-  async addInteractionsWithFunctionalKey(session: any) {
+  private async _addInteractionsWithFunctionalKey(session: any): Promise<any> {
     this._contract = await session.contract(this._address, {
-      viewMethods: [
-        'getMaxAmountPerItem',
-        'getMaxAmountPerTip',
-        'getTotalTipsByItemId',
-        'getTotalTipsByAccount',
-        'getAvailableTipsByAccount',
-        'calculateFee',
-        'getWalletForAutoclaim',
-      ],
-      changeMethods: ['sendTips', 'claimTokens', 'setWalletForAutoclaim', 'deleteWalletForAutoclaim'],
+      viewMethods: TippingContractService.viewMethods,
+      changeMethods: TippingContractService.changeMethods,
     });
+    console.log('2 manifest.name', this._contract.account._app === packageInfo?.name);
     return this._contract;
   }
 
   // VIEW
 
   async getTotalTipsByItemId(itemId: string): Promise<string> {
-    const contract = this._contract || (await this.createContractForViewRequests());
-    const tipsAmount = await contract.getTotalTipsByItemId({ itemId: itemId });
-    return tipsAmount;
+    const contract = await this._getContractForViewRequests();
+    return contract.getTotalTipsByItemId({ itemId: itemId });
   }
 
   async getAvailableTipsByAccount(accountGlobalId: string): Promise<string> {
-    const contract = this._contract || (await this.createContractForViewRequests());
-    const tipsAmount = await contract.getAvailableTipsByAccount({ accountGlobalId });
-    return tipsAmount;
+    const contract = await this._getContractForViewRequests();
+    return contract.getAvailableTipsByAccount({ accountGlobalId });
   }
 
   async calculateFee(donationAmount: string): Promise<string> {
-    const contract = this._contract || (await this.createContractForViewRequests());
-    const donationFee = await contract.calculateFee({ donationAmount });
-    return donationFee;
+    const contract = await this._getContractForViewRequests();
+    return contract.calculateFee({ donationAmount });
   }
 
   async getWalletForAutoclaim(accountGId: string): Promise<string | null> {
-    const contract = this._contract || (await this.createContractForViewRequests());
-    const walletForAutoclaim = await contract.getWalletForAutoclaim({ accountGId });
-    return walletForAutoclaim;
+    const contract = await this._getContractForViewRequests();
+    return contract.getWalletForAutoclaim({ accountGId });
   }
 
   // CALL
 
   async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
-    const session = await getSession(this._network, this._address);
-    await this.addInteractionsWithFunctionalKey(session);
-    const contract = this._contract;
+    const contract = await this._getContractForCallRequests();
     const rawResult = await contract.account.functionCall(
       contract.contractId,
       'sendTips',
@@ -87,9 +78,7 @@ export class TippingContractService {
   }
 
   async claimTokens(accountGId: string): Promise<string> {
-    const session = await getSession(this._network, this._address);
-    await this.addInteractionsWithFunctionalKey(session);
-    const contract = this._contract;
+    const contract = await this._getContractForCallRequests();
     const rawResult = await contract.account.functionCall(
       contract.contractId,
       'claimTokens',
@@ -102,9 +91,7 @@ export class TippingContractService {
   }
 
   async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<string> {
-    const session = await getSession(this._network, this._address);
-    await this.addInteractionsWithFunctionalKey(session);
-    const contract = this._contract;
+    const contract = await this._getContractForCallRequests();
     const rawResult = await contract.account.functionCall(
       contract.contractId,
       'setWalletForAutoclaim',
@@ -117,11 +104,9 @@ export class TippingContractService {
     return rawResult.transaction.hash;
   }
 
-  async deleteWalletForAutoclaim(accountGId: string): Promise<void> {
-    const session = await getSession(this._network, this._address);
-    await this.addInteractionsWithFunctionalKey(session);
-    const contract = this._contract;
-    await contract.account.functionCall(
+  async deleteWalletForAutoclaim(accountGId: string): Promise<string> {
+    const contract = await this._getContractForCallRequests();
+    const rawResult = await contract.account.functionCall(
       contract.contractId,
       'deleteWalletForAutoclaim',
       {
@@ -129,5 +114,22 @@ export class TippingContractService {
       },
       '100000000000000',
     );
+    return rawResult.transaction.hash;
+  }
+
+  // INTERNAL
+
+  async _getContractForViewRequests(): Promise<any> {
+    return this._contract || this._createContractForViewRequests();
+  }
+
+  async _getContractForCallRequests(): Promise<any> {
+    if (this._contract.account._app === packageInfo?.name) {
+      const session = await getSession(this._network, this._address);
+      await this._addInteractionsWithFunctionalKey(session);
+    }
+    return this._contract;
   }
 }
+
+export default TippingContractService;

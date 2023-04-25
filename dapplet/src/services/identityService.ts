@@ -1,7 +1,7 @@
 import { CARequestStatus, NearNetworks, TConnectedAccountsVerificationRequestInfo } from '../interfaces';
 import { getCurrentUserAsync } from '../helpers';
 
-export const getSession = async (network: NearNetworks, contractId: string) => {
+export const getSession = async (network: NearNetworks, contractId: string): Promise<any> => {
   const prevSessions = await Core.sessions();
   const walletOrigin = createNearOrigin(network);
   const prevSession = prevSessions.find((x) => x.authMethod === walletOrigin);
@@ -69,7 +69,7 @@ export const makeNewCAConnection = async (
   return makeNewCAConnection(adapter, walletAccountId, walletNetwork); // ToDo: improve if it's possible
 };
 
-export const getCAPendingRequest = async (
+const getCAPendingRequest = async (
   accountGId: string,
 ): Promise<{
   pendingRequest: TConnectedAccountsVerificationRequestInfo;
@@ -77,19 +77,17 @@ export const getCAPendingRequest = async (
 }> => {
   const pendingRequestsIds = await Core.connectedAccounts.getPendingRequests();
   if (pendingRequestsIds && pendingRequestsIds.length) {
-    const requests = await Promise.all(
-      pendingRequestsIds.map((pendingRequest) => Core.connectedAccounts.getVerificationRequest(pendingRequest)),
-    );
-    for (let i = 0; i < requests.length; i++) {
-      if (requests[i].firstAccount === accountGId || requests[i].secondAccount === accountGId) {
-        return { pendingRequest: requests[i], pendingRequestId: pendingRequestsIds[i] };
+    for (const id of pendingRequestsIds) {
+      const request = await Core.connectedAccounts.getVerificationRequest(id);
+      if (request.firstAccount === accountGId || request.secondAccount === accountGId) {
+        return { pendingRequest: request, pendingRequestId: id };
       }
     }
   }
   return { pendingRequest: null, pendingRequestId: -1 };
 };
 
-export const waitForCAVerificationRequestResolve = async (id: number): Promise<CARequestStatus> => {
+const waitForCAVerificationRequestResolve = async (id: number): Promise<CARequestStatus> => {
   try {
     const requestStatus = await Core.connectedAccounts.getRequestStatus(id);
     if (requestStatus === 'pending') {

@@ -5,7 +5,7 @@ import NEAR_BIG_ICON from './icons/near-big.svg';
 import NEAR_SMALL_ICON from './icons/near-small.svg';
 import NEAR_LINK_BLACK_ICON from './icons/near-link-black.svg';
 import NEAR_LINK_WHITE_ICON from './icons/near-link-white.svg';
-import { TippingContractService } from './services/TippingContractService';
+import TippingContractService from './services/TippingContractService';
 import {
   connectWallet,
   createAccountGlobalId,
@@ -15,6 +15,7 @@ import {
 import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
 import { NearNetworks } from './interfaces';
+import * as messages from './messages';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'dev-1680593274075-24217258210681';
@@ -24,10 +25,9 @@ const TIPPING_MAINNET_CONTRACT_ADDRESS = null;
 export default class {
   @Inject('twitter-adapter.dapplet-base.eth')
   public adapter;
-
+  public network: NearNetworks;
+  public tippingContractAddress: string;
   private _$;
-  private _network: NearNetworks;
-  private _tippingContractAddress: string;
   private _tippingService: TippingContractService;
 
   private _stepYocto: string;
@@ -36,44 +36,43 @@ export default class {
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
   private _initWidgetFunctions: { [name: string]: () => Promise<void> } = {};
-  executeInitWidgetFunctions = () => Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
+  executeInitWidgetFunctions = (): Promise<void[]> =>
+    Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
 
   async activate(): Promise<void> {
     await this.pasteWidgets();
     Core.onConnectedAccountsUpdate(async () => {
       const network = await Core.getPreferredConnectedAccountsNetwork();
-      if (network !== this._network) {
+      if (network !== this.network) {
         this.adapter.detachConfig();
         this.pasteWidgets();
-      } else {
-        this.executeInitWidgetFunctions();
       }
     });
-    Core.onWalletsUpdate(() => {
-      this._tippingService = new TippingContractService(this._network, this._tippingContractAddress);
+    Core.onWalletsUpdate(async () => {
+      this._tippingService = new TippingContractService(this.network, this.tippingContractAddress);
       this.executeInitWidgetFunctions();
     });
   }
 
-  async pasteWidgets() {
+  async pasteWidgets(): Promise<void> {
     // ATTENTION: now tipping works only with testnet
-    this._network = await Core.getPreferredConnectedAccountsNetwork(); // ATTENTION: tipping network depends on the preffered CA network
-    if (this._network === 'mainnet') {
+    this.network = await Core.getPreferredConnectedAccountsNetwork(); // ATTENTION: tipping network depends on the preffered CA network
+    if (this.network === 'mainnet') {
       alert('ATTENTION: now Tipping Dapplet works only with testnet');
       return;
     }
-    this._tippingContractAddress =
-      this._network === NearNetworks.Testnet ? TIPPING_TESTNET_CONTRACT_ADDRESS : TIPPING_MAINNET_CONTRACT_ADDRESS;
-    if (this._tippingContractAddress === null) throw new Error('Unsupported network');
-    this._tippingService = new TippingContractService(this._network, this._tippingContractAddress);
+    this.tippingContractAddress =
+      this.network === NearNetworks.Testnet ? TIPPING_TESTNET_CONTRACT_ADDRESS : TIPPING_MAINNET_CONTRACT_ADDRESS;
+    if (this.tippingContractAddress === null) throw new Error('Unsupported network');
+    this._tippingService = new TippingContractService(this.network, this.tippingContractAddress);
 
     const step = await Core.storage.get('step');
     const delay = await Core.storage.get('delay');
     if (step <= 0) {
-      throw new Error('A donation step must be more than zero. Change the step parameter in the dapplet settings.');
+      throw new Error(messages.zeroDonationStepError);
     }
     if (delay <= 0) {
-      throw new Error('A delay must be greater than zero. Change the delay parameter in the dapplet settings.');
+      throw new Error(messages.zeroDelayError);
     }
     this._stepYocto = parseNearAmount(step.toString());
     this._debounceDelay = getMilliseconds(delay);
@@ -184,88 +183,32 @@ export default class {
     let nearAccountsFromCA: string[];
     let walletAccountId = '';
     try {
-      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
-      walletAccountId = await connectWallet(this._network, this._tippingContractAddress);
+      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
+      walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       if (nearAccountsFromCA.length === 0) {
-        alert(
-          'We use the Connected Accounts service to verify user ownership of social media' +
-            ' accounts and wallets. The service is based on the NEAR smart contract.' +
-            ' Connected Accounts allow you to link accounts decentralized and identify' +
-            ' yourself and other users on various web resources. More details can be found here:\n' +
-            ' https://github.com/dapplets/connected-accounts-assembly',
-        );
-        try {
-          const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
-          if (requestStatus === 'rejected') {
-            return this.executeInitWidgetFunctions();
-          }
-        } catch (err) {
-          console.log(err); // ToDo: problems in CA
-          return this.executeInitWidgetFunctions();
-        }
+        alert(messages.aboutCA);
+        await this.connectNewAccount(walletAccountId);
       } else if (!nearAccountsFromCA.includes(walletAccountId)) {
         if (
           !confirm(
-            'You are logged in with ' +
-              walletAccountId +
-              ', that is not connected with @' +
-              username +
-              ' ' +
-              websiteName +
-              ' account. You can login with already connected wallets (' +
-              nearAccountsFromCA.join(', ') +
-              ') or connect ' +
-              walletAccountId +
-              ' to @' +
-              username +
-              '. Do you want to make a new connection?',
+            messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
           )
         )
           return this.executeInitWidgetFunctions();
-        alert(
-          'We use the Connected Accounts service to verify user ownership of social media' +
-            ' accounts and wallets. The service is based on the NEAR smart contract.' +
-            ' Connected Accounts allow you to link accounts decentralized and identify' +
-            ' yourself and other users on various web resources. More details can be found here:\n' +
-            ' https://github.com/dapplets/connected-accounts-assembly',
-        );
-        try {
-          const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
-          if (requestStatus === 'rejected') {
-            return this.executeInitWidgetFunctions();
-          }
-        } catch (err) {
-          console.log(err); // ToDo: problems in CA
-          return this.executeInitWidgetFunctions();
-        }
+        alert(messages.aboutCA);
+        await this.connectNewAccount(walletAccountId);
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
-      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (!availableTokens) {
-        if (confirm(`You are setting ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?')) {
+        if (confirm(messages.settingTippingWallet(walletAccountId))) {
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          const explorerUrl =
-            this._network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
-          alert(
-            `Claimed ${walletAccountId} as a tipping wallet with @tippingdapplet. ` +
-              `Tx link: ${explorerUrl}/transactions/${txHash}`,
-          );
+          alert(messages.claimed(walletAccountId, this.network, txHash));
         }
-      } else if (
-        confirm(
-          `You are claiming ${availableTokens.toFixed(
-            2,
-          )} $NEAR and setting ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?',
-        )
-      ) {
+      } else if (confirm(messages.claiming(walletAccountId, availableTokens))) {
         const txHash = await this._tippingService.claimTokens(accountGId);
-        const explorerUrl =
-          this._network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
-        alert(
-          `Claimed ${availableTokens.toFixed(2)} $NEAR to ${walletAccountId} with @tippingdapplet. ` +
-            `Tx link: ${explorerUrl}/transactions/${txHash}`,
-        );
+        alert(messages.claimed(walletAccountId, this.network, txHash, availableTokens));
       }
     } catch (e) {
       console.error(e);
@@ -300,36 +243,29 @@ export default class {
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
-      const walletAccountId = await connectWallet(this._network, this._tippingContractAddress);
-      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
-        if (confirm(`You are unbinding ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?')) {
+        if (confirm(messages.unbinding(walletForAutoclaim, username))) {
           await this._tippingService.deleteWalletForAutoclaim(accountGId);
-          alert(`${walletForAutoclaim} was unbinded from @${username} in @tippingdapplet`);
+          alert(messages.unbinded(walletForAutoclaim, username));
         }
       } else {
         if (
           confirm(
-            `You are logged in with ${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
-              `You can login with ${walletForAutoclaim} ${
-                nearAccountsFromCA.length !== 0
-                  ? ' or with already connected wallets (' + nearAccountsFromCA.join(', ') + ')'
-                  : ''
-              } or connect ${walletAccountId} to @${username}. Do you want to make a new connection?`,
+            messages.offerToReloginOrConnectAccount({
+              username,
+              websiteName,
+              walletAccountId,
+              nearAccountsFromCA,
+              walletForAutoclaim,
+            }),
           )
         ) {
-          try {
-            const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
-            if (requestStatus === 'rejected') {
-              return this.executeInitWidgetFunctions();
-            }
-          } catch (err) {
-            console.log(err); // ToDo: problems in CA
-            return this.executeInitWidgetFunctions();
-          }
-          if (confirm(`You are unbinding ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?')) {
+          await this.connectNewAccount(walletAccountId);
+          if (confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
-            alert(`${walletForAutoclaim} was unbinded from @${username} in @tippingdapplet`);
+            alert(messages.unbinded(walletForAutoclaim, username));
           }
         }
       }
@@ -366,50 +302,31 @@ export default class {
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
-      const walletAccountId = await connectWallet(this._network, this._tippingContractAddress);
-      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this._network);
+      const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId) {
-        alert(
-          `${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login to it in the extension.`,
-        );
+        alert(messages.rebindError(walletForAutoclaim));
       } else if (nearAccountsFromCA.includes(walletAccountId)) {
-        if (
-          confirm(
-            `You are binding ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
-              '\nContinue?',
-          )
-        ) {
+        if (confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
           await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          alert(`${walletAccountId} was binded to @${username} in @tippingdapplet`);
+          alert(messages.binded(walletAccountId, username));
         }
       } else {
         if (
           confirm(
-            `You are logged in with ${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
-              `You can login with ${walletForAutoclaim} ${
-                nearAccountsFromCA.length !== 0
-                  ? ' or with already connected wallets (' + nearAccountsFromCA.join(', ') + ')'
-                  : ''
-              } or connect ${walletAccountId} to @${username}. Do you want to make a new connection?`,
+            messages.offerToReloginOrConnectAccount({
+              username,
+              websiteName,
+              walletAccountId,
+              nearAccountsFromCA,
+              walletForAutoclaim,
+            }),
           )
         ) {
-          try {
-            const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this._network);
-            if (requestStatus === 'rejected') {
-              return this.executeInitWidgetFunctions();
-            }
-          } catch (err) {
-            console.log(err); // ToDo: problems in CA
-            return this.executeInitWidgetFunctions();
-          }
-          if (
-            confirm(
-              `You are binding ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
-                '\nContinue?',
-            )
-          ) {
+          await this.connectNewAccount(walletAccountId);
+          if (confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-            alert(`${walletAccountId} was binded to @${username} in @tippingdapplet`);
+            alert(messages.binded(walletAccountId, username));
           }
         }
       }
@@ -436,9 +353,9 @@ export default class {
   };
 
   onProfileAvatarBadgeExec = (_, me) => {
-    if (this._network === NearNetworks.Testnet) {
+    if (this.network === NearNetworks.Testnet) {
       window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
-    } else if (this._network === NearNetworks.Mainnet) {
+    } else if (this.network === NearNetworks.Mainnet) {
       window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
     } else {
       throw new Error('Unsupported network');
@@ -471,22 +388,11 @@ export default class {
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
       const total = sum(amount, fee);
-      if (
-        confirm(
-          `You're tipping ${Core.near.utils.format.formatNearAmount(
-            amount,
-          )} Ⓝ to "@${externalAccount}" at "${websiteName}".\n` +
-            `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` +
-            `Thank you for your support!`,
-        )
-      ) {
+      if (confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName))) {
         const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
         const explorerUrl =
-          this._network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
-        alert(
-          `Tipped ${Core.near.utils.format.formatNearAmount(amount)} $NEAR with @tippingdapplet. ` +
-            `Tx link: ${explorerUrl}/transactions/${txHash}`,
-        );
+          this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+        alert(messages.successfulTipTransfer(amount, explorerUrl, txHash));
       }
     } catch (e) {
       console.error(e);
@@ -505,9 +411,7 @@ export default class {
     const donation = Number(formatNear(me.amount));
     const stepYocto = Number(formatNear(this._stepYocto));
     const result = Number((donationsAmount + donation + stepYocto).toFixed(2));
-
     if (result > 10) return (me.disabled = true);
-
     if (
       lte(sum(me.donationsAmount, me.amount, this._stepYocto), this._maxAmountPerItem) &&
       lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
@@ -515,7 +419,6 @@ export default class {
       me.amount = sum(me.amount, this._stepYocto);
       me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
     }
-
     me.debouncedDonate(me, tweet.authorUsername, tweet.id, me.amount);
   };
 
@@ -543,12 +446,24 @@ export default class {
   };
 
   onPostAvatarBadgeExec = (ctx, me) => {
-    if (this._network === NearNetworks.Testnet) {
+    if (this.network === NearNetworks.Testnet) {
       window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
-    } else if (this._network === NearNetworks.Mainnet) {
+    } else if (this.network === NearNetworks.Mainnet) {
       window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
     } else {
       throw new Error('Unsupported network');
+    }
+  };
+
+  connectNewAccount = async (walletAccountId: string): Promise<void[] | void> => {
+    try {
+      const requestStatus = await makeNewCAConnection(this.adapter, walletAccountId, this.network);
+      if (requestStatus === 'rejected') {
+        return this.executeInitWidgetFunctions();
+      }
+    } catch (err) {
+      console.log(err); // ToDo: problems in CA
+      return this.executeInitWidgetFunctions();
     }
   };
 }
