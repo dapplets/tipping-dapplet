@@ -18,8 +18,8 @@ import { NearNetworks } from './interfaces';
 import * as messages from './messages';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
-const TIPPING_TESTNET_CONTRACT_ADDRESS = 'dev-1680593274075-24217258210681';
-const TIPPING_MAINNET_CONTRACT_ADDRESS = null;
+const TIPPING_TESTNET_CONTRACT_ADDRESS = 'v2.tipping.testnet';
+const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
 
 @Injectable
 export default class {
@@ -55,12 +55,7 @@ export default class {
   }
 
   async pasteWidgets(): Promise<void> {
-    // ATTENTION: now tipping works only with testnet
     this.network = await Core.getPreferredConnectedAccountsNetwork(); // ATTENTION: tipping network depends on the preffered CA network
-    if (this.network === 'mainnet') {
-      alert('ATTENTION: now Tipping Dapplet works only with testnet');
-      return;
-    }
     this.tippingContractAddress =
       this.network === NearNetworks.Testnet ? TIPPING_TESTNET_CONTRACT_ADDRESS : TIPPING_MAINNET_CONTRACT_ADDRESS;
     if (this.tippingContractAddress === null) throw new Error('Unsupported network');

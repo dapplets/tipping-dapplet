@@ -25,7 +25,6 @@ class TippingContractService {
       changeMethods: TippingContractService.changeMethods,
       network: this._network,
     });
-    console.log('1 manifest.name', this._contract.account._app === packageInfo?.name);
     return this._contract;
   }
 
@@ -34,7 +33,6 @@ class TippingContractService {
       viewMethods: TippingContractService.viewMethods,
       changeMethods: TippingContractService.changeMethods,
     });
-    console.log('2 manifest.name', this._contract.account._app === packageInfo?.name);
     return this._contract;
   }
 
