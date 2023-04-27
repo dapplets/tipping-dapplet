@@ -27,7 +27,9 @@ export const createAccountGlobalId = (username: string, websiteName: string): st
 export const getNearAccountsFromCa = async (accountGId: string, network: string): Promise<string[]> => {
   const connectedAccounts = await Core.connectedAccounts.getNet(accountGId);
   const walletOrigin = createNearOrigin(network);
-  return connectedAccounts.filter((id) => id.indexOf(walletOrigin) !== -1).map((id) => id.split('/')[0]);
+  return connectedAccounts
+    ? connectedAccounts.filter((id) => id.indexOf(walletOrigin) !== -1).map((id) => id.split('/')[0])
+    : [];
 };
 
 export const connectNewAccount = async (
