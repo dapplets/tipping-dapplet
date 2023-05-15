@@ -1,6 +1,6 @@
 {
-  "name": "tipping-near-dapplet",
-  "version": "0.1.22",
+  "name": "new-tipping-near-dapplet",
+  "version": "0.2.5",
   "description": "Tipping Dapplet allowing you to send money to another person on Twitter. Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.",
   "main": "lib/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "author": "Dapplets Project",
   "license": "MIT",
   "devDependencies": {
-    "@dapplets/dapplet-extension": "^0.44.0-alpha.7",
+    "@dapplets/dapplet-extension": "develop",
     "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-image": "^2.0.6",
     "@rollup/plugin-json": "^4.1.0",
