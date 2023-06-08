@@ -33,8 +33,8 @@ export default [
       serve({
         port: 3001,
         https: {
-          key: fs.readFileSync('src/server/secret/server.key'),
-          cert: fs.readFileSync('src/server/secret/server.cert'),
+          key: fs.readFileSync('src/secret/localhost/localhost.decrypted.key'),
+          cert: fs.readFileSync('src/secret/localhost/localhost.crt')
         },
         headers: {
           'Access-Control-Allow-Origin': '*',
