@@ -36,6 +36,9 @@ export default class {
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
   private _initWidgetFunctions: { [name: string]: () => Promise<void> } = {};
+
+  private _globalContext = {};
+
   executeInitWidgetFunctions = (): Promise<void[]> =>
     Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
 
@@ -74,80 +77,91 @@ export default class {
 
     const { button, avatarBadge } = this.adapter.exports;
     const { $ } = this.adapter.attachConfig({
-      PROFILE: () => [
-        button({
-          id: 'bindButton',
-          DEFAULT: {
-            hidden: true,
-            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-            tooltip: 'Bind tipping wallet',
-            init: this.onProfileButtonClaimInit,
-            exec: this.onProfileButtonClaimExec,
-          },
-        }),
-        button({
-          id: 'rebindButton',
-          DEFAULT: {
-            tooltip: 'Rebind tipping wallet',
-            hidden: true,
-            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-            init: this.onProfileButtonRebindInit,
-            exec: this.onProfileButtonRebindExec,
-          },
-        }),
-        button({
-          id: 'unbindButton',
-          DEFAULT: {
-            tooltip: 'Unbind tipping wallet',
-            hidden: true,
-            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-            init: this.onProfileButtonUnbindInit,
-            exec: this.onProfileButtonUnbindExec,
-          },
-        }),
-        avatarBadge({
-          DEFAULT: {
-            img: NEAR_BIG_ICON,
-            horizontal: 'right',
-            vertical: 'bottom',
-            hidden: true,
-            init: this.onProfileAvatarBadgeInit,
-            exec: this.onProfileAvatarBadgeExec,
-          },
-        }),
-      ],
-      POST: () => [
-        button({
-          DEFAULT: {
-            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-            label: 'Tip',
-            tooltip: 'Send donation',
-            amount: '0',
-            donationsAmount: '0',
-            nearAccount: '',
-            debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
-            init: this.onPostButtonInit,
-            exec: this.onPostButtonExec,
-          },
-        }),
-        avatarBadge({
-          DEFAULT: {
-            img: NEAR_SMALL_ICON,
-            basic: true,
-            horizontal: 'right',
-            vertical: 'bottom',
-            hidden: true,
-            init: this.onPostAvatarBadgeInit,
-            exec: this.onPostAvatarBadgeExec,
-          },
-        }),
-      ],
+      GLOBAL: (global) => {
+        // Save reference to the global context
+        Object.assign(this._globalContext, global);
+        console.log({ global });
+      },
+      PROFILE: (profile) => {
+        console.log({ profile });
+        return [
+          button({
+            id: 'bindButton',
+            DEFAULT: {
+              hidden: true,
+              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+              tooltip: 'Bind tipping wallet',
+              init: this.onProfileButtonClaimInit,
+              exec: this.onProfileButtonClaimExec,
+            },
+          }),
+          button({
+            id: 'rebindButton',
+            DEFAULT: {
+              tooltip: 'Rebind tipping wallet',
+              hidden: true,
+              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+              init: this.onProfileButtonRebindInit,
+              exec: this.onProfileButtonRebindExec,
+            },
+          }),
+          button({
+            id: 'unbindButton',
+            DEFAULT: {
+              tooltip: 'Unbind tipping wallet',
+              hidden: true,
+              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+              init: this.onProfileButtonUnbindInit,
+              exec: this.onProfileButtonUnbindExec,
+            },
+          }),
+          avatarBadge({
+            DEFAULT: {
+              img: NEAR_BIG_ICON,
+              horizontal: 'right',
+              vertical: 'bottom',
+              hidden: true,
+              init: this.onProfileAvatarBadgeInit,
+              exec: this.onProfileAvatarBadgeExec,
+            },
+          }),
+        ];
+      },
+      POST: (post) => {
+        console.log({ post });
+        return [
+          button({
+            DEFAULT: {
+              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+              label: 'Tip',
+              tooltip: 'Send donation',
+              amount: '0',
+              donationsAmount: '0',
+              nearAccount: '',
+              debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
+              init: this.onPostButtonInit,
+              exec: this.onPostButtonExec,
+            },
+          }),
+          avatarBadge({
+            DEFAULT: {
+              img: NEAR_SMALL_ICON,
+              basic: true,
+              horizontal: 'right',
+              vertical: 'bottom',
+              hidden: true,
+              init: this.onPostAvatarBadgeInit,
+              exec: this.onPostAvatarBadgeExec,
+            },
+          }),
+        ];
+      },
     });
     this._$ = $;
   }
 
   onProfileButtonClaimInit = async (profile, me) => {
-    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       this._initWidgetFunctions[[websiteName, username, 'claim'].join('/')] = () =>
@@ -173,7 +187,7 @@ export default class {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
-    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
@@ -211,7 +225,7 @@ export default class {
   };
 
   onProfileButtonUnbindInit = async (profile, me) => {
-    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       this._initWidgetFunctions[[websiteName, username, 'unbind'].join('/')] = () =>
@@ -232,7 +246,7 @@ export default class {
     me.loading = true;
     me.label = 'Waiting...';
     this._$(profile, 'rebindButton').disabled = true;
-    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
@@ -271,7 +285,7 @@ export default class {
   };
 
   onProfileButtonRebindInit = async (profile, me) => {
-    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       this._initWidgetFunctions[[websiteName, username, 'rebind'].join('/')] = () =>
@@ -292,7 +306,7 @@ export default class {
     me.loading = true;
     me.label = 'Waiting...';
     this._$(profile, 'unbindButton').disabled = true;
-    const { username, websiteName } = await getCurrentUserAsync(this.adapter);
+    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
@@ -333,7 +347,7 @@ export default class {
   };
 
   onProfileAvatarBadgeInit = async (profile, me) => {
-    const { websiteName } = await getCurrentUserAsync(this.adapter);
+    const { websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     const nearAccount = await this._tippingService.getWalletForAutoclaim(accountGId);
     this._initWidgetFunctions[[websiteName, profile.id, 'profile/badge'].join('/')] = () =>
@@ -358,7 +372,7 @@ export default class {
   };
 
   onPostButtonInit = async (post, me) => {
-    const { websiteName } = await getCurrentUserAsync(this.adapter);
+    const { websiteName } = await getCurrentUserAsync(this._globalContext);
     this._initWidgetFunctions[[websiteName, post.id, 'post/button'].join('/')] = () => this.onPostButtonInit(post, me);
     if (post.id && post.authorUsername) {
       me.hidden = false;
@@ -377,7 +391,7 @@ export default class {
   onDebounceDonate = async (me, externalAccount: string, tweetId: string, amount: string) => {
     const tweetGId = 'tweet/' + tweetId;
     try {
-      const { websiteName } = await getCurrentUserAsync(this.adapter);
+      const { websiteName } = await getCurrentUserAsync(this._globalContext);
       const accountGId = createAccountGlobalId(externalAccount, websiteName);
       me.loading = true;
       me.disabled = true;
@@ -419,7 +433,7 @@ export default class {
 
   onPostAvatarBadgeInit = async (post, me) => {
     try {
-      const { websiteName } = await getCurrentUserAsync(this.adapter);
+      const { websiteName } = await getCurrentUserAsync(this._globalContext);
       this._initWidgetFunctions[[websiteName, post.id, 'post/badge'].join('/')] = () =>
         this.onPostAvatarBadgeInit(post, me);
       if (post?.authorUsername && websiteName) {
