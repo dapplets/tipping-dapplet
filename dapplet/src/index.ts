@@ -80,82 +80,75 @@ export default class {
       GLOBAL: (global) => {
         // Save reference to the global context
         Object.assign(this._globalContext, global);
-        console.log({ global });
       },
-      PROFILE: (profile) => {
-        console.log({ profile });
-        return [
-          button({
-            id: 'bindButton',
-            DEFAULT: {
-              hidden: true,
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              tooltip: 'Bind tipping wallet',
-              init: this.onProfileButtonClaimInit,
-              exec: this.onProfileButtonClaimExec,
-            },
-          }),
-          button({
-            id: 'rebindButton',
-            DEFAULT: {
-              tooltip: 'Rebind tipping wallet',
-              hidden: true,
-              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-              init: this.onProfileButtonRebindInit,
-              exec: this.onProfileButtonRebindExec,
-            },
-          }),
-          button({
-            id: 'unbindButton',
-            DEFAULT: {
-              tooltip: 'Unbind tipping wallet',
-              hidden: true,
-              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-              init: this.onProfileButtonUnbindInit,
-              exec: this.onProfileButtonUnbindExec,
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_BIG_ICON,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: this.onProfileAvatarBadgeInit,
-              exec: this.onProfileAvatarBadgeExec,
-            },
-          }),
-        ];
-      },
-      POST: (post) => {
-        console.log({ post });
-        return [
-          button({
-            DEFAULT: {
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              label: 'Tip',
-              tooltip: 'Send donation',
-              amount: '0',
-              donationsAmount: '0',
-              nearAccount: '',
-              debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
-              init: this.onPostButtonInit,
-              exec: this.onPostButtonExec,
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_SMALL_ICON,
-              basic: true,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: this.onPostAvatarBadgeInit,
-              exec: this.onPostAvatarBadgeExec,
-            },
-          }),
-        ];
-      },
+      PROFILE: () => [
+        button({
+          id: 'bindButton',
+          DEFAULT: {
+            hidden: true,
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            tooltip: 'Bind tipping wallet',
+            init: this.onProfileButtonClaimInit,
+            exec: this.onProfileButtonClaimExec,
+          },
+        }),
+        button({
+          id: 'rebindButton',
+          DEFAULT: {
+            tooltip: 'Rebind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonRebindInit,
+            exec: this.onProfileButtonRebindExec,
+          },
+        }),
+        button({
+          id: 'unbindButton',
+          DEFAULT: {
+            tooltip: 'Unbind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonUnbindInit,
+            exec: this.onProfileButtonUnbindExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_BIG_ICON,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onProfileAvatarBadgeInit,
+            exec: this.onProfileAvatarBadgeExec,
+          },
+        }),
+      ],
+      POST: () => [
+        button({
+          DEFAULT: {
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            label: 'Tip',
+            tooltip: 'Send donation',
+            amount: '0',
+            donationsAmount: '0',
+            nearAccount: '',
+            debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
+            init: this.onPostButtonInit,
+            exec: this.onPostButtonExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_SMALL_ICON,
+            basic: true,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onPostAvatarBadgeInit,
+            exec: this.onPostAvatarBadgeExec,
+          },
+        }),
+      ],
     });
     this._$ = $;
   }

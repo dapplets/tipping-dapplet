@@ -23,6 +23,6 @@
     "default": "config/default.json"
   },
   "dependencies": {
-    "twitter-config.dapplet-base.eth": "0.1.0"
+    "twitter-config.dapplet-base.eth": "0.1.4"
   }
 }
