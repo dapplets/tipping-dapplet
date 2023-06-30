@@ -7,7 +7,7 @@
     "$ref": "package.json#/version"
   },
   "type": "FEATURE",
-  "title": "Tipping NEAR Dapplet",
+  "title": "TEST MV3 Tipping NEAR Dapplet",
   "description": {
     "$ref": "package.json#/description"
   },
@@ -23,6 +23,6 @@
     "default": "config/default.json"
   },
   "dependencies": {
-    "twitter-config.dapplet-base.eth": "0.1.4"
+    "twitter-config.dapplet-base.eth": "0.1.5"
   }
 }
