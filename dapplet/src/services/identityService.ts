@@ -75,7 +75,7 @@ const makeNewCAConnection = async (
   const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId);
   if (pendingRequestId !== -1 && pendingRequest) {
     const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
-    alert(
+    Core.alert(
       'Connection of ' +
         pendingRequest.firstAccount.split('/')[0] +
         ' and ' +

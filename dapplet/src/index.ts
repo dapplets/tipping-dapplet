@@ -80,10 +80,8 @@ export default class {
       GLOBAL: (global) => {
         // Save reference to the global context
         Object.assign(this._globalContext, global);
-        console.log({ global });
       },
-      PROFILE: (profile) => {
-        console.log({ profile });
+      PROFILE: () => {
         return [
           button({
             id: 'bindButton',
@@ -127,8 +125,7 @@ export default class {
           }),
         ];
       },
-      POST: (post) => {
-        console.log({ post });
+      POST: () => {
         return [
           button({
             DEFAULT: {
@@ -195,13 +192,13 @@ export default class {
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (
           nearAccountsFromCA.length !== 0 &&
-          !confirm(
+          !await Core.confirm(
             messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
           )
         ) {
           return this.executeInitWidgetFunctions();
         } else {
-          alert(messages.aboutCA);
+          Core.alert(messages.aboutCA);
           const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
@@ -209,13 +206,13 @@ export default class {
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
       if (!availableTokens) {
-        if (confirm(messages.settingTippingWallet(walletAccountId))) {
+        if (await Core.confirm(messages.settingTippingWallet(walletAccountId))) {
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          alert(messages.claimed(walletAccountId, this.network, txHash));
+          Core.alert(messages.claimed(walletAccountId, this.network, txHash));
         }
-      } else if (confirm(messages.claiming(walletAccountId, availableTokens))) {
+      } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens))) {
         const txHash = await this._tippingService.claimTokens(accountGId);
-        alert(messages.claimed(walletAccountId, this.network, txHash, availableTokens));
+        Core.alert(messages.claimed(walletAccountId, this.network, txHash, availableTokens));
       }
     } catch (e) {
       console.error(e);
@@ -253,13 +250,13 @@ export default class {
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
-        if (confirm(messages.unbinding(walletForAutoclaim, username))) {
+        if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
           await this._tippingService.deleteWalletForAutoclaim(accountGId);
-          alert(messages.unbinded(walletForAutoclaim, username));
+          Core.alert(messages.unbinded(walletForAutoclaim, username));
         }
       } else {
         if (
-          confirm(
+          await Core.confirm(
             messages.offerToReloginOrConnectAccount({
               username,
               websiteName,
@@ -271,9 +268,9 @@ export default class {
         ) {
           const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
           if (!isConnected) return this.executeInitWidgetFunctions();
-          if (confirm(messages.unbinding(walletForAutoclaim, username))) {
+          if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
-            alert(messages.unbinded(walletForAutoclaim, username));
+            Core.alert(messages.unbinded(walletForAutoclaim, username));
           }
         }
       }
@@ -313,15 +310,15 @@ export default class {
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId) {
-        alert(messages.rebindError(walletForAutoclaim));
+        Core.alert(messages.rebindError(walletForAutoclaim));
       } else if (nearAccountsFromCA.includes(walletAccountId)) {
-        if (confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
+        if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
           await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          alert(messages.binded(walletAccountId, username));
+          Core.alert(messages.binded(walletAccountId, username));
         }
       } else {
         if (
-          confirm(
+          await Core.confirm(
             messages.offerToReloginOrConnectAccount({
               username,
               websiteName,
@@ -333,9 +330,9 @@ export default class {
         ) {
           const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
           if (!isConnected) return this.executeInitWidgetFunctions();
-          if (confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
+          if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-            alert(messages.binded(walletAccountId, username));
+            Core.alert(messages.binded(walletAccountId, username));
           }
         }
       }
@@ -397,11 +394,11 @@ export default class {
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
       const total = sum(amount, fee);
-      if (confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName))) {
+      if (await Core.confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName))) {
         const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
         const explorerUrl =
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
-        alert(messages.successfulTipTransfer(amount, explorerUrl, txHash));
+        Core.alert(messages.successfulTipTransfer(amount, explorerUrl, txHash));
       }
     } catch (e) {
       console.error(e);
