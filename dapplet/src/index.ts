@@ -23,7 +23,7 @@ const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
 
 @Injectable
 export default class {
-  @Inject('twitter-adapter.dapplet-base.eth')
+  @Inject('twitter-config.dapplet-base.eth')
   public adapter;
   public network: NearNetworks;
   public tippingContractAddress: string;
