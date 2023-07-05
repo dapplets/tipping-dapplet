@@ -360,9 +360,9 @@ export default class {
 
   onProfileAvatarBadgeExec = (_, me) => {
     if (this.network === NearNetworks.Testnet) {
-      window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
+      Core.openPage(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`);
     } else if (this.network === NearNetworks.Mainnet) {
-      window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
+      Core.openPage(`https://explorer.near.org/accounts/${me.nearAccount}`);
     } else {
       throw new Error('Unsupported network');
     }
@@ -453,9 +453,9 @@ export default class {
 
   onPostAvatarBadgeExec = (ctx, me) => {
     if (this.network === NearNetworks.Testnet) {
-      window.open(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`, '_blank');
+      Core.openPage(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`);
     } else if (this.network === NearNetworks.Mainnet) {
-      window.open(`https://explorer.near.org/accounts/${me.nearAccount}`, '_blank');
+      Core.openPage(`https://explorer.near.org/accounts/${me.nearAccount}`);
     } else {
       throw new Error('Unsupported network');
     }
