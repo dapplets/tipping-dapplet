@@ -33,12 +33,12 @@ export const getNearAccountsFromCa = async (accountGId: string, network: string)
 };
 
 export const connectNewAccount = async (
-  adapter: any,
+  globalContext: any,
   walletAccountId: string,
   network: NearNetworks,
 ): Promise<boolean> => {
   try {
-    const requestStatus = await makeNewCAConnection(adapter, walletAccountId, network);
+    const requestStatus = await makeNewCAConnection(globalContext, walletAccountId, network);
     if (requestStatus === 'rejected') {
       return false;
     }
@@ -50,11 +50,11 @@ export const connectNewAccount = async (
 };
 
 const makeNewCAConnection = async (
-  adapter: any,
+  globalContext: any,
   walletAccountId: string,
   walletNetwork: NearNetworks,
 ): Promise<CARequestStatus> => {
-  const { username, fullname, websiteName, img } = await getCurrentUserAsync(adapter);
+  const { username, fullname, websiteName, img } = await getCurrentUserAsync(globalContext);
   const websiteNameLowerCase = websiteName.toLowerCase();
   const args = {
     firstAccountId: username,
@@ -85,7 +85,7 @@ const makeNewCAConnection = async (
     );
     return requestStatus;
   }
-  return makeNewCAConnection(adapter, walletAccountId, walletNetwork); // ToDo: improve if it's possible
+  return makeNewCAConnection(globalContext, walletAccountId, walletNetwork); // ToDo: improve if it's possible
 };
 
 const getCAPendingRequest = async (

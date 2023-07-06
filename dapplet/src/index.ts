@@ -199,7 +199,7 @@ export default class {
           return this.executeInitWidgetFunctions();
         } else {
           Core.alert(messages.aboutCA);
-          const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
@@ -266,7 +266,7 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
@@ -328,7 +328,7 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(this.adapter, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
