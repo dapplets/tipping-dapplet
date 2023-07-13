@@ -192,9 +192,9 @@ export default class {
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (
           nearAccountsFromCA.length !== 0 &&
-          !await Core.confirm(
+          !(await Core.confirm(
             messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
-          )
+          ))
         ) {
           return this.executeInitWidgetFunctions();
         } else {
@@ -205,6 +205,7 @@ export default class {
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
+
       if (!availableTokens) {
         if (await Core.confirm(messages.settingTippingWallet(walletAccountId))) {
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
@@ -222,6 +223,9 @@ export default class {
   };
 
   onProfileButtonUnbindInit = async (profile, me) => {
+    me.disabled = true;
+    me.loading = true;
+    me.label = 'Waiting...';
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
@@ -229,6 +233,7 @@ export default class {
         this.onProfileButtonUnbindInit(profile, me);
       const accountGId = createAccountGlobalId(profile.id, websiteName);
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+
       me.label = 'Unbind';
       me.disabled = false;
       me.loading = false;
