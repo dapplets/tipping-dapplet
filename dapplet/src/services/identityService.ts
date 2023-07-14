@@ -75,14 +75,23 @@ const makeNewCAConnection = async (
   const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId);
   if (pendingRequestId !== -1 && pendingRequest) {
     const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
-    Core.alert(
-      'Connection of ' +
+    Core.notify({
+      title:
+        'Connection of ' +
         pendingRequest.firstAccount.split('/')[0] +
         ' and ' +
         pendingRequest.secondAccount.split('/')[0] +
         ' has been ' +
         requestStatus,
-    );
+    });
+    // Core.alert(
+    //   'Connection of ' +
+    //     pendingRequest.firstAccount.split('/')[0] +
+    //     ' and ' +
+    //     pendingRequest.secondAccount.split('/')[0] +
+    //     ' has been ' +
+    //     requestStatus,
+    // );
     return requestStatus;
   }
   return makeNewCAConnection(globalContext, walletAccountId, walletNetwork); // ToDo: improve if it's possible
