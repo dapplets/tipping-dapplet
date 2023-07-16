@@ -16,7 +16,6 @@ import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
 import { NearNetworks } from './interfaces';
 import * as messages from './messages';
-import { log } from 'mathjs';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'v2.tipping.testnet';
@@ -35,7 +34,6 @@ const CONFIRM = [
 @Injectable
 export default class {
   @Inject('twitter-config.dapplet-base.eth')
-  
   public adapter;
   public network: NearNetworks;
   public tippingContractAddress: string;
@@ -56,7 +54,7 @@ export default class {
 
   async activate(): Promise<void> {
     await this.pasteWidgets();
-    this.subscription = Core.events.ofType('notification_action').subscribe(this.handleViaCore as any);
+    this.subscription = Core.events.ofType('notification_action').subscribe(this.handleNotificationAction as any);
     Core.onConnectedAccountsUpdate(async () => {
       const network = await Core.getPreferredConnectedAccountsNetwork();
       if (network !== this.network) {
@@ -220,8 +218,8 @@ export default class {
             }),
 
             payload: {
-              accountA: 'twitter/example.user',
-              accountB: 'ethereum/0xdead...beef',
+              accountA: walletAccountId,
+              accountB: nearAccountsFromCA,
             },
             actions: [
               {
@@ -231,8 +229,8 @@ export default class {
               },
               {
                 icon: null,
-                action: 'Close nearAccountsFromCA',
-                title: 'Close',
+                action: 'Cancel nearAccountsFromCA',
+                title: 'Cancel',
               },
             ],
           });
@@ -240,12 +238,12 @@ export default class {
           // return this.executeInitWidgetFunctions();
         } else {
           console.log(' Core.notify else');
-          Core.notify({
-            title: messages.aboutCA,
-          });
+          // Core.notify({
+          //   title: messages.aboutCA,
+          // });
 
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
-          if (!isConnected) return this.executeInitWidgetFunctions();
+          // const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          // if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
@@ -257,18 +255,18 @@ export default class {
           title: messages.settingTippingWallet(walletAccountId),
 
           payload: {
-            accountA: 'twitter/example.user',
-            accountB: 'ethereum/0xdead...beef',
+            accountA: accountGId,
+            accountB: walletAccountId,
           },
           actions: [
             {
               icon: null,
-              action: 'Ok availableTokens',
+              action: 'Ok !availableTokens',
               title: 'Ok',
             },
             {
               icon: null,
-              action: 'Cancel availableTokens',
+              action: 'Cancel !availableTokens',
               title: 'Cancel',
             },
           ],
@@ -287,18 +285,18 @@ export default class {
           title: messages.claiming(walletAccountId, availableTokens),
 
           payload: {
-            accountA: 'twitter/example.user',
-            accountB: 'ethereum/0xdead...beef',
+            accountA: accountGId,
+            accountB: availableTokens,
           },
           actions: [
             {
               icon: null,
-              action: 'Ok else',
+              action: 'Ok availableTokens',
               title: 'Ok',
             },
             {
               icon: null,
-              action: 'Cancel else',
+              action: 'Cancel availableTokens',
               title: 'Cancel',
             },
           ],
@@ -311,9 +309,10 @@ export default class {
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      this.executeInitWidgetFunctions();
     }
+    // finally {
+    //   this.executeInitWidgetFunctions();
+    // }
   };
 
   onProfileButtonUnbindInit = async (profile, me) => {
@@ -345,42 +344,90 @@ export default class {
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
-        if (await Core.confirm(messages.unbinding(walletForAutoclaim, username), CONFIRM)) {
-          await this._tippingService.deleteWalletForAutoclaim(accountGId);
-          Core.notify({
-            title: messages.unbinded(walletForAutoclaim, username),
-          });
-          // Core.alert(messages.unbinded(walletForAutoclaim, username));
-        }
+        Core.notify({
+          title: messages.unbinding(walletForAutoclaim, username),
+
+          payload: {
+            accountA: accountGId,
+            accountB: walletForAutoclaim,
+          },
+          actions: [
+            {
+              icon: null,
+              action: 'Ok walletAccountId',
+              title: 'Ok',
+            },
+            {
+              icon: null,
+              action: 'Cancel walletAccountId',
+              title: 'Cancel',
+            },
+          ],
+        });
+        // if (await Core.confirm(messages.unbinding(walletForAutoclaim, username), CONFIRM)) {
+        // await this._tippingService.deleteWalletForAutoclaim(accountGId);
+        // Core.notify({
+        //   title: messages.unbinded(walletForAutoclaim, username),
+        // });
+        // Core.alert(messages.unbinded(walletForAutoclaim, username));
+        // }
       } else {
-        if (
-          await Core.confirm(
-            messages.offerToReloginOrConnectAccount({
-              username,
-              websiteName,
-              walletAccountId,
-              nearAccountsFromCA,
-              walletForAutoclaim,
-            }),
-            CONFIRM,
-          )
-        ) {
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
-          if (!isConnected) return this.executeInitWidgetFunctions();
-          if ((await Core.confirm(messages.unbinding(walletForAutoclaim, username)), CONFIRM)) {
-            await this._tippingService.deleteWalletForAutoclaim(accountGId);
-            Core.notify({
-              title: messages.unbinded(walletForAutoclaim, username),
-            });
-            // Core.alert(messages.unbinded(walletForAutoclaim, username));
-          }
-        }
+        Core.notify({
+          title: messages.offerToReloginOrConnectAccount({
+            username,
+            websiteName,
+            walletAccountId,
+            nearAccountsFromCA,
+            walletForAutoclaim,
+          }),
+
+          payload: {
+            accountA: accountGId,
+            accountB: walletAccountId,
+          },
+          actions: [
+            {
+              icon: null,
+              action: 'Ok !walletAccountId',
+              title: 'Ok',
+            },
+            {
+              icon: null,
+              action: 'Cancel !walletAccountId',
+              title: 'Cancel',
+            },
+          ],
+        });
+        // if (
+        //   await Core.confirm(
+        //     messages.offerToReloginOrConnectAccount({
+        //       username,
+        //       websiteName,
+        //       walletAccountId,
+        //       nearAccountsFromCA,
+        //       walletForAutoclaim,
+        //     }),
+        //     CONFIRM,
+        //   )
+        // ) {
+        // const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+        // if (!isConnected) return this.executeInitWidgetFunctions();
+
+        // if ((await Core.confirm(messages.unbinding(walletForAutoclaim, username)), CONFIRM)) {
+        // await this._tippingService.deleteWalletForAutoclaim(accountGId);
+        // Core.notify({
+        //   title: messages.unbinded(walletForAutoclaim, username),
+        // });
+        // Core.alert(messages.unbinded(walletForAutoclaim, username));
+        // }
+        // }
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      this.executeInitWidgetFunctions();
     }
+    // finally {
+    //   this.executeInitWidgetFunctions();
+    // }
   };
 
   onProfileButtonRebindInit = async (profile, me) => {
@@ -415,44 +462,93 @@ export default class {
         Core.notify({
           title: messages.rebindError(walletForAutoclaim),
         });
+        // todo: new
+        this.executeInitWidgetFunctions();
         // Core.alert(messages.rebindError(walletForAutoclaim));
       } else if (nearAccountsFromCA.includes(walletAccountId)) {
-        if ((await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim)), CONFIRM)) {
-          await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          Core.notify({
-            title: messages.binded(walletAccountId, username),
-          });
-          // Core.alert(messages.binded(walletAccountId, username));
-        }
+        Core.notify({
+          title: messages.rebinding(username, walletAccountId, walletForAutoclaim),
+
+          payload: {
+            accountA: accountGId,
+            accountB: walletAccountId,
+          },
+          actions: [
+            {
+              icon: null,
+              action: 'Ok nearAccountsFromCA includes walletAccountId',
+              title: 'Ok',
+            },
+            {
+              icon: null,
+              action: 'Cancel nearAccountsFromCA includes walletAccountId',
+              title: 'Cancel',
+            },
+          ],
+        });
+        // if ((await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim)), CONFIRM)) {
+        // await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
+        // Core.notify({
+        //   title: messages.binded(walletAccountId, username),
+        // });
+        // Core.alert(messages.binded(walletAccountId, username));
+        // }
       } else {
-        if (
-          await Core.confirm(
-            messages.offerToReloginOrConnectAccount({
-              username,
-              websiteName,
-              walletAccountId,
-              nearAccountsFromCA,
-              walletForAutoclaim,
-            }),
-            CONFIRM,
-          )
-        ) {
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
-          if (!isConnected) return this.executeInitWidgetFunctions();
-          if ((await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim)), CONFIRM)) {
-            await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-            Core.notify({
-              title: messages.binded(walletAccountId, username),
-            });
-            // Core.alert(messages.binded(walletAccountId, username));
-          }
-        }
+        Core.notify({
+          title: messages.offerToReloginOrConnectAccount({
+            username,
+            websiteName,
+            walletAccountId,
+            nearAccountsFromCA,
+            walletForAutoclaim,
+          }),
+
+          payload: {
+            accountA: accountGId,
+            accountB: walletAccountId,
+          },
+          actions: [
+            {
+              icon: null,
+              action: 'Ok nearAccountsFromCA !includes walletAccountId',
+              title: 'Ok',
+            },
+            {
+              icon: null,
+              action: 'Cancel nearAccountsFromCA !includes walletAccountId',
+              title: 'Cancel',
+            },
+          ],
+        });
+        // if (
+        //   await Core.confirm(
+        //     messages.offerToReloginOrConnectAccount({
+        //       username,
+        //       websiteName,
+        //       walletAccountId,
+        //       nearAccountsFromCA,
+        //       walletForAutoclaim,
+        //     }),
+        //     CONFIRM,
+        //   )
+        // ) {
+        // const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+        // if (!isConnected) return this.executeInitWidgetFunctions();
+        // if ((await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim)), CONFIRM)) {
+        // await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
+        // Core.notify({
+        //   title: messages.binded(walletAccountId, username),
+        // });
+        // Core.alert(messages.binded(walletAccountId, username));
+        // }
+        // }
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      this.executeInitWidgetFunctions();
     }
+    // finally {
+    //   this.executeInitWidgetFunctions();
+    // }
   };
 
   onProfileAvatarBadgeInit = async (profile, me) => {
@@ -506,19 +602,41 @@ export default class {
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
       const total = sum(amount, fee);
-      if ((await Core.confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName)), CONFIRM)) {
-        const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
-        const explorerUrl =
-          this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
-        Core.notify({
-          title: 'Tipping Dapplet',
-          message: messages.successfulTipTransfer(amount, explorerUrl, txHash),
-        });
-        // Core.alert(messages.successfulTipTransfer(amount, explorerUrl, txHash));
-      }
+      const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
+      const explorerUrl =
+        this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+      Core.notify({
+        title: messages.tipTransfer(amount, fee, externalAccount, websiteName),
+
+        payload: {
+          accountA: amount,
+          accountB: explorerUrl,
+          accountC: txHash,
+        },
+        actions: [
+          {
+            icon: null,
+            action: 'Ok tipTransfer',
+            title: 'Ok',
+          },
+          {
+            icon: null,
+            action: 'Cancel tipTransfer',
+            title: 'Cancel',
+          },
+        ],
+      });
+      // if ((await Core.confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName)), CONFIRM)) {
+
+      // Core.notify({
+      //   title: messages.successfulTipTransfer(amount, explorerUrl, txHash),
+      // });
+      // Core.alert(messages.successfulTipTransfer(amount, explorerUrl, txHash));
+      // }
     } catch (e) {
       console.error(e);
     } finally {
+      //  todo: how transfer to handleNotificationAction?
       me.donationsAmount = await this._tippingService.getTotalTipsByItemId(tweetGId);
       me.loading = false;
       me.disabled = false;
@@ -576,10 +694,242 @@ export default class {
       throw new Error('Unsupported network');
     }
   };
-  handleViaCore = async ({ action, payload }) => {
+
+  handleNotificationAction = async ({ action, payload, title }) => {
     console.log(action, 'action');
     console.log(payload, 'payload');
-    if (action !== 'Close') return;
-    // Core.notify({ title: "IgnoreClicked" });
+    console.log(title, 'title');
+    if (action === 'Cancel nearAccountsFromCA') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok nearAccountsFromCA') {
+      try {
+        Core.notify({
+          title: messages.aboutCA,
+        });
+        const isConnected = await connectNewAccount(this._globalContext, payload.accountA, this.network);
+        if (!isConnected) return this.executeInitWidgetFunctions();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.executeInitWidgetFunctions();
+      }
+    }
+
+    if (action === 'Ok !availableTokens') {
+      try {
+        const txHash = await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
+        Core.notify({
+          title: messages.claimed(payload.accountB, this.network, txHash),
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.executeInitWidgetFunctions();
+      }
+    }
+
+    // todo: ?
+    if (action === 'Cancel !availableToken') {
+      this.executeInitWidgetFunctions();
+      return;
+    }
+
+    if (action === 'Ok availableToken') {
+      try {
+        const txHash = await this._tippingService.claimTokens(payload.accountA);
+        const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+        Core.notify({
+          title: messages.claimed(walletAccountId, this.network, txHash, payload.accountB),
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.executeInitWidgetFunctions();
+      }
+    }
+
+    // todo:?
+    if (action === 'Cancel availableToken') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok walletAccountId') {
+      try {
+        const { username } = await getCurrentUserAsync(this._globalContext);
+        await this._tippingService.deleteWalletForAutoclaim(payload.accountA);
+        Core.notify({
+          title: messages.unbinded(payload.accountB, username),
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        this.executeInitWidgetFunctions();
+      }
+    }
+
+    // todo:?
+    if (action === 'Cancel walletAccountId') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok !walletAccountId') {
+      try {
+        const { username } = await getCurrentUserAsync(this._globalContext);
+        const isConnected = await connectNewAccount(this._globalContext, payload.accountB, this.network);
+        const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(payload.accountA);
+        if (!isConnected) return this.executeInitWidgetFunctions();
+        Core.notify({
+          title: messages.unbinding(walletForAutoclaim, username),
+
+          payload: {
+            accountA: payload.accountA,
+            accountB: walletForAutoclaim,
+          },
+          actions: [
+            {
+              icon: null,
+              action: 'Ok !walletAccountId unbinding',
+              title: 'Ok',
+            },
+            {
+              icon: null,
+              action: 'Cancel !walletAccountId unbinding',
+              title: 'Cancel',
+            },
+          ],
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      //  finally {
+      //   this.executeInitWidgetFunctions();
+      // }
+    }
+
+    // todo:?
+    if (action === 'Cancel !walletAccountId') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok !walletAccountId unbinding') {
+      try {
+        const { username } = await getCurrentUserAsync(this._globalContext);
+        await this._tippingService.deleteWalletForAutoclaim(payload.accountA);
+        Core.notify({
+          title: messages.unbinded(payload.accountB, username),
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        return this.executeInitWidgetFunctions();
+      }
+    }
+
+    // todo:?
+    if (action === 'Cancel !walletAccountId unbinding') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok nearAccountsFromCA includes walletAccountId') {
+      try {
+        const { username } = await getCurrentUserAsync(this._globalContext);
+        await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
+        Core.notify({
+          title: messages.binded(payload.accountB, username),
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        return this.executeInitWidgetFunctions();
+      }
+    }
+
+    // todo:?
+    if (action === 'Cancel nearAccountsFromCA includes walletAccountId') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok nearAccountsFromCA !includes walletAccountId') {
+      try {
+        const { username } = await getCurrentUserAsync(this._globalContext);
+        const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(payload.accountA);
+        const isConnected = await connectNewAccount(this._globalContext, payload.accountB, this.network);
+        if (!isConnected) return this.executeInitWidgetFunctions();
+        Core.notify({
+          title: messages.rebinding(username, payload.accountB, walletForAutoclaim),
+
+          payload: {
+            accountA: payload.accountA,
+            accountB: payload.accountB,
+          },
+          actions: [
+            {
+              icon: null,
+              action: 'Ok nearAccountsFromCA !includes walletAccountId rebinding',
+              title: 'Ok',
+            },
+            {
+              icon: null,
+              action: 'Cancel nearAccountsFromCA !includes walletAccountId rebinding',
+              title: 'Cancel',
+            },
+          ],
+        });
+      } catch (e) {
+        console.error(e);
+      }
+      // finally {
+      //   this.executeInitWidgetFunctions();
+      // }
+    }
+
+    // todo:?
+    if (action === 'Cancel nearAccountsFromCA !includes walletAccountId') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    if (action === 'Ok nearAccountsFromCA !includes walletAccountId rebinding') {
+      try {
+        const { username } = await getCurrentUserAsync(this._globalContext);
+        await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
+        Core.notify({
+          title: messages.binded(payload.accountB, username),
+        });
+      } catch (e) {
+        console.error(e);
+      } finally {
+        return this.executeInitWidgetFunctions();
+      }
+    }
+
+    // todo:?
+    if (action === 'Cancel nearAccountsFromCA !includes walletAccountId rebinding') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    // todo: not finally
+    if (action === 'Ok tipTransfer') {
+      try {
+        Core.notify({
+          title: messages.successfulTipTransfer(payload.accountA, payload.accountB, payload.accountC),
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // todo:?
+    if (action === 'Cancel tipTransfer') {
+      return this.executeInitWidgetFunctions();
+    }
+
+    // try{
+    // }catch (e) {
+    //   console.error(e);
+    // } finally {
+    //   this.executeInitWidgetFunctions();
+    // }
   };
 }
