@@ -201,14 +201,7 @@ export default class {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
-        if (
-          nearAccountsFromCA.length !== 0
-          // !(await Core.confirm(
-          //   messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
-          //   CONFIRM,
-          // ))
-        ) {
-          console.log(' Core.notify: nearAccountsFromCA.length !== 0');
+        if (nearAccountsFromCA.length !== 0) {
           Core.notify({
             title: messages.offerToReloginOrConnectAccount({
               username,
@@ -234,23 +227,18 @@ export default class {
               },
             ],
           });
-          console.log('Core.notify: nearAccountsFromCA.length !== 0 end');
-          // return this.executeInitWidgetFunctions();
         } else {
-          console.log(' Core.notify else');
-          // Core.notify({
-          //   title: messages.aboutCA,
-          // });
+          Core.notify({
+            title: messages.aboutCA,
+          });
 
-          // const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
-          // if (!isConnected) return this.executeInitWidgetFunctions();
+          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
       if (!availableTokens) {
-        // if (await Core.confirm(messages.settingTippingWallet(walletAccountId), CONFIRM)) {
-        console.log('Core.notify: !availableTokens');
         Core.notify({
           title: messages.settingTippingWallet(walletAccountId),
 
@@ -271,16 +259,7 @@ export default class {
             },
           ],
         });
-        console.log('Core.notify: !availableTokens ');
-        // const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-        // Core.notify({
-        //   title: messages.claimed(walletAccountId, this.network, txHash),
-        // });
-      }
-      //  (
-      //   await Core.confirm(messages.claiming(walletAccountId, availableTokens), CONFIRM))
-      else {
-        console.log('Core.notify: availableTokens ');
+      } else {
         Core.notify({
           title: messages.claiming(walletAccountId, availableTokens),
 
@@ -301,18 +280,10 @@ export default class {
             },
           ],
         });
-        console.log('Core.notify: availableTokens  end');
-        // const txHash = await this._tippingService.claimTokens(accountGId);
-        // Core.notify({
-        //   title: messages.claimed(walletAccountId, this.network, txHash, availableTokens),
-        // });
       }
     } catch (e) {
       console.error(e);
     }
-    // finally {
-    //   this.executeInitWidgetFunctions();
-    // }
   };
 
   onProfileButtonUnbindInit = async (profile, me) => {
@@ -364,13 +335,6 @@ export default class {
             },
           ],
         });
-        // if (await Core.confirm(messages.unbinding(walletForAutoclaim, username), CONFIRM)) {
-        // await this._tippingService.deleteWalletForAutoclaim(accountGId);
-        // Core.notify({
-        //   title: messages.unbinded(walletForAutoclaim, username),
-        // });
-        // Core.alert(messages.unbinded(walletForAutoclaim, username));
-        // }
       } else {
         Core.notify({
           title: messages.offerToReloginOrConnectAccount({
@@ -398,36 +362,10 @@ export default class {
             },
           ],
         });
-        // if (
-        //   await Core.confirm(
-        //     messages.offerToReloginOrConnectAccount({
-        //       username,
-        //       websiteName,
-        //       walletAccountId,
-        //       nearAccountsFromCA,
-        //       walletForAutoclaim,
-        //     }),
-        //     CONFIRM,
-        //   )
-        // ) {
-        // const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
-        // if (!isConnected) return this.executeInitWidgetFunctions();
-
-        // if ((await Core.confirm(messages.unbinding(walletForAutoclaim, username)), CONFIRM)) {
-        // await this._tippingService.deleteWalletForAutoclaim(accountGId);
-        // Core.notify({
-        //   title: messages.unbinded(walletForAutoclaim, username),
-        // });
-        // Core.alert(messages.unbinded(walletForAutoclaim, username));
-        // }
-        // }
       }
     } catch (e) {
       console.error(e);
     }
-    // finally {
-    //   this.executeInitWidgetFunctions();
-    // }
   };
 
   onProfileButtonRebindInit = async (profile, me) => {
@@ -462,9 +400,8 @@ export default class {
         Core.notify({
           title: messages.rebindError(walletForAutoclaim),
         });
-        // todo: new
+
         this.executeInitWidgetFunctions();
-        // Core.alert(messages.rebindError(walletForAutoclaim));
       } else if (nearAccountsFromCA.includes(walletAccountId)) {
         Core.notify({
           title: messages.rebinding(username, walletAccountId, walletForAutoclaim),
@@ -486,13 +423,6 @@ export default class {
             },
           ],
         });
-        // if ((await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim)), CONFIRM)) {
-        // await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-        // Core.notify({
-        //   title: messages.binded(walletAccountId, username),
-        // });
-        // Core.alert(messages.binded(walletAccountId, username));
-        // }
       } else {
         Core.notify({
           title: messages.offerToReloginOrConnectAccount({
@@ -520,35 +450,10 @@ export default class {
             },
           ],
         });
-        // if (
-        //   await Core.confirm(
-        //     messages.offerToReloginOrConnectAccount({
-        //       username,
-        //       websiteName,
-        //       walletAccountId,
-        //       nearAccountsFromCA,
-        //       walletForAutoclaim,
-        //     }),
-        //     CONFIRM,
-        //   )
-        // ) {
-        // const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
-        // if (!isConnected) return this.executeInitWidgetFunctions();
-        // if ((await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim)), CONFIRM)) {
-        // await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-        // Core.notify({
-        //   title: messages.binded(walletAccountId, username),
-        // });
-        // Core.alert(messages.binded(walletAccountId, username));
-        // }
-        // }
       }
     } catch (e) {
       console.error(e);
     }
-    // finally {
-    //   this.executeInitWidgetFunctions();
-    // }
   };
 
   onProfileAvatarBadgeInit = async (profile, me) => {
@@ -626,13 +531,6 @@ export default class {
           },
         ],
       });
-      // if ((await Core.confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName)), CONFIRM)) {
-
-      // Core.notify({
-      //   title: messages.successfulTipTransfer(amount, explorerUrl, txHash),
-      // });
-      // Core.alert(messages.successfulTipTransfer(amount, explorerUrl, txHash));
-      // }
     } catch (e) {
       console.error(e);
     } finally {
@@ -696,9 +594,6 @@ export default class {
   };
 
   handleNotificationAction = async ({ action, payload, title }) => {
-    console.log(action, 'action');
-    console.log(payload, 'payload');
-    console.log(title, 'title');
     if (action === 'Cancel nearAccountsFromCA') {
       return this.executeInitWidgetFunctions();
     }
@@ -730,7 +625,6 @@ export default class {
       }
     }
 
-    // todo: ?
     if (action === 'Cancel !availableToken') {
       this.executeInitWidgetFunctions();
       return;
@@ -750,7 +644,6 @@ export default class {
       }
     }
 
-    // todo:?
     if (action === 'Cancel availableToken') {
       return this.executeInitWidgetFunctions();
     }
@@ -769,7 +662,6 @@ export default class {
       }
     }
 
-    // todo:?
     if (action === 'Cancel walletAccountId') {
       return this.executeInitWidgetFunctions();
     }
@@ -803,12 +695,8 @@ export default class {
       } catch (e) {
         console.error(e);
       }
-      //  finally {
-      //   this.executeInitWidgetFunctions();
-      // }
     }
 
-    // todo:?
     if (action === 'Cancel !walletAccountId') {
       return this.executeInitWidgetFunctions();
     }
@@ -823,11 +711,10 @@ export default class {
       } catch (e) {
         console.error(e);
       } finally {
-        return this.executeInitWidgetFunctions();
+        this.executeInitWidgetFunctions();
       }
     }
 
-    // todo:?
     if (action === 'Cancel !walletAccountId unbinding') {
       return this.executeInitWidgetFunctions();
     }
@@ -842,11 +729,10 @@ export default class {
       } catch (e) {
         console.error(e);
       } finally {
-        return this.executeInitWidgetFunctions();
+        this.executeInitWidgetFunctions();
       }
     }
 
-    // todo:?
     if (action === 'Cancel nearAccountsFromCA includes walletAccountId') {
       return this.executeInitWidgetFunctions();
     }
@@ -880,12 +766,8 @@ export default class {
       } catch (e) {
         console.error(e);
       }
-      // finally {
-      //   this.executeInitWidgetFunctions();
-      // }
     }
 
-    // todo:?
     if (action === 'Cancel nearAccountsFromCA !includes walletAccountId') {
       return this.executeInitWidgetFunctions();
     }
@@ -900,16 +782,14 @@ export default class {
       } catch (e) {
         console.error(e);
       } finally {
-        return this.executeInitWidgetFunctions();
+        this.executeInitWidgetFunctions();
       }
     }
 
-    // todo:?
     if (action === 'Cancel nearAccountsFromCA !includes walletAccountId rebinding') {
       return this.executeInitWidgetFunctions();
     }
 
-    // todo: not finally
     if (action === 'Ok tipTransfer') {
       try {
         Core.notify({
@@ -920,16 +800,8 @@ export default class {
       }
     }
 
-    // todo:?
     if (action === 'Cancel tipTransfer') {
       return this.executeInitWidgetFunctions();
     }
-
-    // try{
-    // }catch (e) {
-    //   console.error(e);
-    // } finally {
-    //   this.executeInitWidgetFunctions();
-    // }
   };
 }
