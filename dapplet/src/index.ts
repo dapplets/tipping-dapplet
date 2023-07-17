@@ -593,6 +593,9 @@ export default class {
   };
 
   handleNotificationAction = async ({ action, payload, title }) => {
+    console.log(action, 'action');
+
+    console.log(payload, 'payload');
     if (action === 'Cancel nearAccountsFromCA') {
       return this.executeInitWidgetFunctions();
     }
@@ -624,12 +627,12 @@ export default class {
       }
     }
 
-    if (action === 'Cancel !availableToken') {
+    if (action === 'Cancel !availableTokens') {
       this.executeInitWidgetFunctions();
       return;
     }
 
-    if (action === 'Ok availableToken') {
+    if (action === 'Ok availableTokens') {
       try {
         const txHash = await this._tippingService.claimTokens(payload.accountA);
         const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
@@ -643,7 +646,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel availableToken') {
+    if (action === 'Cancel availableTokens') {
       return this.executeInitWidgetFunctions();
     }
 
