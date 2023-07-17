@@ -20,16 +20,6 @@ import * as messages from './messages';
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'v2.tipping.testnet';
 const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
-const CONFIRM = [
-  {
-    action: 'ok',
-    title: 'ok',
-  },
-  {
-    action: 'cancel',
-    title: 'cancel',
-  },
-];
 
 @Injectable
 export default class {
@@ -499,6 +489,7 @@ export default class {
   };
 
   onDebounceDonate = async (me, externalAccount: string, tweetId: string, amount: string) => {
+    this._$ = me;
     const tweetGId = 'tweet/' + tweetId;
     try {
       const { websiteName } = await getCurrentUserAsync(this._globalContext);
@@ -532,15 +523,16 @@ export default class {
       });
     } catch (e) {
       console.error(e);
-    } finally {
-      //  todo: how transfer to handleNotificationAction?
-      me.donationsAmount = await this._tippingService.getTotalTipsByItemId(tweetGId);
-      me.loading = false;
-      me.disabled = false;
-      me.amount = '0';
-      me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' NEAR';
-      this.executeInitWidgetFunctions();
     }
+    //  finally {
+    //   //  todo: how transfer to handleNotificationAction?
+    //   me.donationsAmount = await this._tippingService.getTotalTipsByItemId(tweetGId);
+    //   me.loading = false;
+    //   me.disabled = false;
+    //   me.amount = '0';
+    //   me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' NEAR';
+    //   this.executeInitWidgetFunctions();
+    // }
   };
 
   onPostButtonExec = async (tweet, me) => {
@@ -592,10 +584,7 @@ export default class {
     }
   };
 
-  handleNotificationAction = async ({ action, payload, title }) => {
-    console.log(action, 'action');
-
-    console.log(payload, 'payload');
+  handleNotificationAction = async ({ action, payload }) => {
     if (action === 'Cancel nearAccountsFromCA') {
       return this.executeInitWidgetFunctions();
     }
@@ -793,6 +782,7 @@ export default class {
     }
 
     if (action === 'Ok tipTransfer') {
+      console.log(this._$);
       try {
         const txHash = await this._tippingService.sendTips(payload.accountA, payload.accountB, payload.accountC);
         const explorerUrl =
@@ -802,11 +792,23 @@ export default class {
         });
       } catch (e) {
         console.error(e);
+      } finally {
+        this._$.loading = false;
+        this._$.disabled = false;
+        this._$.amount = '0';
+        this._$.label = equals(this._$.donationsAmount, '0') ? 'Tip' : formatNear(this._$.donationsAmount) + ' NEAR';
+        this._$.donationsAmount = await this._tippingService.getTotalTipsByItemId(payload.accountA);
+        this.executeInitWidgetFunctions();
       }
     }
 
     if (action === 'Cancel tipTransfer') {
-      return this.executeInitWidgetFunctions();
+      this._$.loading = false;
+      this._$.disabled = false;
+      this._$.amount = '0';
+      this._$.label = equals(this._$.donationsAmount, '0') ? 'Tip' : formatNear(this._$.donationsAmount) + ' NEAR';
+      this._$.donationsAmount = await this._tippingService.getTotalTipsByItemId(payload.accountA);
+      this.executeInitWidgetFunctions();
     }
   };
 }
