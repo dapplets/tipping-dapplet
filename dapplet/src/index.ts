@@ -507,16 +507,15 @@ export default class {
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
       const total = sum(amount, fee);
-      const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
-      const explorerUrl =
-        this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+
       Core.notify({
         title: messages.tipTransfer(amount, fee, externalAccount, websiteName),
 
         payload: {
-          accountA: amount,
-          accountB: explorerUrl,
-          accountC: txHash,
+          accountA: accountGId,
+          accountB: tweetGId,
+          accountC: total,
+          accountD: amount,
         },
         actions: [
           {
@@ -792,8 +791,11 @@ export default class {
 
     if (action === 'Ok tipTransfer') {
       try {
+        const txHash = await this._tippingService.sendTips(payload.accountA, payload.accountB, payload.accountC);
+        const explorerUrl =
+          this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         Core.notify({
-          title: messages.successfulTipTransfer(payload.accountA, payload.accountB, payload.accountC),
+          title: messages.successfulTipTransfer(payload.accountD, explorerUrl, txHash),
         });
       } catch (e) {
         console.error(e);
