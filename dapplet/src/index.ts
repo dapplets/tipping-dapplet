@@ -193,7 +193,8 @@ export default class {
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (nearAccountsFromCA.length !== 0) {
           Core.notify({
-            title: messages.offerToReloginOrConnectAccount({
+            title: 'Tipping dapplet',
+            message: messages.offerToReloginOrConnectAccount({
               username,
               websiteName,
               walletAccountId,
@@ -219,7 +220,8 @@ export default class {
           });
         } else {
           Core.notify({
-            title: messages.aboutCA,
+            title: 'Tipping dapplet',
+            message: messages.aboutCA,
           });
 
           const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
@@ -230,7 +232,8 @@ export default class {
       const availableTokens = Number(formatNearAmount(tokens, 4));
       if (!availableTokens) {
         Core.notify({
-          title: messages.settingTippingWallet(walletAccountId),
+          title: 'Tipping dapplet',
+          message: messages.settingTippingWallet(walletAccountId),
 
           payload: {
             accountA: accountGId,
@@ -251,7 +254,8 @@ export default class {
         });
       } else {
         Core.notify({
-          title: messages.claiming(walletAccountId, availableTokens),
+          title: 'Tipping dapplet',
+          message: messages.claiming(walletAccountId, availableTokens),
 
           payload: {
             accountA: accountGId,
@@ -306,7 +310,8 @@ export default class {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
         Core.notify({
-          title: messages.unbinding(walletForAutoclaim, username),
+          title: 'Tipping dapplet',
+          message: messages.unbinding(walletForAutoclaim, username),
 
           payload: {
             accountA: accountGId,
@@ -327,7 +332,8 @@ export default class {
         });
       } else {
         Core.notify({
-          title: messages.offerToReloginOrConnectAccount({
+          title: 'Tipping dapplet',
+          message: messages.offerToReloginOrConnectAccount({
             username,
             websiteName,
             walletAccountId,
@@ -388,13 +394,15 @@ export default class {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId) {
         Core.notify({
-          title: messages.rebindError(walletForAutoclaim),
+          title: 'Tipping dapplet',
+          message: messages.rebindError(walletForAutoclaim),
         });
 
         this.executeInitWidgetFunctions();
       } else if (nearAccountsFromCA.includes(walletAccountId)) {
         Core.notify({
-          title: messages.rebinding(username, walletAccountId, walletForAutoclaim),
+          title: 'Tipping dapplet',
+          message: messages.rebinding(username, walletAccountId, walletForAutoclaim),
 
           payload: {
             accountA: accountGId,
@@ -415,7 +423,8 @@ export default class {
         });
       } else {
         Core.notify({
-          title: messages.offerToReloginOrConnectAccount({
+          title: 'Tipping dapplet',
+          message: messages.offerToReloginOrConnectAccount({
             username,
             websiteName,
             walletAccountId,
@@ -500,6 +509,7 @@ export default class {
       const total = sum(amount, fee);
 
       Core.notify({
+        message: 'Tipping dapplet',
         title: messages.tipTransfer(amount, fee, externalAccount, websiteName),
 
         payload: {
@@ -592,7 +602,8 @@ export default class {
     if (action === 'Ok nearAccountsFromCA') {
       try {
         Core.notify({
-          title: messages.aboutCA,
+          title: 'Tipping dapplet',
+          message: messages.aboutCA,
         });
         const isConnected = await connectNewAccount(this._globalContext, payload.accountA, this.network);
         if (!isConnected) return this.executeInitWidgetFunctions();
@@ -607,7 +618,8 @@ export default class {
       try {
         const txHash = await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
         Core.notify({
-          title: messages.claimed(payload.accountB, this.network, txHash),
+          title: 'Tipping dapplet',
+          message: messages.claimed(payload.accountB, this.network, txHash),
         });
       } catch (e) {
         console.error(e);
@@ -626,7 +638,8 @@ export default class {
         const txHash = await this._tippingService.claimTokens(payload.accountA);
         const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
         Core.notify({
-          title: messages.claimed(walletAccountId, this.network, txHash, payload.accountB),
+          title: 'Tipping dapplet',
+          message: messages.claimed(walletAccountId, this.network, txHash, payload.accountB),
         });
       } catch (e) {
         console.error(e);
@@ -644,7 +657,8 @@ export default class {
         const { username } = await getCurrentUserAsync(this._globalContext);
         await this._tippingService.deleteWalletForAutoclaim(payload.accountA);
         Core.notify({
-          title: messages.unbinded(payload.accountB, username),
+          title: 'Tipping dapplet',
+          message: messages.unbinded(payload.accountB, username),
         });
       } catch (e) {
         console.error(e);
@@ -664,7 +678,8 @@ export default class {
         const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(payload.accountA);
         if (!isConnected) return this.executeInitWidgetFunctions();
         Core.notify({
-          title: messages.unbinding(walletForAutoclaim, username),
+          title: 'Tipping dapplet',
+          message: messages.unbinding(walletForAutoclaim, username),
 
           payload: {
             accountA: payload.accountA,
@@ -697,7 +712,8 @@ export default class {
         const { username } = await getCurrentUserAsync(this._globalContext);
         await this._tippingService.deleteWalletForAutoclaim(payload.accountA);
         Core.notify({
-          title: messages.unbinded(payload.accountB, username),
+          title: 'Tipping dapplet',
+          message: messages.unbinded(payload.accountB, username),
         });
       } catch (e) {
         console.error(e);
@@ -715,7 +731,8 @@ export default class {
         const { username } = await getCurrentUserAsync(this._globalContext);
         await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
         Core.notify({
-          title: messages.binded(payload.accountB, username),
+          title: 'Tipping dapplet',
+          message: messages.binded(payload.accountB, username),
         });
       } catch (e) {
         console.error(e);
@@ -735,7 +752,8 @@ export default class {
         const isConnected = await connectNewAccount(this._globalContext, payload.accountB, this.network);
         if (!isConnected) return this.executeInitWidgetFunctions();
         Core.notify({
-          title: messages.rebinding(username, payload.accountB, walletForAutoclaim),
+          title: 'Tipping dapplet',
+          message: messages.rebinding(username, payload.accountB, walletForAutoclaim),
 
           payload: {
             accountA: payload.accountA,
@@ -768,7 +786,8 @@ export default class {
         const { username } = await getCurrentUserAsync(this._globalContext);
         await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
         Core.notify({
-          title: messages.binded(payload.accountB, username),
+          title: 'Tipping dapplet',
+          message: messages.binded(payload.accountB, username),
         });
       } catch (e) {
         console.error(e);
@@ -788,7 +807,8 @@ export default class {
         const explorerUrl =
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         Core.notify({
-          title: messages.successfulTipTransfer(payload.accountD, explorerUrl, txHash),
+          title: 'Tipping dapplet',
+          message: messages.successfulTipTransfer(payload.accountD, explorerUrl, txHash),
         });
       } catch (e) {
         console.error(e);

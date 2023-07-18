@@ -76,7 +76,8 @@ const makeNewCAConnection = async (
   if (pendingRequestId !== -1 && pendingRequest) {
     const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
     Core.notify({
-      title:
+      title: 'Tipping dapplet',
+      message:
         'Connection of ' +
         pendingRequest.firstAccount.split('/')[0] +
         ' and ' +
