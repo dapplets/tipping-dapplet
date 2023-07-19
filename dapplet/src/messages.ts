@@ -1,14 +1,14 @@
 import { NearNetworks } from './interfaces';
 
 export const zeroDonationStepError =
-  'A donation step must be more than zero. Change the step parameter in the dapplet settings.';
+  'The tip step must be more than zero. Change the step parameter in the dapplet settings.';
 
 export const zeroDelayError = 'A delay must be greater than zero. Change the delay parameter in the dapplet settings.';
 
 export const aboutCA =
   'We use the Connected Accounts service to verify user ownership of social media' +
   ' accounts and wallets. The service is based on the NEAR smart contract.' +
-  ' Connected Accounts allow you to link accounts decentralized and identify' +
+  ' Connected Accounts allow you to link accounts in decentralized way and identify' +
   ' yourself and other users on various web resources. More details can be found here:\n' +
   ' https://github.com/dapplets/connected-accounts-assembly';
 
@@ -35,7 +35,7 @@ export const offerToReloginOrConnectAccount = ({
   }connect ${walletAccountId} to @${username}. Do you want to make a new connection?`;
 
 export const tipTransfer = (amount: string, fee: string, externalAccount: string, websiteName: string): string =>
-  `You're tipping ${Core.near.utils.format.formatNearAmount(
+  `You're are about to tip ${Core.near.utils.format.formatNearAmount(
     amount,
   )} Ⓝ to "@${externalAccount}" at "${websiteName}".\n` +
   `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` +
@@ -46,12 +46,12 @@ export const successfulTipTransfer = (amount: string, explorerUrl: string, txHas
   `Tx link: ${explorerUrl}/transactions/${txHash}`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
-  `You are setting ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?';
+  `You are about to set ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?';
 
 export const claiming = (walletAccountId: string, availableTokens: number): string =>
-  `You are claiming ${availableTokens.toFixed(
+  `You are about to claim ${availableTokens.toFixed(
     2,
-  )} $NEAR and setting ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?';
+  )} $NEAR and set ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?';
 
 export const claimed = (
   walletAccountId: string,
@@ -62,26 +62,26 @@ export const claimed = (
   const explorerUrl =
     network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
   return (
-    `Claimed ${
+    `${
       availableTokens
-        ? availableTokens.toFixed(2) + ' $NEAR to ' + walletAccountId
+        ? availableTokens.toFixed(2) + ' $NEAR has been claimed to ' + walletAccountId
         : walletAccountId + ' as a tipping wallet'
     } with @tippingdapplet. ` + `Tx link: ${explorerUrl}/transactions/${txHash}`
   );
 };
 
 export const unbinding = (walletForAutoclaim: string, username: string): string =>
-  `You are unbinding ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?';
+  `You are about to unbind ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?';
 
 export const unbinded = (walletForAutoclaim: string, username: string): string =>
-  `${walletForAutoclaim} was unbinded from @${username} in @tippingdapplet`;
+  `${walletForAutoclaim} has been unbound from @${username} in @tippingdapplet`;
 
 export const rebindError = (walletForAutoclaim: string): string =>
-  `${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login to it in the extension.`;
+  `${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login into it using the Extension.`;
 
 export const rebinding = (username: string, walletAccountId: string, walletForAutoclaim: string): string =>
-  `You are binding ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
+  `You are about to bind ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
   '\nContinue?';
 
 export const binded = (walletAccountId: string, username: string): string =>
-  `${walletAccountId} was binded to @${username} in @tippingdapplet`;
+  `${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
