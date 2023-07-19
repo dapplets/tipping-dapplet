@@ -14,7 +14,7 @@ import {
 } from './services/identityService';
 import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
-import { NearNetworks } from './interfaces';
+import { NearNetworks, NotificationActions } from './interfaces';
 import * as messages from './messages';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
@@ -129,6 +129,7 @@ export default class {
       POST: () => {
         return [
           button({
+            id: 'tipButton',
             DEFAULT: {
               img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
               label: 'Tip',
@@ -207,13 +208,11 @@ export default class {
             },
             actions: [
               {
-                icon: null,
-                action: 'Ok nearAccountsFromCA',
+                action: NotificationActions.ConnectNewAccount_OK,
                 title: 'Ok',
               },
               {
-                icon: null,
-                action: 'Cancel nearAccountsFromCA',
+                action: NotificationActions.CANCEL,
                 title: 'Cancel',
               },
             ],
@@ -241,13 +240,11 @@ export default class {
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok !availableTokens',
+              action: NotificationActions.SetWalletForAutoclaim_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel !availableTokens',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -263,13 +260,11 @@ export default class {
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok availableTokens',
+              action: NotificationActions.Claim_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel availableTokens',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -312,20 +307,17 @@ export default class {
         Core.notify({
           title: 'Tipping dapplet',
           message: messages.unbinding(walletForAutoclaim, username),
-
           payload: {
             accountA: accountGId,
             accountB: walletForAutoclaim,
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok walletAccountId',
+              action: NotificationActions.Unbind_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel walletAccountId',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -347,13 +339,11 @@ export default class {
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok !walletAccountId',
+              action: NotificationActions.Relogin_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel !walletAccountId',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -403,20 +393,17 @@ export default class {
         Core.notify({
           title: 'Tipping dapplet',
           message: messages.rebinding(username, walletAccountId, walletForAutoclaim),
-
           payload: {
             accountA: accountGId,
             accountB: walletAccountId,
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok nearAccountsFromCA includes walletAccountId',
+              action: NotificationActions.Rebind_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel nearAccountsFromCA includes walletAccountId',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -438,13 +425,11 @@ export default class {
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok nearAccountsFromCA !includes walletAccountId',
+              action: NotificationActions.Relogin2_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel nearAccountsFromCA !includes walletAccountId',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -497,9 +482,11 @@ export default class {
     }
   };
 
-  onDebounceDonate = async (me, externalAccount: string, tweetId: string, amount: string) => {
-    this._$ = me;
+  onDebounceDonate = async (me, tweet: any, amount: string) => {
+    const externalAccount: string = tweet.authorUsername;
+    const tweetId: string = tweet.id;
     const tweetGId = 'tweet/' + tweetId;
+
     try {
       const { websiteName } = await getCurrentUserAsync(this._globalContext);
       const accountGId = createAccountGlobalId(externalAccount, websiteName);
@@ -511,22 +498,20 @@ export default class {
       Core.notify({
         message: messages.tipTransfer(amount, fee, externalAccount, websiteName),
         title: 'Tipping dapplet',
-
         payload: {
           accountA: accountGId,
           accountB: tweetGId,
           accountC: total,
           accountD: amount,
+          ctx: tweet,
         },
         actions: [
           {
-            icon: null,
-            action: 'Ok tipTransfer',
+            action: NotificationActions.Tip_OK,
             title: 'Ok',
           },
           {
-            icon: null,
-            action: 'Cancel tipTransfer',
+            action: NotificationActions.Tip_Cancel,
             title: 'Cancel',
           },
         ],
@@ -534,15 +519,6 @@ export default class {
     } catch (e) {
       console.error(e);
     }
-    //  finally {
-    //   //  todo: how transfer to handleNotificationAction?
-    //   me.donationsAmount = await this._tippingService.getTotalTipsByItemId(tweetGId);
-    //   me.loading = false;
-    //   me.disabled = false;
-    //   me.amount = '0';
-    //   me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' NEAR';
-    //   this.executeInitWidgetFunctions();
-    // }
   };
 
   onPostButtonExec = async (tweet, me) => {
@@ -558,7 +534,7 @@ export default class {
       me.amount = sum(me.amount, this._stepYocto);
       me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
     }
-    me.debouncedDonate(me, tweet.authorUsername, tweet.id, me.amount);
+    me.debouncedDonate(me, tweet, me.amount);
   };
 
   onPostAvatarBadgeInit = async (post, me) => {
@@ -595,11 +571,11 @@ export default class {
   };
 
   handleNotificationAction = async ({ action, payload }) => {
-    if (action === 'Cancel nearAccountsFromCA') {
+    if (action === NotificationActions.CANCEL) {
       return this.executeInitWidgetFunctions();
     }
 
-    if (action === 'Ok nearAccountsFromCA') {
+    if (action === NotificationActions.ConnectNewAccount_OK) {
       try {
         Core.notify({
           title: 'Tipping dapplet',
@@ -614,7 +590,7 @@ export default class {
       }
     }
 
-    if (action === 'Ok !availableTokens') {
+    if (action === NotificationActions.SetWalletForAutoclaim_OK) {
       try {
         const txHash = await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
         Core.notify({
@@ -628,12 +604,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel !availableTokens') {
-      this.executeInitWidgetFunctions();
-      return;
-    }
-
-    if (action === 'Ok availableTokens') {
+    if (action === NotificationActions.Claim_OK) {
       try {
         const txHash = await this._tippingService.claimTokens(payload.accountA);
         const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
@@ -648,11 +619,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel availableTokens') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok walletAccountId') {
+    if (action === NotificationActions.Unbind_OK) {
       try {
         const { username } = await getCurrentUserAsync(this._globalContext);
         await this._tippingService.deleteWalletForAutoclaim(payload.accountA);
@@ -667,11 +634,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel walletAccountId') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok !walletAccountId') {
+    if (action === NotificationActions.Relogin_OK) {
       try {
         const { username } = await getCurrentUserAsync(this._globalContext);
         const isConnected = await connectNewAccount(this._globalContext, payload.accountB, this.network);
@@ -680,20 +643,17 @@ export default class {
         Core.notify({
           title: 'Tipping dapplet',
           message: messages.unbinding(walletForAutoclaim, username),
-
           payload: {
             accountA: payload.accountA,
             accountB: walletForAutoclaim,
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok !walletAccountId unbinding',
+              action: NotificationActions.Unbind_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel !walletAccountId unbinding',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -703,30 +663,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel !walletAccountId') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok !walletAccountId unbinding') {
-      try {
-        const { username } = await getCurrentUserAsync(this._globalContext);
-        await this._tippingService.deleteWalletForAutoclaim(payload.accountA);
-        Core.notify({
-          title: 'Tipping dapplet',
-          message: messages.unbinded(payload.accountB, username),
-        });
-      } catch (e) {
-        console.error(e);
-      } finally {
-        this.executeInitWidgetFunctions();
-      }
-    }
-
-    if (action === 'Cancel !walletAccountId unbinding') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok nearAccountsFromCA includes walletAccountId') {
+    if (action === NotificationActions.Rebind_OK) {
       try {
         const { username } = await getCurrentUserAsync(this._globalContext);
         await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
@@ -741,11 +678,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel nearAccountsFromCA includes walletAccountId') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok nearAccountsFromCA !includes walletAccountId') {
+    if (action === NotificationActions.Relogin2_OK) {
       try {
         const { username } = await getCurrentUserAsync(this._globalContext);
         const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(payload.accountA);
@@ -754,20 +687,17 @@ export default class {
         Core.notify({
           title: 'Tipping dapplet',
           message: messages.rebinding(username, payload.accountB, walletForAutoclaim),
-
           payload: {
             accountA: payload.accountA,
             accountB: payload.accountB,
           },
           actions: [
             {
-              icon: null,
-              action: 'Ok nearAccountsFromCA !includes walletAccountId rebinding',
+              action: NotificationActions.Rebind_OK,
               title: 'Ok',
             },
             {
-              icon: null,
-              action: 'Cancel nearAccountsFromCA !includes walletAccountId rebinding',
+              action: NotificationActions.CANCEL,
               title: 'Cancel',
             },
           ],
@@ -777,31 +707,7 @@ export default class {
       }
     }
 
-    if (action === 'Cancel nearAccountsFromCA !includes walletAccountId') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok nearAccountsFromCA !includes walletAccountId rebinding') {
-      try {
-        const { username } = await getCurrentUserAsync(this._globalContext);
-        await this._tippingService.setWalletForAutoclaim(payload.accountA, payload.accountB);
-        Core.notify({
-          title: 'Tipping dapplet',
-          message: messages.binded(payload.accountB, username),
-        });
-      } catch (e) {
-        console.error(e);
-      } finally {
-        this.executeInitWidgetFunctions();
-      }
-    }
-
-    if (action === 'Cancel nearAccountsFromCA !includes walletAccountId rebinding') {
-      return this.executeInitWidgetFunctions();
-    }
-
-    if (action === 'Ok tipTransfer') {
-      console.log(this._$);
+    if (action === NotificationActions.Tip_OK) {
       try {
         const txHash = await this._tippingService.sendTips(payload.accountA, payload.accountB, payload.accountC);
         const explorerUrl =
@@ -813,21 +719,23 @@ export default class {
       } catch (e) {
         console.error(e);
       } finally {
-        this._$.loading = false;
-        this._$.disabled = false;
-        this._$.amount = '0';
-        this._$.label = equals(this._$.donationsAmount, '0') ? 'Tip' : formatNear(this._$.donationsAmount) + ' NEAR';
-        this._$.donationsAmount = await this._tippingService.getTotalTipsByItemId(payload.accountA);
+        const widget = this._$(payload.ctx, 'tipButton');
+        widget.loading = false;
+        widget.disabled = false;
+        widget.amount = '0';
+        widget.label = equals(widget.donationsAmount, '0') ? 'Tip' : formatNear(widget.donationsAmount) + ' NEAR';
+        widget.donationsAmount = await this._tippingService.getTotalTipsByItemId(payload.accountA);
         this.executeInitWidgetFunctions();
       }
     }
 
-    if (action === 'Cancel tipTransfer') {
-      this._$.loading = false;
-      this._$.disabled = false;
-      this._$.amount = '0';
-      this._$.label = equals(this._$.donationsAmount, '0') ? 'Tip' : formatNear(this._$.donationsAmount) + ' NEAR';
-      this._$.donationsAmount = await this._tippingService.getTotalTipsByItemId(payload.accountA);
+    if (action === NotificationActions.Tip_Cancel) {
+      const widget = this._$(payload.ctx, 'tipButton');
+      widget.loading = false;
+      widget.disabled = false;
+      widget.amount = '0';
+      widget.label = equals(widget.donationsAmount, '0') ? 'Tip' : formatNear(widget.donationsAmount) + ' NEAR';
+      widget.donationsAmount = await this._tippingService.getTotalTipsByItemId(payload.accountA);
       this.executeInitWidgetFunctions();
     }
   };

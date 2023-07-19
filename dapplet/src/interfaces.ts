@@ -20,6 +20,7 @@ export interface ICurrentUser {
   img?: string;
   websiteName: string;
 }
+
 export type TConnectedAccountsVerificationRequestInfo = {
   firstAccount: string;
   secondAccount: string;
@@ -30,3 +31,16 @@ export type TConnectedAccountsVerificationRequestInfo = {
 };
 
 export type CARequestStatus = 'not found' | 'pending' | 'approved' | 'rejected';
+
+export enum NotificationActions {
+  CANCEL = 'CANCEL',
+  ConnectNewAccount_OK = 'ConnectNewAccount_OK',
+  SetWalletForAutoclaim_OK = 'SetWalletForAutoclaim_OK',
+  Claim_OK = 'Claim_OK',
+  Unbind_OK = 'Unbind_OK',
+  Relogin_OK = 'Relogin_OK',
+  Rebind_OK = 'Rebind_OK',
+  Relogin2_OK = 'Relogin2_OK',
+  Tip_OK = 'Tip_OK',
+  Tip_Cancel = 'Tip_Cancel',
+}
