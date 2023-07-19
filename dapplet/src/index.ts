@@ -509,8 +509,8 @@ export default class {
       const total = sum(amount, fee);
 
       Core.notify({
-        message: 'Tipping dapplet',
-        title: messages.tipTransfer(amount, fee, externalAccount, websiteName),
+        message: messages.tipTransfer(amount, fee, externalAccount, websiteName),
+        title: 'Tipping dapplet',
 
         payload: {
           accountA: accountGId,
