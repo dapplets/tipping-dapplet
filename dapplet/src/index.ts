@@ -29,7 +29,6 @@ export default class {
   public tippingContractAddress: string;
   private _$;
   private _tippingService: TippingContractService;
-  public subscription;
   private _stepYocto: string;
   private _debounceDelay: number;
   private _maxAmountPerItem = '10000000000000000000000000'; // 10 NEAR
@@ -44,7 +43,6 @@ export default class {
 
   async activate(): Promise<void> {
     await this.pasteWidgets();
-    this.subscription = Core.events.ofType('notification_action').subscribe(this.handleNotificationAction as any);
     Core.onConnectedAccountsUpdate(async () => {
       const network = await Core.getPreferredConnectedAccountsNetwork();
       if (network !== this.network) {
@@ -570,7 +568,8 @@ export default class {
     }
   };
 
-  handleNotificationAction = async ({ action, payload }) => {
+  @OnEvent('notification_action')
+  async handleNotificationAction({ action, payload }) {
     if (action === NotificationActions.CANCEL) {
       return this.executeInitWidgetFunctions();
     }
