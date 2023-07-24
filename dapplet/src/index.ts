@@ -36,6 +36,7 @@ export default class {
   private _maxAmountPerTip = '1000000000000000000000000'; // 1 NEAR
 
   private _initWidgetFunctions: { [name: string]: () => Promise<void> } = {};
+  private _isItAnInternalWalletLogin = false;
 
   private _globalContext = {};
 
@@ -52,8 +53,10 @@ export default class {
       }
     });
     Core.onWalletsUpdate(async () => {
-      this._tippingService = new TippingContractService(this.network, this.tippingContractAddress);
-      this.executeInitWidgetFunctions();
+      if (!this._isItAnInternalWalletLogin) {
+        this._tippingService = new TippingContractService(this.network, this.tippingContractAddress);
+        this.executeInitWidgetFunctions();
+      }
     });
   }
 
@@ -188,13 +191,14 @@ export default class {
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
+      this._isItAnInternalWalletLogin = true;
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (
           nearAccountsFromCA.length !== 0 &&
-          !await Core.confirm(
+          !(await Core.confirm(
             messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
-          )
+          ))
         ) {
           return this.executeInitWidgetFunctions();
         } else {
@@ -205,6 +209,7 @@ export default class {
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
+
       if (!availableTokens) {
         if (await Core.confirm(messages.settingTippingWallet(walletAccountId))) {
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
@@ -217,6 +222,7 @@ export default class {
     } catch (e) {
       console.error(e);
     } finally {
+      this._isItAnInternalWalletLogin = false;
       this.executeInitWidgetFunctions();
     }
   };
@@ -229,6 +235,7 @@ export default class {
         this.onProfileButtonUnbindInit(profile, me);
       const accountGId = createAccountGlobalId(profile.id, websiteName);
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+
       me.label = 'Unbind';
       me.disabled = false;
       me.loading = false;
@@ -247,6 +254,7 @@ export default class {
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+      this._isItAnInternalWalletLogin = true;
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
@@ -277,6 +285,7 @@ export default class {
     } catch (e) {
       console.error(e);
     } finally {
+      this._isItAnInternalWalletLogin = false;
       this.executeInitWidgetFunctions();
     }
   };
@@ -307,6 +316,7 @@ export default class {
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
       const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+      this._isItAnInternalWalletLogin = true;
       const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       if (walletForAutoclaim === walletAccountId) {
@@ -339,6 +349,7 @@ export default class {
     } catch (e) {
       console.error(e);
     } finally {
+      this._isItAnInternalWalletLogin = false;
       this.executeInitWidgetFunctions();
     }
   };
