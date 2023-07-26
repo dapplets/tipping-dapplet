@@ -81,8 +81,7 @@ export default class {
     const { button, avatarBadge } = this.adapter.exports;
     const { $ } = this.adapter.attachConfig({
       GLOBAL: (global) => {
-        // Save reference to the global context
-        Object.assign(this._globalContext, global);
+        this._globalContext = global;
       },
       PROFILE: () => {
         return [
