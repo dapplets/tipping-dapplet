@@ -1,5 +1,6 @@
 import { CARequestStatus, NearNetworks, TConnectedAccountsVerificationRequestInfo } from '../interfaces';
 import { getCurrentUserAsync } from '../helpers';
+import { CARequestStatusMsg } from '../messages';
 
 export const getSession = async (network: NearNetworks, contractId: string): Promise<any> => {
   const prevSessions = await Core.sessions();
@@ -76,12 +77,11 @@ const makeNewCAConnection = async (
   if (pendingRequestId !== -1 && pendingRequest) {
     const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
     await Core.alert(
-      'Connection of ' +
-        pendingRequest.firstAccount.split('/')[0] +
-        ' and ' +
-        pendingRequest.secondAccount.split('/')[0] +
-        ' has been ' +
+      CARequestStatusMsg(
+        pendingRequest.firstAccount.split('/')[0],
+        pendingRequest.secondAccount.split('/')[0],
         requestStatus,
+      ),
     );
     return requestStatus;
   }

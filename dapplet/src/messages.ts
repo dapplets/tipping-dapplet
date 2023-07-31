@@ -85,3 +85,6 @@ export const rebinding = (username: string, walletAccountId: string, walletForAu
 
 export const binded = (walletAccountId: string, username: string): string =>
   `${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
+
+export const CARequestStatusMsg = (firstAccount: string, secondAccount: string, requestStatus: string): string =>
+  'Connection of ' + firstAccount + ' and ' + secondAccount + ' has been ' + requestStatus;
