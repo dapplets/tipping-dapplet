@@ -28,7 +28,9 @@ export const offerToReloginOrConnectAccount = ({
   `You are logged in with ${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
   `You can ${
     walletForAutoclaim || nearAccountsFromCA.length !== 0
-      ? `login with ${walletForAutoclaim ? walletForAutoclaim + ' or with ' : ''}${
+      ? `login with ${
+          walletForAutoclaim ? walletForAutoclaim + (nearAccountsFromCA.length !== 0 ? ' or with ' : '') : ''
+        }${
           nearAccountsFromCA.length !== 0 ? 'already connected wallets (' + nearAccountsFromCA.join(', ') + ')' : ''
         } or `
       : ''
@@ -65,7 +67,7 @@ export const claimed = (
     `${
       availableTokens
         ? availableTokens.toFixed(2) + ' $NEAR has been claimed to ' + walletAccountId
-        : walletAccountId + ' as a tipping wallet'
+        : walletAccountId + ' has been claimed as a tipping wallet'
     } with @tippingdapplet. ` + `Tx link: ${explorerUrl}/transactions/${txHash}`
   );
 };
