@@ -212,11 +212,23 @@ export default class {
       if (!availableTokens) {
         if (await Core.confirm(messages.settingTippingWallet(walletAccountId))) {
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          Core.notify(messages.claimed(walletAccountId, this.network, txHash));
+
+          Core.notify({
+            title: 'Tipping Dapplet',
+            message: messages.claimed(walletAccountId, this.network, txHash),
+            teaser: `${messages.nearUnicode + walletAccountId + ' has been set as a tipping wallet.'}`,
+          });
         }
       } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens))) {
         const txHash = await this._tippingService.claimTokens(accountGId);
-        Core.notify(messages.claimed(walletAccountId, this.network, txHash, availableTokens));
+
+        Core.notify({
+          title: 'Tipping Dapplet',
+          message: messages.claimed(walletAccountId, this.network, txHash, availableTokens),
+          teaser: `${
+            availableTokens.toFixed(2) + ' $NEAR of tips was received to  ' + messages.nearUnicode + walletAccountId
+          }`,
+        });
       }
     } catch (e) {
       console.error(e);
@@ -259,7 +271,12 @@ export default class {
       if (walletForAutoclaim === walletAccountId || nearAccountsFromCA.includes(walletAccountId)) {
         if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
           await this._tippingService.deleteWalletForAutoclaim(accountGId);
-          Core.notify(messages.unbinded(walletForAutoclaim, username));
+
+          Core.notify({
+            title: 'Tipping Dapplet',
+            message: messages.unbinded(walletForAutoclaim, username),
+            teaser: `${messages.nearUnicode}${walletForAutoclaim} has been unbound from @${username}`,
+          });
         }
       } else {
         if (
@@ -277,7 +294,12 @@ export default class {
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
-            Core.notify(messages.unbinded(walletForAutoclaim, username));
+
+            Core.notify({
+              title: 'Tipping Dapplet',
+              message: messages.unbinded(walletForAutoclaim, username),
+              teaser: `${messages.nearUnicode}${walletForAutoclaim} has been unbound from @${username}`,
+            });
           }
         }
       }
@@ -323,7 +345,12 @@ export default class {
       } else if (nearAccountsFromCA.includes(walletAccountId)) {
         if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
           await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-          Core.notify(messages.binded(walletAccountId, username));
+
+          Core.notify({
+            title: 'Tipping Dapplet',
+            message: messages.binded(walletAccountId, username),
+            teaser: `${messages.nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`,
+          });
         }
       } else {
         if (
@@ -341,7 +368,11 @@ export default class {
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
-            Core.notify(messages.binded(walletAccountId, username));
+            Core.notify({
+              title: 'Tipping Dapplet',
+              message: messages.binded(walletAccountId, username),
+              teaser: `${messages.nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`,
+            });
           }
         }
       }
@@ -408,7 +439,11 @@ export default class {
         const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
         const explorerUrl =
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
-        Core.notify(messages.successfulTipTransfer(amount, explorerUrl, txHash));
+        Core.notify({
+          title: 'Tipping Dapplet',
+          message: messages.successfulTipTransfer(amount, explorerUrl, txHash),
+          teaser: `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped`,
+        });
       }
     } catch (e) {
       console.error(e);

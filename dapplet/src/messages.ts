@@ -1,4 +1,5 @@
 import { NearNetworks } from './interfaces';
+export const nearUnicode = '\u24C3';
 
 export const zeroDonationStepError =
   'The tip step must be more than zero. Change the step parameter in the dapplet settings.';
@@ -6,11 +7,11 @@ export const zeroDonationStepError =
 export const zeroDelayError = 'A delay must be greater than zero. Change the delay parameter in the dapplet settings.';
 
 export const aboutCA =
-  'We use the Connected Accounts service to verify user ownership of social media' +
-  ' accounts and wallets. The service is based on the NEAR smart contract.' +
-  ' Connected Accounts allow you to link accounts in decentralized way and identify' +
-  ' yourself and other users on various web resources. More details can be found here:\n' +
-  ' https://github.com/dapplets/connected-accounts-assembly';
+  'We use Connected Accounts. It is the service to verify user ownership of web2' +
+  ' accounts and wallets based on the NEAR smart-contract. It allow you to link' +
+  ' accounts in decentralized way and identify yourself and other users ony' +
+  ' supported web sites. More details can be found [here]' +
+  '(https://github.com/dapplets/connected-accounts-assembly)';
 
 export const offerToReloginOrConnectAccount = ({
   username,
@@ -25,7 +26,7 @@ export const offerToReloginOrConnectAccount = ({
   nearAccountsFromCA: string[];
   walletForAutoclaim?: string;
 }): string =>
-  `You are logged in with ${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
+  `You are logged in with ${nearUnicode}${walletAccountId}, that is not connected with @${username} ${websiteName} account. ` +
   `You can ${
     walletForAutoclaim || nearAccountsFromCA.length !== 0
       ? `login with ${
@@ -37,23 +38,19 @@ export const offerToReloginOrConnectAccount = ({
   }connect ${walletAccountId} to @${username}. Do you want to make a new connection?`;
 
 export const tipTransfer = (amount: string, fee: string, externalAccount: string, websiteName: string): string =>
-  `You're are about to tip ${Core.near.utils.format.formatNearAmount(
-    amount,
-  )} Ⓝ to "@${externalAccount}" at "${websiteName}".\n` +
-  `A tiny fee of ${Core.near.utils.format.formatNearAmount(fee)} Ⓝ for project development will be added.\n` +
-  `Thank you for your support!`;
+  `You're are about to tip ${Core.near.utils.format.formatNearAmount(amount)} $NEAR to @${externalAccount} tweet.\n` +
+  `${Core.near.utils.format.formatNearAmount(fee)}$NEAR fee`;
 
 export const successfulTipTransfer = (amount: string, explorerUrl: string, txHash: string): string =>
-  `Tipped ${Core.near.utils.format.formatNearAmount(amount)} $NEAR with @tippingdapplet. ` +
-  `Tx link: ${explorerUrl}/transactions/${txHash}`;
+  `${Core.near.utils.format.formatNearAmount(amount)} $NEAR with was tipped. ` +
+  ` [Tx link:](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
-  `You are about to set ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?';
+  `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet` + '\nContinue?';
 
 export const claiming = (walletAccountId: string, availableTokens: number): string =>
-  `You are about to claim ${availableTokens.toFixed(
-    2,
-  )} $NEAR and set ${walletAccountId} as a tipping wallet with @tippingdapplet` + '\nContinue?';
+  `You are about to claim ${availableTokens.toFixed(2)} $NEAR and set ${nearUnicode}${walletAccountId} as a tipping` +
+  '\nContinue?';
 
 export const claimed = (
   walletAccountId: string,
@@ -63,30 +60,31 @@ export const claimed = (
 ): string => {
   const explorerUrl =
     network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+
   return (
     `${
       availableTokens
-        ? availableTokens.toFixed(2) + ' $NEAR has been claimed to ' + walletAccountId
-        : walletAccountId + ' has been claimed as a tipping wallet'
-    } with @tippingdapplet. ` + `Tx link: ${explorerUrl}/transactions/${txHash}`
+        ? availableTokens.toFixed(2) + ' $NEAR of tips was received to  ' + nearUnicode + walletAccountId
+        : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
+    }` + ` [Tx link](${explorerUrl}/transactions/${txHash})`
   );
 };
 
 export const unbinding = (walletForAutoclaim: string, username: string): string =>
-  `You are about to unbind ${walletForAutoclaim} from @${username} in @tippingdapplet` + '\nContinue?';
+  `You are about to unbind ${nearUnicode}${walletForAutoclaim} from @${username}` + '\nContinue?';
 
 export const unbinded = (walletForAutoclaim: string, username: string): string =>
-  `${walletForAutoclaim} has been unbound from @${username} in @tippingdapplet`;
+  `${nearUnicode}${walletForAutoclaim} has been unbound from @${username}`;
 
 export const rebindError = (walletForAutoclaim: string): string =>
-  `${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login into it using the Extension.`;
+  `${nearUnicode}${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login into it using the Extension.`;
 
 export const rebinding = (username: string, walletAccountId: string, walletForAutoclaim: string): string =>
-  `You are about to bind ${walletAccountId} to @${username} instead of ${walletForAutoclaim} in @tippingdapplet` +
+  `You are about to bind ${nearUnicode}${walletAccountId} to @${username} instead of ${walletForAutoclaim}` +
   '\nContinue?';
 
 export const binded = (walletAccountId: string, username: string): string =>
-  `${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
+  `${nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
 
 export const CARequestStatusMsg = (firstAccount: string, secondAccount: string, requestStatus: string): string =>
-  'Connection of ' + firstAccount + ' and ' + secondAccount + ' has been ' + requestStatus;
+  'Connection of ' + nearUnicode + firstAccount + ' and ' + secondAccount + ' has been ' + requestStatus;
