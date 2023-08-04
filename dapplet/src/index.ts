@@ -216,7 +216,7 @@ export default class {
           Core.notify({
             title: 'Tipping Dapplet',
             message: messages.claimed(walletAccountId, this.network, txHash),
-            teaser: `${messages.nearUnicode + walletAccountId + ' has been set as a tipping wallet.'}`,
+            teaser: messages.teaserClaimed(walletAccountId),
           });
         }
       } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens))) {
@@ -225,9 +225,7 @@ export default class {
         Core.notify({
           title: 'Tipping Dapplet',
           message: messages.claimed(walletAccountId, this.network, txHash, availableTokens),
-          teaser: `${
-            availableTokens.toFixed(2) + ' $NEAR of tips was received to  ' + messages.nearUnicode + walletAccountId
-          }`,
+          teaser: messages.teaserClaimed(walletAccountId, availableTokens),
         });
       }
     } catch (e) {
@@ -275,7 +273,7 @@ export default class {
           Core.notify({
             title: 'Tipping Dapplet',
             message: messages.unbinded(walletForAutoclaim, username),
-            teaser: `${messages.nearUnicode}${walletForAutoclaim} has been unbound from @${username}`,
+            teaser: messages.teaserUnbinded(walletForAutoclaim, username),
           });
         }
       } else {
@@ -298,7 +296,7 @@ export default class {
             Core.notify({
               title: 'Tipping Dapplet',
               message: messages.unbinded(walletForAutoclaim, username),
-              teaser: `${messages.nearUnicode}${walletForAutoclaim} has been unbound from @${username}`,
+              teaser: messages.teaserUnbinded(walletForAutoclaim, username),
             });
           }
         }
@@ -349,7 +347,7 @@ export default class {
           Core.notify({
             title: 'Tipping Dapplet',
             message: messages.binded(walletAccountId, username),
-            teaser: `${messages.nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`,
+            teaser: messages.teaserBinded(walletAccountId, username),
           });
         }
       } else {
@@ -371,7 +369,7 @@ export default class {
             Core.notify({
               title: 'Tipping Dapplet',
               message: messages.binded(walletAccountId, username),
-              teaser: `${messages.nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`,
+              teaser: messages.teaserBinded(walletAccountId, username),
             });
           }
         }
@@ -442,7 +440,7 @@ export default class {
         Core.notify({
           title: 'Tipping Dapplet',
           message: messages.successfulTipTransfer(amount, explorerUrl, txHash),
-          teaser: `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped`,
+          teaser: messages.teaserSuccessfulTipTransfer(amount),
         });
       }
     } catch (e) {
