@@ -64,7 +64,7 @@ export const claimed = (
   return (
     `${
       availableTokens
-        ? availableTokens.toFixed(2) + ' $NEAR of tips was received to  ' + nearUnicode + walletAccountId
+        ? availableTokens.toFixed(2) + ' $NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
         : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
     }` + ` [Tx link](${explorerUrl}/transactions/${txHash})`
   );
@@ -88,3 +88,23 @@ export const binded = (walletAccountId: string, username: string): string =>
 
 export const CARequestStatusMsg = (firstAccount: string, secondAccount: string, requestStatus: string): string =>
   'Connection of ' + nearUnicode + firstAccount + ' and ' + secondAccount + ' has been ' + requestStatus;
+
+export const teaserClaimed = (walletAccountId: string, availableTokens?: number) => {
+  return `${
+    availableTokens
+      ? availableTokens.toFixed(2) + ' $NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
+      : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
+  }`;
+};
+
+export const teaserUnbinded = (walletForAutoclaim: string, username: string) => {
+  return `${nearUnicode}${walletForAutoclaim} has been unbound from @${username}`;
+};
+
+export const teaserBinded = (walletAccountId: string, username: string): string => {
+  return `${nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
+};
+
+export const teaserSuccessfulTipTransfer = (amount: string): string => {
+  return `${Core.near.utils.format.formatNearAmount(amount)} $NEAR with was tipped.`;
+};
