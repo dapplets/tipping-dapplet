@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import AdmZip from 'adm-zip';
 
-const version = 'v0.58.0';
+const version = 'v0.59.0-alpha.1';
 const extensionUrl = `https://github.com/dapplets/dapplet-extension/releases/download/${version}/dapplet-extension.zip`;
 const extensionsPath = path.join(__dirname, 'extension')
 const versionPath = path.join(extensionsPath, version)
