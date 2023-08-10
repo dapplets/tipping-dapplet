@@ -424,8 +424,9 @@ export default class {
     }
   };
 
-  onDebounceDonate = async (me, externalAccount: string, tweetId: string, amount: string) => {
+  onDebounceDonate = async (me, externalAccount: string, tweetId: string, amount: string, tweet) => {
     const tweetGId = 'tweet/' + tweetId;
+
     try {
       const { websiteName } = await getCurrentUserAsync(this._globalContext);
       const accountGId = createAccountGlobalId(externalAccount, websiteName);
@@ -439,7 +440,7 @@ export default class {
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         Core.notify({
           title: 'Tipping Dapplet',
-          message: messages.successfulTipTransfer(amount, explorerUrl, txHash),
+          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet),
           teaser: messages.teaserSuccessfulTipTransfer(amount),
         });
       }
@@ -468,7 +469,7 @@ export default class {
       me.amount = sum(me.amount, this._stepYocto);
       me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
     }
-    me.debouncedDonate(me, tweet.authorUsername, tweet.id, me.amount);
+    me.debouncedDonate(me, tweet.authorUsername, tweet.id, me.amount, tweet);
   };
 
   onPostAvatarBadgeInit = async (post, me) => {
