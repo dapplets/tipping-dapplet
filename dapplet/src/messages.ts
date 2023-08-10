@@ -43,7 +43,7 @@ export const tipTransfer = (amount: string, fee: string, externalAccount: string
 
 export const successfulTipTransfer = (amount: string, explorerUrl: string, txHash: string,tweet:any): string =>
   `${Core.near.utils.format.formatNearAmount(amount)} $NEAR with was tipped to [tweet](https://twitter.com/${tweet.authorUsername}/status/${tweet.id}). ` +
-  ` [Tx link:](${explorerUrl}/transactions/${txHash})`;
+  ` [Tx link](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
   `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet` + '\nContinue?';
@@ -65,7 +65,7 @@ export const claimed = (
     `${
       availableTokens
         ? availableTokens.toFixed(2) + ' $NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
-        : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
+        : nearUnicode + walletAccountId + ' has been set as a tipping wallet. '
     }` + ` [Tx link](${explorerUrl}/transactions/${txHash})`
   );
 };
