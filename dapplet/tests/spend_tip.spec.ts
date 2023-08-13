@@ -3,19 +3,19 @@ import fs from 'fs';
 import path from 'path';
 
 // login info
-const { TWITTER_EMAIL, TWITTER_USERNAME, TWITTER_PASSWORD } = process.env;
+const { TWITTER_EMAIL, TWITTER_USERNAME, TWITTER_PASSWORD, SECRET_PHRASE } = process.env;
 
 const tipsReciever = {
   username: 'alsakhaev',
   bio: 'Web3 Developer at Dapplets',
 };
 
-
 const artifactsPath = path.join(__dirname, '..', 'artifacts');
 const cookiesPath = path.join(artifactsPath, 'cookies.json');
 
-test('Login in twitter', async ({ context }) => {
+test('Send Tip and check change text to button claim', async ({ context }) => {
   // apply cookies if exist
+  test.setTimeout(80000);
   if (fs.existsSync(cookiesPath)) {
     const cookies = fs.readFileSync(cookiesPath, 'utf8');
     const deserializedCookies = JSON.parse(cookies);
@@ -80,6 +80,60 @@ test('Login in twitter', async ({ context }) => {
   await page.waitForEvent(
     'console',
     (msg) => msg.text().includes('tipping-near-dapplet') && msg.text().includes('is loaded'),
-    );
-    
+  );
+
+  // check claim button text
+  await page.getByTestId('app-text-transition-container').locator(`span:has-not-text("Claim and get")`);
+
+  // click send tip and cancel
+  await page.getByTitle('Send donation').first().click();
+  await page.waitForTimeout(3000);
+  await page.getByTestId('actions-label');
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.locator(`span:has-not-text("NEAR")`);
+  await page.waitForTimeout(5000);
+
+    // click send tip and ok
+  await page.getByTitle('Send donation').first().dblclick();
+  await page.waitForTimeout(3000);
+  await page.getByTitle('Send donation').first().getByText('0.10 NEAR');
+  await page.waitForTimeout(3000);
+  await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();
+  await page.waitForTimeout(2000);
+
+  // connect near wallet
+  const [newPage] = await Promise.all([
+    context.waitForEvent('page'),
+    page.getByTestId('wallet-to-connect-near_mainnet').click(),
+  ]);
+  await newPage.waitForLoadState();
+  await expect(newPage).toHaveURL('https://app.mynearwallet.com/');
+  await newPage.getByRole('button', { name: 'Import Existing Account' }).click(), await newPage.waitForLoadState();
+  await expect(newPage).toHaveURL('https://app.mynearwallet.com/recover-account');
+  await newPage.getByRole('button', { name: 'Recover Account' }).first().click();
+  await newPage.waitForLoadState();
+  await expect(newPage).toHaveURL('https://app.mynearwallet.com/recover-seed-phrase');
+  await newPage.locator('input').type(SECRET_PHRASE);
+  await newPage.getByRole('button', { name: 'Find My Account' }).click();
+  await newPage.getByRole('button', { name: 'Next' }).click();
+
+  const [newPage2] = await Promise.all([
+    context.waitForEvent('page'),
+    await newPage.getByRole('button', { name: 'Connect' }).click(),
+    await page.waitForTimeout(5000)
+  ]);
+  await newPage2.getByRole('button', { name: 'Next' }).click();
+
+  const [newPage3] = await Promise.all([
+    context.waitForEvent('page'),
+    await newPage2.getByRole('button', { name: 'Connect' }).click(),
+    await newPage2.waitForTimeout(5000)
+  ]);
+  await newPage3.getByRole('button', { name: 'Approve' }).click(),
+  await newPage3.waitForTimeout(5000)
+
+  // open notification was tipped
+  await page.locator(`span:has-text("was tipped")`);
+  // check claim button new text
+  await page.getByTestId('app-text-transition-container').locator(`span:has-text("Claim and get")`);
 });
