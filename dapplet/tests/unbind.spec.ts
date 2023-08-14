@@ -84,7 +84,7 @@ test('Unbind', async ({ context }) => {
 
   // check claim button text
   await page.locator(`span:has-text("Unbind")`).click();
-  await page.pause();
+
 
 
   // // connect near wallet
