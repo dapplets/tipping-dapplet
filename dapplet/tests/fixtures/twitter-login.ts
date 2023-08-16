@@ -1,4 +1,5 @@
 import { test as base } from '@dapplets/dapplet-playwright';
+import { fixture as dappletExecutorFixture } from '../fixtures/dapplet-executor';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,7 +17,9 @@ export type TwitterLoginOptions = {
   twitterUsername: string;
 };
 
-export const test = base.extend<TwitterLoginOptions>({
+type ExtendParams = Parameters<typeof base.extend<TwitterLoginOptions>>;
+
+export const fixture: ExtendParams[0] = {
   twitterPassword: [null, { option: true }],
   twitterEmail: [null, { option: true }],
   twitterUsername: [null, { option: true }],
@@ -67,6 +70,8 @@ export const test = base.extend<TwitterLoginOptions>({
 
     await use(page);
   },
-});
+};
+
+export const test = base.extend<TwitterLoginOptions>(fixture).extend(dappletExecutorFixture);
 
 export const expect = test.expect;

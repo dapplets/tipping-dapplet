@@ -2,10 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import { TwitterLoginOptions } from './tests/fixtures/twitter-login';
 import { BrowserOptions } from '@dapplets/dapplet-playwright';
+import { DappletExecutorOptions } from './tests/fixtures/dapplet-executor';
 
 dotenv.config();
 
-export default defineConfig<TwitterLoginOptions & BrowserOptions>({
+export default defineConfig<TwitterLoginOptions & BrowserOptions & DappletExecutorOptions>({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -25,6 +26,8 @@ export default defineConfig<TwitterLoginOptions & BrowserOptions>({
         twitterUsername: process.env.TWITTER_USERNAME,
         newHeadless: process.env.CI ? true : false,
         extensionVersion: 'v0.60.0-alpha.2',
+        registryUrl: 'http://localhost:3001/dapplet.json',
+        dappletName: 'tipping-near-dapplet',
       },
     },
   ],
