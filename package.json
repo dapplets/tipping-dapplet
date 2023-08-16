@@ -6,7 +6,8 @@
   "scripts": {
     "install": "cd dapplet && npm i",
     "start": "cd dapplet && npm start",
-    "prettier": "npx prettier --write ."
+    "prettier": "npx prettier --write .",
+    "test": "cd dapplet && npm run test"
   },
   "repository": {
     "type": "git",
