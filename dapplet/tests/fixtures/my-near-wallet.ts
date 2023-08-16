@@ -1,4 +1,4 @@
-import { test as base } from './fixtures';
+import { test as base } from './twitter-login';
 import { MainApp } from '../pages/my-near-wallet/main-app';
 import { Login } from '../pages/my-near-wallet/login';
 import { Sign } from '../pages/my-near-wallet/sign';

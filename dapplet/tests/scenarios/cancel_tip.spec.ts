@@ -1,30 +1,18 @@
-import { test, expect } from '../fixtures/fixtures';
-import fs from 'fs';
-import path from 'path';
-import { Overlay } from '../pages/overlay';
+import { test, expect } from '../fixtures/my-near-wallet';
 
-const tipsReciever = {
-  username: 'alsakhaev',
-  bio: 'Web3 Developer at Dapplets',
-};
+const registryUrl = 'http://localhost:3001/dapplet.json';
 
-const artifactsPath = path.join(__dirname, '..', 'artifacts');
-const cookiesPath = path.join(artifactsPath, 'cookies.json');
-
-test('Send Tip and check change text to button claim', async ({ context }) => {
-  // apply cookies if exist
+test('Send Tip and check change text to button claim', async ({
+  page,
+  skipOnboarding,
+  enableDevServer,
+  activateDapplet,
+}) => {
   test.setTimeout(80000);
-  if (fs.existsSync(cookiesPath)) {
-    const cookies = fs.readFileSync(cookiesPath, 'utf8');
-    const deserializedCookies = JSON.parse(cookies);
-    await context.addCookies(deserializedCookies);
-  }
 
-  const page = await context.newPage();
-
-  const overlay = new Overlay(page);
-
-  await overlay.runDapplet(tipsReciever, context, artifactsPath, cookiesPath);
+  await skipOnboarding();
+  await enableDevServer(registryUrl);
+  await activateDapplet('tipping-near-dapplet', registryUrl);
 
   // check claim button text
   await page.getByTestId('app-text-transition-container').locator(`span:has-not-text("Claim and get")`);
