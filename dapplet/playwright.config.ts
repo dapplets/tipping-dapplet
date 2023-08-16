@@ -1,12 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import { TwitterLoginOptions } from './tests/fixtures/twitter-login';
-import { BrowserOptions } from '@dapplets/dapplet-playwright';
-import { DappletExecutorOptions } from './tests/fixtures/dapplet-executor';
+import { BrowserOptions, DappletExecutor } from '@dapplets/dapplet-playwright';
 
 dotenv.config();
 
-export default defineConfig<TwitterLoginOptions & BrowserOptions & DappletExecutorOptions>({
+export default defineConfig<TwitterLoginOptions & BrowserOptions & DappletExecutor.DappletExecutorOptions>({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

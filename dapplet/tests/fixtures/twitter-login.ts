@@ -1,5 +1,4 @@
-import { test as base } from '@dapplets/dapplet-playwright';
-import { fixture as dappletExecutorFixture } from '../fixtures/dapplet-executor';
+import { test as base, DappletExecutor } from '@dapplets/dapplet-playwright';
 import fs from 'fs';
 import path from 'path';
 
@@ -72,6 +71,6 @@ export const fixture: ExtendParams[0] = {
   },
 };
 
-export const test = base.extend<TwitterLoginOptions>(fixture).extend(dappletExecutorFixture);
+export const test = base.extend<TwitterLoginOptions>(fixture).extend(DappletExecutor.fixture);
 
 export const expect = test.expect;
