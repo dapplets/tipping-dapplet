@@ -18,7 +18,7 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: cd dapplet && npx playwright install --with-deps
     - name: Run Playwright tests
       env:
         TWITTER_AUTH_EMAIL: ${{ secrets.TWITTER_AUTH_EMAIL }}
@@ -30,7 +30,7 @@ jobs:
         IMAP_AUTH_HOST: ${{ secrets.IMAP_AUTH_HOST }}
         IMAP_AUTH_USER: ${{ secrets.IMAP_AUTH_USER }}
         IMAP_AUTH_PASS: ${{ secrets.IMAP_AUTH_PASS }}
-      run: npx playwright test
+      run: npm run test
     - uses: actions/upload-artifact@v3
       if: always()
       with:
