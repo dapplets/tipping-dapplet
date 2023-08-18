@@ -34,6 +34,7 @@
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-react": "^7.22.0",
+    "imapflow": "^1.0.136",
     "lodash": "^4.17.21",
     "rollup": "^2.38.3",
     "rollup-plugin-serve": "^1.1.0",

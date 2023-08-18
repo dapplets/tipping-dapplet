@@ -1,7 +1,7 @@
-import { test, expect } from '../fixtures/my-near-wallet';
+import { test } from '../fixtures/my-near-wallet';
 
 test('Claim', async ({ page, restoreAndConnectWallet, confirmNewSession }) => {
-  test.setTimeout(80000);
+  await page.goto(process.env.TWITTER_TEST_PROFILE_URL)
 
   // go to profile
   await page.getByLabel('Profile').first().click();
