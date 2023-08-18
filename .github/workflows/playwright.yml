@@ -30,6 +30,7 @@ jobs:
         IMAP_AUTH_HOST: ${{ secrets.IMAP_AUTH_HOST }}
         IMAP_AUTH_USER: ${{ secrets.IMAP_AUTH_USER }}
         IMAP_AUTH_PASS: ${{ secrets.IMAP_AUTH_PASS }}
+        SECRET_PHRASE: ${{ secrets.SECRET_PHRASE }}
       run: npm run test
     - uses: actions/upload-artifact@v3
       if: always()
