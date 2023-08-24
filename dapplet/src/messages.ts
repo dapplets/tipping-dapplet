@@ -53,9 +53,7 @@ export const successfulTipTransfer = (
     websiteName === 'Twitter'
       ? `[tweet](https://twitter.com/${postCtx.authorUsername}/status/${postCtx.id})`
       : websiteName === 'GitHub'
-      ? postCtx.location
-        ? `[comment](https://github.com${postCtx.location.pathname}#${postCtx.id})`
-        : 'comment'
+      ? `[comment](${postCtx.url}#${postCtx.id})`
       : 'post'
   }. ` + ` [Tx link](${explorerUrl}/transactions/${txHash})`;
 
