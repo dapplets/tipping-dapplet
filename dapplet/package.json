@@ -1,7 +1,7 @@
 {
   "name": "tipping-near-dapplet",
-  "version": "0.4.6",
-  "description": "Tipping Dapplet allowing you to send money to another person on Twitter. Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.",
+  "version": "0.5.0",
+  "description": "Tipping Dapplet allowing you to send money to another person on Twitter and GitHub. Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.",
   "main": "lib/index.js",
   "scripts": {
     "start": "rollup -w --config rollup.config.js",
