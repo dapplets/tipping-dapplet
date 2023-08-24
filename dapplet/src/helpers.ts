@@ -64,12 +64,3 @@ export const getCurrentUserAsync = async (ctx: any): Promise<ICurrentUser> => {
   }
   return { websiteName: '' };
 };
-
-export const trimCtx = (ctx: any) =>
-  Object.fromEntries(
-    Object.entries(ctx).map(([key, value]) => {
-      let newValue = value;
-      if (typeof value === 'string') newValue = value.trim();
-      return [key, newValue];
-    }),
-  );

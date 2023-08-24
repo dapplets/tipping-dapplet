@@ -13,7 +13,7 @@ import {
   connectNewAccount,
 } from './services/identityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync, trimCtx } from './helpers';
+import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
 import { NearNetworks } from './interfaces';
 import * as messages from './messages';
 
@@ -81,82 +81,76 @@ export default class {
     const { button, avatarBadge } = this.adapter.exports;
     const { $ } = this.adapter.attachConfig({
       GLOBAL: (global) => {
-        this._globalContext = trimCtx(global);
+        this._globalContext = global;
       },
-      PROFILE: (ctx) => {
-        const profileCtx = trimCtx(ctx);
-        return [
-          button({
-            id: 'bindButton',
-            DEFAULT: {
-              hidden: true,
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              tooltip: 'Bind tipping wallet',
-              init: (_, me) => this.onProfileButtonClaimInit(profileCtx, me),
-              exec: (_, me) => this.onProfileButtonClaimExec(profileCtx, me),
-            },
-          }),
-          button({
-            id: 'rebindButton',
-            DEFAULT: {
-              tooltip: 'Rebind tipping wallet',
-              hidden: true,
-              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-              init: (_, me) => this.onProfileButtonRebindInit(profileCtx, me),
-              exec: (_, me) => this.onProfileButtonRebindExec(profileCtx, me, ctx),
-            },
-          }),
-          button({
-            id: 'unbindButton',
-            DEFAULT: {
-              tooltip: 'Unbind tipping wallet',
-              hidden: true,
-              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-              init: (_, me) => this.onProfileButtonUnbindInit(profileCtx, me),
-              exec: (_, me) => this.onProfileButtonUnbindExec(profileCtx, me, ctx),
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_BIG_ICON,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: (_, me) => this.onProfileAvatarBadgeInit(profileCtx, me),
-              exec: (_, me) => this.onProfileAvatarBadgeExec(me),
-            },
-          }),
-        ];
-      },
-      POST: (ctx) => {
-        const postCtx = trimCtx(ctx);
-        return [
-          button({
-            DEFAULT: {
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              label: 'Tip',
-              tooltip: 'Send donation',
-              amount: '0',
-              donationsAmount: '0',
-              nearAccount: '',
-              debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
-              init: (_, me) => this.onPostButtonInit(postCtx, me),
-              exec: (_, me) => this.onPostButtonExec(postCtx, me),
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_SMALL_ICON,
-              basic: true,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: (_, me) => this.onPostAvatarBadgeInit(postCtx, me),
-              exec: (_, me) => this.onPostAvatarBadgeExec(me),
-            },
-          }),
-        ];
-      },
+      PROFILE: () => [
+        button({
+          id: 'bindButton',
+          DEFAULT: {
+            hidden: true,
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            tooltip: 'Bind tipping wallet',
+            init: this.onProfileButtonClaimInit,
+            exec: this.onProfileButtonClaimExec,
+          },
+        }),
+        button({
+          id: 'rebindButton',
+          DEFAULT: {
+            tooltip: 'Rebind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonRebindInit,
+            exec: this.onProfileButtonRebindExec,
+          },
+        }),
+        button({
+          id: 'unbindButton',
+          DEFAULT: {
+            tooltip: 'Unbind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonUnbindInit,
+            exec: this.onProfileButtonUnbindExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_BIG_ICON,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onProfileAvatarBadgeInit,
+            exec: this.onProfileAvatarBadgeExec,
+          },
+        }),
+      ],
+      POST: () => [
+        button({
+          DEFAULT: {
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            label: 'Tip',
+            tooltip: 'Send donation',
+            amount: '0',
+            donationsAmount: '0',
+            nearAccount: '',
+            debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
+            init: this.onPostButtonInit,
+            exec: this.onPostButtonExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_SMALL_ICON,
+            basic: true,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onPostAvatarBadgeInit,
+            exec: this.onPostAvatarBadgeExec,
+          },
+        }),
+      ],
     });
     this._$ = $;
   }
@@ -256,11 +250,11 @@ export default class {
     }
   };
 
-  onProfileButtonUnbindExec = async (profile, me, ctx) => {
+  onProfileButtonUnbindExec = async (profile, me) => {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
-    this._$(ctx, 'rebindButton').disabled = true;
+    this._$(profile, 'rebindButton').disabled = true;
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
@@ -328,11 +322,11 @@ export default class {
     }
   };
 
-  onProfileButtonRebindExec = async (profile, me, ctx) => {
+  onProfileButtonRebindExec = async (profile, me) => {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
-    this._$(ctx, 'unbindButton').disabled = true;
+    this._$(profile, 'unbindButton').disabled = true;
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
@@ -399,7 +393,7 @@ export default class {
     }
   };
 
-  onProfileAvatarBadgeExec = (me) => {
+  onProfileAvatarBadgeExec = (_, me) => {
     if (this.network === NearNetworks.Testnet) {
       Core.openPage(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`);
     } else if (this.network === NearNetworks.Mainnet) {
@@ -497,7 +491,7 @@ export default class {
     }
   };
 
-  onPostAvatarBadgeExec = (me) => {
+  onPostAvatarBadgeExec = (_, me) => {
     if (this.network === NearNetworks.Testnet) {
       Core.openPage(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`);
     } else if (this.network === NearNetworks.Mainnet) {
