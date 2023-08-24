@@ -49,13 +49,9 @@ export const successfulTipTransfer = (
   postCtx: any,
   websiteName: string,
 ): string =>
-  `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped to ${
-    websiteName === 'Twitter'
-      ? `[tweet](https://twitter.com/${postCtx.authorUsername}/status/${postCtx.id})`
-      : websiteName === 'GitHub'
-      ? `[comment](${postCtx.url}#${postCtx.id})`
-      : 'post'
-  }. ` + ` [Tx link](${explorerUrl}/transactions/${txHash})`;
+  `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped to [${
+    websiteName === 'Twitter' ? 'tweet' : websiteName === 'GitHub' ? 'comment' : 'post'
+  }](${postCtx.url}). [Tx link](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
   `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet` + '\nContinue?';
