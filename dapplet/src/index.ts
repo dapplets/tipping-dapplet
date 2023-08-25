@@ -23,7 +23,7 @@ const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
 
 @Injectable
 export default class {
-  @Inject('twitter-config.dapplet-base.eth')
+  @Inject('social-virtual-config.dapplet-base.eth')
   public adapter;
   public network: NearNetworks;
   public tippingContractAddress: string;
@@ -83,78 +83,74 @@ export default class {
       GLOBAL: (global) => {
         this._globalContext = global;
       },
-      PROFILE: () => {
-        return [
-          button({
-            id: 'bindButton',
-            DEFAULT: {
-              hidden: true,
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              tooltip: 'Bind tipping wallet',
-              init: this.onProfileButtonClaimInit,
-              exec: this.onProfileButtonClaimExec,
-            },
-          }),
-          button({
-            id: 'rebindButton',
-            DEFAULT: {
-              tooltip: 'Rebind tipping wallet',
-              hidden: true,
-              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-              init: this.onProfileButtonRebindInit,
-              exec: this.onProfileButtonRebindExec,
-            },
-          }),
-          button({
-            id: 'unbindButton',
-            DEFAULT: {
-              tooltip: 'Unbind tipping wallet',
-              hidden: true,
-              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-              init: this.onProfileButtonUnbindInit,
-              exec: this.onProfileButtonUnbindExec,
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_BIG_ICON,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: this.onProfileAvatarBadgeInit,
-              exec: this.onProfileAvatarBadgeExec,
-            },
-          }),
-        ];
-      },
-      POST: () => {
-        return [
-          button({
-            DEFAULT: {
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              label: 'Tip',
-              tooltip: 'Send donation',
-              amount: '0',
-              donationsAmount: '0',
-              nearAccount: '',
-              debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
-              init: this.onPostButtonInit,
-              exec: this.onPostButtonExec,
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_SMALL_ICON,
-              basic: true,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: this.onPostAvatarBadgeInit,
-              exec: this.onPostAvatarBadgeExec,
-            },
-          }),
-        ];
-      },
+      PROFILE: () => [
+        button({
+          id: 'bindButton',
+          DEFAULT: {
+            hidden: true,
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            tooltip: 'Bind tipping wallet',
+            init: this.onProfileButtonClaimInit,
+            exec: this.onProfileButtonClaimExec,
+          },
+        }),
+        button({
+          id: 'rebindButton',
+          DEFAULT: {
+            tooltip: 'Rebind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonRebindInit,
+            exec: this.onProfileButtonRebindExec,
+          },
+        }),
+        button({
+          id: 'unbindButton',
+          DEFAULT: {
+            tooltip: 'Unbind tipping wallet',
+            hidden: true,
+            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+            init: this.onProfileButtonUnbindInit,
+            exec: this.onProfileButtonUnbindExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_BIG_ICON,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onProfileAvatarBadgeInit,
+            exec: this.onProfileAvatarBadgeExec,
+          },
+        }),
+      ],
+      POST: () => [
+        button({
+          DEFAULT: {
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            label: 'Tip',
+            tooltip: 'Send donation',
+            amount: '0',
+            donationsAmount: '0',
+            nearAccount: '',
+            debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
+            init: this.onPostButtonInit,
+            exec: this.onPostButtonExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_SMALL_ICON,
+            basic: true,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onPostAvatarBadgeInit,
+            exec: this.onPostAvatarBadgeExec,
+          },
+        }),
+      ],
     });
     this._$ = $;
   }
@@ -440,7 +436,7 @@ export default class {
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         Core.notify({
           title: 'Tipping Dapplet',
-          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet),
+          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet, websiteName),
           teaser: messages.teaserSuccessfulTipTransfer(amount),
         });
       }
@@ -456,7 +452,7 @@ export default class {
     }
   };
 
-  onPostButtonExec = async (tweet, me) => {
+  onPostButtonExec = async (post, me) => {
     const donationsAmount = Number(formatNear(me.donationsAmount));
     const donation = Number(formatNear(me.amount));
     const stepYocto = Number(formatNear(this._stepYocto));
@@ -469,7 +465,7 @@ export default class {
       me.amount = sum(me.amount, this._stepYocto);
       me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
     }
-    me.debouncedDonate(me, tweet.authorUsername, tweet.id, me.amount, tweet);
+    me.debouncedDonate(me, post.authorUsername, post.id, me.amount, post);
   };
 
   onPostAvatarBadgeInit = async (post, me) => {
@@ -495,7 +491,7 @@ export default class {
     }
   };
 
-  onPostAvatarBadgeExec = (ctx, me) => {
+  onPostAvatarBadgeExec = (_, me) => {
     if (this.network === NearNetworks.Testnet) {
       Core.openPage(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`);
     } else if (this.network === NearNetworks.Mainnet) {
