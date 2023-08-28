@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
-import { BrowserOptions, DappletExecutor } from '@dapplets/dapplet-playwright';
+import { BrowserOptions, DappletExecutor, RegistryTypes } from '@dapplets/dapplet-playwright';
 
 dotenv.config();
 
@@ -20,8 +20,12 @@ export default defineConfig<BrowserOptions & DappletExecutor.DappletExecutorOpti
       use: {
         ...devices['Desktop Chrome'],
         newHeadless: process.env.CI ? true : false,
-        extensionVersion: 'v0.60.0-alpha.2',
-        registryUrl: 'http://localhost:3001/dapplet.json',
+        extensionVersion: 'latest',
+        registry:
+          process.env.GIT_BRANCH_NAME === 'develop' || process.env.GIT_BRANCH_NAME === 'testing'
+            ? RegistryTypes.Test
+            : RegistryTypes.Prod,
+        devServerUrl: 'http://localhost:3001/dapplet.json',
         dappletName: 'tipping-near-dapplet',
       },
     },

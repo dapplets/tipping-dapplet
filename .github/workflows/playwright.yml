@@ -15,6 +15,10 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: 18
+    - name: Extract branch name
+      shell: bash
+      run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      id: extract_branch
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
@@ -31,6 +35,7 @@ jobs:
         IMAP_AUTH_USER: ${{ secrets.IMAP_AUTH_USER }}
         IMAP_AUTH_PASS: ${{ secrets.IMAP_AUTH_PASS }}
         SECRET_PHRASE: ${{ secrets.SECRET_PHRASE }}
+        GIT_BRANCH_NAME: eng:${{ steps.extract_branch.outputs.branch }}
       run: npm run test
     - uses: actions/upload-artifact@v3
       if: always()
