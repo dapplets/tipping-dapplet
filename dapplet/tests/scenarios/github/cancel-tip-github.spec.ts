@@ -1,8 +1,8 @@
-import { test, expect } from '../fixtures/my-near-wallet';
+import { test, expect } from '../../fixtures/my-near-wallet';
 
-test('Send Tip and check change text to button claim', async ({ page }) => {
+test('Send Tip and check change text to button claim', async ({ page}) => {
 
-    await page.goto(process.env.TWITTER_TEST_PROFILE_URL);
+  await page.goto(process.env.GITHUB_TEST_COMMIT_URL);
 
   // check claim button text
   await page.getByTestId('app-text-transition-container').locator(`span:has-not-text("Claim and get")`);

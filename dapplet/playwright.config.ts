@@ -22,7 +22,7 @@ export default defineConfig<BrowserOptions & DappletExecutor.DappletExecutorOpti
       use: {
         ...devices['Desktop Chrome'],
         newHeadless: CI ? true : false,
-        extensionVersion: 'latest',
+        extensionVersion: 'v0.61.0-alpha.4',
         registry: ['main', 'master'].includes(GIT_BRANCH_NAME) ? RegistryTypes.Prod : RegistryTypes.Test,
         devServerUrl: 'http://localhost:3001/dapplet.json',
         dappletName: 'tipping-near-dapplet',

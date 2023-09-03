@@ -18,6 +18,11 @@ export class RecoverSeedPhrase {
     await this.typeSecretPhrase(phrase);
     await this.clickFindMyAccount();
     await this.page.waitForURL(/https:\/\/app.mynearwallet.com\/login/)
+    const modal = await this.page.getByText('Close').isVisible()
+    if(modal){
+      await this.page.getByText('Close').click()
+    }
+   
     return new Login(this.page);
   } 
 }
