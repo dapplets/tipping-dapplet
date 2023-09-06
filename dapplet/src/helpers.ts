@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { NEAR_ADDRESS, TESTERS_ADDRESSES } from '../config/TESTERS_ADDRESSES';
-import { ICurrentUser, NearNetworks } from './interfaces';
+import { ICurrentProfile, ICurrentUser, NearNetworks } from './interfaces';
 
 export function sum(...values: string[]): string {
   let _sum = new BigNumber('0');
@@ -63,4 +63,12 @@ export const getCurrentUserAsync = async (ctx: any): Promise<ICurrentUser> => {
     await new Promise((res) => setTimeout(res, 500));
   }
   return { websiteName: '' };
+};
+
+export const getCurrentProfileAsync = async (ctx: any): Promise<ICurrentProfile> => {
+  for (let i = 0; i < 10; i++) {
+    if (ctx.authorUsername) return ctx;
+    await new Promise((res) => setTimeout(res, 500));
+  }
+  return null;
 };

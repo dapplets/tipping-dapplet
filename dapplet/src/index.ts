@@ -14,12 +14,17 @@ import {
 } from './services/identityService';
 import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
-import { NearNetworks } from './interfaces';
+import { ICurrentProfile, NearNetworks } from './interfaces';
 import * as messages from './messages';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'v2.tipping.testnet';
 const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
+
+interface IState {
+  ctx: ICurrentProfile;
+  waitForClaim: boolean;
+}
 
 @Injectable
 export default class {
@@ -39,6 +44,7 @@ export default class {
   private _isItAnInternalWalletLogin = false;
 
   private _globalContext = {};
+  public state = Core.state<IState>({ ctx: null, waitForClaim: false });
 
   executeInitWidgetFunctions = (): Promise<void[]> =>
     Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
@@ -83,48 +89,52 @@ export default class {
       GLOBAL: (global) => {
         this._globalContext = global;
       },
-      PROFILE: () => [
-        button({
-          id: 'bindButton',
-          DEFAULT: {
-            hidden: true,
-            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-            tooltip: 'Bind tipping wallet',
-            init: this.onProfileButtonClaimInit,
-            exec: this.onProfileButtonClaimExec,
-          },
-        }),
-        button({
-          id: 'rebindButton',
-          DEFAULT: {
-            tooltip: 'Rebind tipping wallet',
-            hidden: true,
-            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-            init: this.onProfileButtonRebindInit,
-            exec: this.onProfileButtonRebindExec,
-          },
-        }),
-        button({
-          id: 'unbindButton',
-          DEFAULT: {
-            tooltip: 'Unbind tipping wallet',
-            hidden: true,
-            img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
-            init: this.onProfileButtonUnbindInit,
-            exec: this.onProfileButtonUnbindExec,
-          },
-        }),
-        avatarBadge({
-          DEFAULT: {
-            img: NEAR_BIG_ICON,
-            horizontal: 'right',
-            vertical: 'bottom',
-            hidden: true,
-            init: this.onProfileAvatarBadgeInit,
-            exec: this.onProfileAvatarBadgeExec,
-          },
-        }),
-      ],
+      PROFILE: (ctx: ICurrentProfile) => {
+        if (!ctx.authorUsername) return;
+        this.state[ctx.id].ctx.next(ctx);
+        return [
+          button({
+            id: 'bindButton',
+            DEFAULT: {
+              hidden: true,
+              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+              tooltip: 'Bind tipping wallet',
+              init: this.onProfileButtonClaimInit,
+              exec: this.onProfileButtonClaimExec,
+            },
+          }),
+          button({
+            id: 'rebindButton',
+            DEFAULT: {
+              tooltip: 'Rebind tipping wallet',
+              hidden: true,
+              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+              init: this.onProfileButtonRebindInit,
+              exec: this.onProfileButtonRebindExec,
+            },
+          }),
+          button({
+            id: 'unbindButton',
+            DEFAULT: {
+              tooltip: 'Unbind tipping wallet',
+              hidden: true,
+              img: { DARK: NEAR_LINK_WHITE_ICON, LIGHT: NEAR_LINK_BLACK_ICON },
+              init: this.onProfileButtonUnbindInit,
+              exec: this.onProfileButtonUnbindExec,
+            },
+          }),
+          avatarBadge({
+            DEFAULT: {
+              img: NEAR_BIG_ICON,
+              horizontal: 'right',
+              vertical: 'bottom',
+              hidden: true,
+              init: this.onProfileAvatarBadgeInit,
+              exec: this.onProfileAvatarBadgeExec,
+            },
+          }),
+        ];
+      },
       POST: () => [
         button({
           DEFAULT: {
@@ -169,10 +179,17 @@ export default class {
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = formatNear(tokens);
-      me.label = `Claim${Number(availableTokens) === 0 ? '' : ' and get ' + availableTokens + ' Ⓝ'}`;
-      me.disabled = false;
-      me.loading = false;
-      me.hidden = false;
+      if (this.state[profile.id].waitForClaim.value) {
+        me.label = 'Waiting...';
+        me.disabled = true;
+        me.loading = true;
+        me.hidden = false;
+      } else {
+        me.label = `Claim${Number(availableTokens) === 0 ? '' : ' and get ' + availableTokens + ' Ⓝ'}`;
+        me.disabled = false;
+        me.loading = false;
+        me.hidden = false;
+      }
     } else {
       me.hidden = true;
     }
@@ -182,6 +199,7 @@ export default class {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
+    this.state[profile.id].waitForClaim.next(true);
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
@@ -198,7 +216,7 @@ export default class {
           return this.executeInitWidgetFunctions();
         } else {
           await Core.alert(messages.aboutCA);
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
@@ -228,6 +246,7 @@ export default class {
       console.error(e);
     } finally {
       this._isItAnInternalWalletLogin = false;
+      this.state[profile.id].waitForClaim.next(false);
       this.executeInitWidgetFunctions();
     }
   };
@@ -284,7 +303,7 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
@@ -358,7 +377,7 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);

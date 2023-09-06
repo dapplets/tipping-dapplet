@@ -1,5 +1,5 @@
 import { CARequestStatus, NearNetworks, TConnectedAccountsVerificationRequestInfo } from '../interfaces';
-import { getCurrentUserAsync } from '../helpers';
+import { getCurrentProfileAsync } from '../helpers';
 import { CARequestStatusMsg } from '../messages';
 
 export const getSession = async (network: NearNetworks, contractId: string): Promise<any> => {
@@ -34,12 +34,12 @@ export const getNearAccountsFromCa = async (accountGId: string, network: string)
 };
 
 export const connectNewAccount = async (
-  globalContext: any,
   walletAccountId: string,
   network: NearNetworks,
+  profile: any,
 ): Promise<boolean> => {
   try {
-    const requestStatus = await makeNewCAConnection(globalContext, walletAccountId, network);
+    const requestStatus = await makeNewCAConnection(walletAccountId, network, profile);
     if (requestStatus === 'rejected') {
       return false;
     }
@@ -51,28 +51,30 @@ export const connectNewAccount = async (
 };
 
 const makeNewCAConnection = async (
-  globalContext: any,
   walletAccountId: string,
   walletNetwork: NearNetworks,
+  profile: any,
 ): Promise<CARequestStatus> => {
-  const { username, fullname, websiteName, img } = await getCurrentUserAsync(globalContext);
-  const websiteNameLowerCase = websiteName.toLowerCase();
+  const { authorFullname, authorImg, authorUsername, parent } = await getCurrentProfileAsync(profile.value);
+  const websiteNameLowerCase = parent?.websiteName.toLowerCase();
+  const firstProofUrl = 'https://' + websiteNameLowerCase + '.com/' + authorUsername;
   const args = {
-    firstAccountId: username,
+    firstAccountId: authorUsername,
     firstOriginId: websiteNameLowerCase,
-    firstAccountImage: img,
+    firstAccountImage: authorImg,
     secondAccountId: walletAccountId,
     secondOriginId: createNearOrigin(walletNetwork),
     secondAccountImage: null,
     isUnlink: false,
-    firstProofUrl: 'https://' + websiteNameLowerCase + '.com/' + username,
+    firstProofUrl,
   };
+  const conditionType = `${websiteNameLowerCase}/near-${walletNetwork}`;
   const condition = {
-    type: `${websiteNameLowerCase}/near-${walletNetwork}`,
-    user: fullname,
+    type: conditionType,
+    user: authorFullname,
   };
   await Core.connectedAccounts.requestVerification(args, condition);
-  const accountGId = createAccountGlobalId(username, websiteName);
+  const accountGId = createAccountGlobalId(authorUsername, parent?.websiteName);
   const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId);
   if (pendingRequestId !== -1 && pendingRequest) {
     const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
@@ -85,7 +87,7 @@ const makeNewCAConnection = async (
     );
     return requestStatus;
   }
-  return makeNewCAConnection(globalContext, walletAccountId, walletNetwork); // ToDo: improve if it's possible
+  return makeNewCAConnection(walletAccountId, walletNetwork, profile); // ToDo: improve if it's possible
 };
 
 const getCAPendingRequest = async (
