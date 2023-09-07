@@ -20,6 +20,18 @@ export interface ICurrentUser {
   img?: string;
   websiteName: string;
 }
+
+export interface ICurrentProfile {
+  authorFullname: string;
+  authorImg: string;
+  authorUsername: string;
+  id: string;
+  parent?: {
+    websiteName: string;
+  };
+  url: string;
+}
+
 export type TConnectedAccountsVerificationRequestInfo = {
   firstAccount: string;
   secondAccount: string;
