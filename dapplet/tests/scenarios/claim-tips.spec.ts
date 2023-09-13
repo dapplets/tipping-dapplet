@@ -1,25 +1,29 @@
-import { test } from '../fixtures/my-near-wallet';
+import { test, expect } from '../fixtures/my-near-wallet';
 
-test('Claim', async ({ page, restoreAndConnectWallet, confirmNewSession }) => {
-  await page.goto(process.env.TWITTER_TEST_PROFILE_URL)
+test('Claim', async ({ page, restoreAndConnectWallet, confirmNewSession,  }) => {
 
-  // go to profile
-  await page.getByLabel('Profile').first().click();
+  await page.goto(process.env.TWITTER_TEST_PROFILE_URL);
 
-  //   check claim btn or rebind/unbind btn
-  const rebind = await page.getByTestId('reply');
+  const unbindButton = await page.getByTestId(`PROFILE/${process.env.GITHUB_AUTH_USERNAME}/unbindButton`);
 
-  if (rebind.nth(2)) {
-    await page.getByText('Unbind').click();
+  const isUnbindButton = await unbindButton.boundingBox();
 
-    // open my near wallet
+  if (isUnbindButton.width && isUnbindButton.width > 100) {
+    await page.getByTestId(`PROFILE/${process.env.GITHUB_AUTH_USERNAME}/unbindButton`).click();
     await page.getByTestId('wallet-to-connect-near_mainnet').click();
-    await restoreAndConnectWallet(process.env.SECRET_PHRASE);
+    await restoreAndConnectWallet(process.env.NEAR_SECRET_PHRASE);
+
     await confirmNewSession();
 
-    // unbinding
     await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();
-    await page.locator(`span:has-not-text("Unbind")`);
+    await page.waitForTimeout(10000);
+    await page.getByText('Claim').click();
+    const checkModal = await page.getByTestId('actions-label').all();
+    if (checkModal.length) {
+      await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();
+    }
+
+    await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();
   } else {
     await page.getByText('Claim').click();
     const checkModal = await page.getByTestId('actions-label').all();
@@ -27,8 +31,11 @@ test('Claim', async ({ page, restoreAndConnectWallet, confirmNewSession }) => {
       await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();
     }
     // open my near wallet
+
     await page.getByTestId('wallet-to-connect-near_mainnet').click();
-    await restoreAndConnectWallet(process.env.SECRET_PHRASE);
+
+    await restoreAndConnectWallet(process.env.NEAR_SECRET_PHRASE);
+
     await confirmNewSession();
 
     await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();

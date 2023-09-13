@@ -1,4 +1,5 @@
-import { test as base } from './twitter-login';
+import { test as base } from './login';
+import { test as baseGithub } from './github-login';
 import { MainApp } from '../pages/my-near-wallet/main-app';
 import { Login } from '../pages/my-near-wallet/login';
 import { Sign } from '../pages/my-near-wallet/sign';
@@ -7,9 +8,11 @@ export type MyNearWalletOptions = {
   restoreAndConnectWallet(seedPhrase: string): Promise<void>;
   confirmNewSession(): Promise<void>;
   approveTransaction(): Promise<void>;
+ 
 };
 
 export const test = base.extend<MyNearWalletOptions>({
+ 
   restoreAndConnectWallet: async ({ context }, use) => {
     await use(async (seedPhrase: string) => {
       const page = await context.waitForEvent('page');
@@ -24,11 +27,22 @@ export const test = base.extend<MyNearWalletOptions>({
   confirmNewSession: async ({ context }, use) => {
     await use(async () => {
       const page = await context.waitForEvent('page');
+      const modal = await page.getByText('Close').isVisible();
+      if (modal) {
+        await page.getByText('Close').click();
+      }
+
+      const enterPassword = await page.getByPlaceholder('Enter password');
+      if (enterPassword) {
+        enterPassword.type(process.env.NEAR_PASSWORD);
+        await page.getByText('Unlock Wallet').last().click();
+      }
       const loginPage = new Login(page);
       await loginPage.clickNext();
       await loginPage.clickConnect();
     });
   },
+
   approveTransaction: async ({ context }, use) => {
     await use(async () => {
       const page = await context.waitForEvent('page');
@@ -37,5 +51,7 @@ export const test = base.extend<MyNearWalletOptions>({
     });
   },
 });
+
+
 
 export const expect = test.expect;

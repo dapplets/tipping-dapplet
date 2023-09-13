@@ -6,7 +6,9 @@ import { ImapFlow } from "imapflow";
 const artifactsPath = path.join(__dirname, '..', 'artifacts');
 const cookiesPath = path.join(artifactsPath, 'cookies.json');
 
-type ExtendParams = Parameters<typeof base.extend<{}>>;
+type ExtendParams = Parameters<typeof base.extend<{
+
+}>>;
 
 export const fixture: ExtendParams[0] = {
   page: async ({ context }, use) => {
@@ -19,57 +21,31 @@ export const fixture: ExtendParams[0] = {
     }
 
     const page = await context.newPage();
-
-    await page.goto("https://twitter.com/" + process.env.TWITTER_AUTH_USERNAME);
-    await page.waitForTimeout(5000); // ToDo: remove
+// change proccess env
+    await page.goto("https://github.com/" + process.env.GITHUB_AUTH_USERNAME);
+    // await page.waitForTimeout(5000); // ToDo: remove
 
     // ToDo: move to POM
-    const isSigningIn = await page.isVisible('//*[@id="layers"]//input');
+    // change isSigningIn
+    const isSigningIn = await page.getByText("Sign in").isVisible();
     if (isSigningIn) {
-      const emailInput = await page.locator('//*[@id="layers"]//input');
-      await emailInput.type(process.env.TWITTER_AUTH_EMAIL);
-      await page.getByRole("button", { name: "Next" }).click();
+        await page.getByText("Sign in").click()
+        await page.fill('[name="login"]', process.env.GITHUB_AUTH_USERNAME);
+     
+        await page.locator("input[name=password]").type(process.env.GITHUB_AUTH_PASSWORD)
+        await page.locator("input[name=commit]").click()
+     
+    }
 
-      // unusual activity popup
-      const extraInput = await page.locator("input[name=text]");
-      if (extraInput) {
-        await extraInput.type(process.env.TWITTER_AUTH_USERNAME);
-        await page.getByRole("button", { name: "Next" }).click();
-      }
-
-      await page
-        .locator("input[name=password]")
-        .type(process.env.TWITTER_AUTH_PASSWORD);
-      await page.getByRole("button", { name: "Log in" }).click();
-
-      await page.waitForTimeout(5000); // ToDo: remove
-
-      // email popup
-      if (await page.getByText("Check your email").isVisible()) {
-        const confirmationCode = await waitForConfirmationCode();
-        if (confirmationCode) {
-          throw new Error(
-            "Twitter reqested email confirmation code that could not be recevied"
-          );
-        }
-
-        const extraInput = await page.locator("input[name=text]");
-        await extraInput.type(confirmationCode);
-        await page.getByRole("button", { name: "Next" }).click();
-      }
-
-      await page.waitForTimeout(5000);
-      await page.locator(`span:has-text("${process.env.TWITTER_AUTH_BIO}")`); // ToDo: remove hardcoded values
-
-      // save cookies to reuse later
+    
       const cookies = await context.cookies();
       const cookieJson = JSON.stringify(cookies);
       fs.mkdirSync(artifactsPath, { recursive: true });
       fs.writeFileSync(cookiesPath, cookieJson);
-    }
+    
 
     await use(page);
-  },
+  }
 };
 
 export const test = base.extend(fixture).extend(DappletExecutor.fixture);
