@@ -62,9 +62,7 @@ class TippingContractService {
 
   async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'sendTips',
+    const rawResult = await contract.sendTips(
       {
         accountGId,
         itemId,
@@ -77,9 +75,7 @@ class TippingContractService {
 
   async claimTokens(accountGId: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'claimTokens',
+    const rawResult = await contract.claimTokens(
       {
         accountGId,
       },
@@ -90,9 +86,7 @@ class TippingContractService {
 
   async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'setWalletForAutoclaim',
+    const rawResult = await contract.setWalletForAutoclaim(
       {
         accountGId,
         wallet,
@@ -104,9 +98,7 @@ class TippingContractService {
 
   async deleteWalletForAutoclaim(accountGId: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'deleteWalletForAutoclaim',
+    const rawResult = await contract.deleteWalletForAutoclaim(
       {
         accountGId,
       },
