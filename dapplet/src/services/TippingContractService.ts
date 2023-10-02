@@ -62,56 +62,56 @@ class TippingContractService {
 
   async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'sendTips',
-      {
+    const rawResult = await contract.account.functionCall({
+      contractId: contract.contractId,
+      methodName: 'sendTips',
+      args: {
         accountGId,
         itemId,
       },
-      '50000000000000',
-      totalAmount,
-    );
+      gas: '50000000000000',
+      attachedDeposit: totalAmount,
+    });
     return rawResult.transaction.hash;
   }
 
   async claimTokens(accountGId: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'claimTokens',
-      {
+    const rawResult = await contract.account.functionCall({
+      contractId: contract.contractId,
+      methodName: 'claimTokens',
+      args: {
         accountGId,
       },
-      '100000000000000',
-    );
+      gas: '100000000000000',
+    });
     return rawResult.transaction.hash;
   }
 
   async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'setWalletForAutoclaim',
-      {
+    const rawResult = await contract.account.functionCall({
+      contractId: contract.contractId,
+      methodName: 'setWalletForAutoclaim',
+      args: {
         accountGId,
         wallet,
       },
-      '100000000000000',
-    );
+      gas: '100000000000000',
+    });
     return rawResult.transaction.hash;
   }
 
   async deleteWalletForAutoclaim(accountGId: string): Promise<string> {
     const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'deleteWalletForAutoclaim',
-      {
+    const rawResult = await contract.account.functionCall({
+      contractId: contract.contractId,
+      methodName: 'deleteWalletForAutoclaim',
+      args: {
         accountGId,
       },
-      '100000000000000',
-    );
+      gas: '100000000000000',
+    });
     return rawResult.transaction.hash;
   }
 
