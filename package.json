@@ -1,6 +1,6 @@
 {
   "name": "tipping-near-dapplet",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Tipping Dapplet, allowing you to send money to another person on Twitter and GitHub",
   "main": "",
   "scripts": {
