@@ -61,57 +61,49 @@ class TippingContractService {
   // CALL
 
   async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'sendTips',
-      {
+    const rawResult = await this._contractCall({
+      methodName: 'sendTips',
+      args: {
         accountGId,
         itemId,
       },
-      '50000000000000',
-      totalAmount,
-    );
+      gas: '50000000000000',
+      attachedDeposit: totalAmount,
+    });
     return rawResult.transaction.hash;
   }
 
   async claimTokens(accountGId: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'claimTokens',
-      {
+    const rawResult = await this._contractCall({
+      methodName: 'claimTokens',
+      args: {
         accountGId,
       },
-      '100000000000000',
-    );
+      gas: '100000000000000',
+    });
     return rawResult.transaction.hash;
   }
 
   async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'setWalletForAutoclaim',
-      {
+    const rawResult = await this._contractCall({
+      methodName: 'setWalletForAutoclaim',
+      args: {
         accountGId,
         wallet,
       },
-      '100000000000000',
-    );
+      gas: '100000000000000',
+    });
     return rawResult.transaction.hash;
   }
 
   async deleteWalletForAutoclaim(accountGId: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall(
-      contract.contractId,
-      'deleteWalletForAutoclaim',
-      {
+    const rawResult = await this._contractCall({
+      methodName: 'deleteWalletForAutoclaim',
+      args: {
         accountGId,
       },
-      '100000000000000',
-    );
+      gas: '100000000000000',
+    });
     return rawResult.transaction.hash;
   }
 
@@ -127,6 +119,17 @@ class TippingContractService {
       await this._addInteractionsWithFunctionalKey(session);
     }
     return this._contract;
+  }
+
+  async _contractCall(props: { methodName: string; args: any; gas: string; attachedDeposit?: string }): Promise<any> {
+    const { account, contractId } = await this._getContractForCallRequests();
+
+    // Resolve difference between old and new near-api-js APIs
+    const isNewNearApi = (<any>Core).extension?.satisfied?.('>=0.63.0-alpha.1');
+    const contractCallArgs = isNewNearApi
+      ? [{ contractId, ...props }]
+      : [contractId, props.methodName, props.args, props.gas, props.attachedDeposit];
+    return account.functionCall(...contractCallArgs);
   }
 }
 
