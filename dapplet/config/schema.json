@@ -1,9 +1,6 @@
 {
   "type": "object",
-  "required": [
-    "step",
-    "delay"
-  ],
+  "required": ["step", "delay"],
   "properties": {
     "step": {
       "type": "number",

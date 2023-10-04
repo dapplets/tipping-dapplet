@@ -15,9 +15,7 @@
     "$ref": "package.json#/main"
   },
   "icon": "src/icons/money-logo.png",
-  "contextIds": [
-    "social-virtual-config.dapplet-base.eth"
-  ],
+  "contextIds": ["social-virtual-config.dapplet-base.eth"],
   "config": {
     "schema": "config/schema.json",
     "default": "config/default.json"

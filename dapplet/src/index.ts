@@ -449,13 +449,22 @@ export default class {
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
       const total = sum(amount, fee);
+
       if (await Core.confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName))) {
         const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
         const explorerUrl =
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+
         Core.notify({
           title: 'Tipping Dapplet',
-          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet, websiteName),
+          message: messages.successfulTipTransfer(
+            amount,
+            explorerUrl,
+            txHash,
+            tweet,
+            websiteName,
+            tweet.authorFullname,
+          ),
           teaser: messages.teaserSuccessfulTipTransfer(amount),
         });
       }

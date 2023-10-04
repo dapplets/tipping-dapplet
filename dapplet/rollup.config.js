@@ -7,11 +7,7 @@ import json from '@rollup/plugin-json';
 import fs from 'fs';
 
 const showAddress = () => ({
-  load: () =>
-    console.log(
-      '\x1b[35m%s\x1b[0m',
-      `Current registry address: http://localhost:3001/dapplet.json`,
-    ),
+  load: () => console.log('\x1b[35m%s\x1b[0m', `Current registry address: http://localhost:3001/dapplet.json`),
 });
 
 export default [

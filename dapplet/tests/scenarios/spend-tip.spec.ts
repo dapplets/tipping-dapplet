@@ -6,7 +6,7 @@ test('Send Tip and check change text to button claim', async ({
   confirmNewSession,
   approveTransaction,
 }) => {
-  await page.goto(process.env.TWITTER_TEST_PROFILE_URL)
+  await page.goto(process.env.TWITTER_TEST_PROFILE_URL);
 
   // check claim button text
   await page.getByTestId('app-text-transition-container').locator(`span:has-not-text("Claim and get")`);
