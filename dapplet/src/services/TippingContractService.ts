@@ -61,9 +61,7 @@ class TippingContractService {
   // CALL
 
   async sendTips(accountGId: string, itemId: string, totalAmount: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall({
-      contractId: contract.contractId,
+    const rawResult = await this._contractCall({
       methodName: 'sendTips',
       args: {
         accountGId,
@@ -76,9 +74,7 @@ class TippingContractService {
   }
 
   async claimTokens(accountGId: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall({
-      contractId: contract.contractId,
+    const rawResult = await this._contractCall({
       methodName: 'claimTokens',
       args: {
         accountGId,
@@ -89,9 +85,7 @@ class TippingContractService {
   }
 
   async setWalletForAutoclaim(accountGId: string, wallet: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall({
-      contractId: contract.contractId,
+    const rawResult = await this._contractCall({
       methodName: 'setWalletForAutoclaim',
       args: {
         accountGId,
@@ -103,9 +97,7 @@ class TippingContractService {
   }
 
   async deleteWalletForAutoclaim(accountGId: string): Promise<string> {
-    const contract = await this._getContractForCallRequests();
-    const rawResult = await contract.account.functionCall({
-      contractId: contract.contractId,
+    const rawResult = await this._contractCall({
       methodName: 'deleteWalletForAutoclaim',
       args: {
         accountGId,
@@ -127,6 +119,17 @@ class TippingContractService {
       await this._addInteractionsWithFunctionalKey(session);
     }
     return this._contract;
+  }
+
+  async _contractCall(props: { methodName: string; args: any; gas: string; attachedDeposit?: string }): Promise<any> {
+    const { account, contractId } = await this._getContractForCallRequests();
+
+    // Resolve difference between old and new near-api-js APIs
+    const isNewNearApi = (<any>Core).extension?.satisfied?.('>=0.63.0-alpha.1');
+    const contractCallArgs = isNewNearApi
+      ? [{ contractId, ...props }]
+      : [contractId, props.methodName, props.args, props.gas, props.attachedDeposit];
+    return account.functionCall(...contractCallArgs);
   }
 }
 
