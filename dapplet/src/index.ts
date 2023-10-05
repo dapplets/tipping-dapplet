@@ -13,7 +13,7 @@ import {
   connectNewAccount,
 } from './services/identityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
+import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync, truncateAddress } from './helpers';
 import { ICurrentProfile, NearNetworks } from './interfaces';
 import * as messages from './messages';
 
@@ -445,6 +445,26 @@ export default class {
     try {
       const { websiteName } = await getCurrentUserAsync(this._globalContext);
       const accountGId = createAccountGlobalId(externalAccount, websiteName);
+      const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+
+      let addressFrom;
+
+      let linkFrom;
+
+      if (walletAccountId.includes('testnet') || walletAccountId.includes('near')) {
+        addressFrom = walletAccountId;
+      } else {
+        addressFrom = truncateAddress(walletAccountId, 24);
+      }
+
+      if (this.network === NearNetworks.Testnet) {
+        linkFrom = 'https://explorer.testnet.near.org/accounts/' + addressFrom;
+      } else if (this.network === NearNetworks.Mainnet) {
+        linkFrom = 'https://explorer.near.org/accounts/' + addressFrom;
+      } else {
+        linkFrom = 'https://explorer.near.org';
+      }
+
       me.loading = true;
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
@@ -464,6 +484,8 @@ export default class {
             tweet,
             websiteName,
             tweet.authorFullname,
+            addressFrom,
+            linkFrom,
           ),
           teaser: messages.teaserSuccessfulTipTransfer(amount),
         });

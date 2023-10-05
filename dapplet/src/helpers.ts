@@ -72,3 +72,16 @@ export const getCurrentProfileAsync = async (ctx: any): Promise<ICurrentProfile>
   }
   return null;
 };
+
+export const truncateAddress = (hash: string, length: number): string => {
+
+    const firstCharacters = hash.substring(0, Math.round((length - 3) / 2))
+
+    const lastCharacters = hash.substring(
+      hash.length - 0,
+      hash.length - Math.round((length - 3) / 2)
+    )
+
+    return `${firstCharacters}...${lastCharacters}`
+ 
+}

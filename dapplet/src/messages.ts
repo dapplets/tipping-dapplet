@@ -49,8 +49,10 @@ export const successfulTipTransfer = (
   postCtx: any,
   websiteName: string,
   externalAccount?: string,
+  addressFrom?: string,
+  linkFrom?: string,
 ): string =>
-  `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped to [${
+  `${Core.near.utils.format.formatNearAmount(amount)} $NEAR from [${addressFrom}](${linkFrom}) was tipped to [${
     websiteName === 'Twitter' ? 'tweet by @' + `${externalAccount}` : websiteName === 'GitHub' ? 'comment' : 'post'
   }](${postCtx.url}). [Tx link](${explorerUrl}/transactions/${txHash})`;
 
