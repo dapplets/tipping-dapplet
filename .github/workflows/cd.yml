@@ -1,0 +1,58 @@
+name: CD
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - master
+            - develop
+        paths-ignore:
+            - 'package.json'
+            - 'package-lock.json'
+            - 'CHANGELOG.md'
+jobs:
+    deploy:
+        name: Deploy
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 18
+            - name: Install Dependencies
+              run: npm i
+            - name: Set variables
+              env:
+                  TEST_REGISTRY_ADDRESS: test.v3.registry.dapplet-base.eth
+                  PUBLIC_REGISTRY_ADDRESS: v3.registry.dapplet-base.eth
+
+              run: |
+                  if [[ "${{github.base_ref}}" == "develop" || "${{github.ref}}" == "refs/heads/develop" ]]; then
+                      echo "TARGET_REGISTRY: $TEST_REGISTRY_ADDRESS"
+                      echo "TARGET_REGISTRY=$TEST_REGISTRY_ADDRESS" >> "$GITHUB_ENV"
+                      echo "ETH_PRIVATE_KEY=${{ secrets.TEST_ETH_PRIVATE_KEY }}" >> "$GITHUB_ENV"
+                  fi
+
+                  if [[ "${{github.base_ref}}" == "master" || "${{github.ref}}" == "refs/heads/master" ]]; then
+                      echo "TARGET_REGISTRY: $PUBLIC_REGISTRY_ADDRESS"
+                      echo "TARGET_REGISTRY=$PUBLIC_REGISTRY_ADDRESS" >> "$GITHUB_ENV"
+                      echo "ETH_PRIVATE_KEY=${{ secrets.PUB_ETH_PRIVATE_KEY }}" >> "$GITHUB_ENV"
+                  fi
+            - name: Start the Dapplet and Deploy it to the Dapplets Registry
+              id: deploy
+              env:
+                  ETH_PRIVATE_KEY: ${{ env.ETH_PRIVATE_KEY}}
+                  DEV_SERVER_URL: http://localhost:3001/dapplet.json
+                  TARGET_REGISTRY: ${{ env.TARGET_REGISTRY }}
+                  IPFS_GATEWAY_URL: https://ipfs-gateway.mooo.com
+              run: |
+                  success=true    
+                  npm run cd || success=false
+                  if ! ${success}; then
+                      echo "The process failed."
+                      exit 1
+                  else
+                      echo "The module was deployed successfully."
+                      exit 0
+                  fi

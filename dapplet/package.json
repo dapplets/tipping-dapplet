@@ -1,12 +1,13 @@
 {
   "name": "tipping-near-dapplet",
-  "version": "0.4.6",
-  "description": "Tipping Dapplet allowing you to send money to another person on Twitter. Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.",
+  "version": "0.5.5",
+  "description": "Tipping Dapplet allowing you to send money to another person on Twitter and GitHub. Charges an extra fee of 3% on each donation and 0.002 NEAR for linking an account.",
   "main": "lib/index.js",
   "scripts": {
     "start": "rollup -w --config rollup.config.js",
     "build": "rollup --config rollup.config.js",
-    "linter": "npx eslint ."
+    "linter": "npx eslint .",
+    "test": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -16,6 +17,8 @@
   "license": "MIT",
   "devDependencies": {
     "@dapplets/dapplet-extension": "develop",
+    "@dapplets/dapplet-playwright": "^0.1.6",
+    "@playwright/test": "^1.37.0",
     "@rollup/plugin-commonjs": "^17.1.0",
     "@rollup/plugin-image": "^2.0.6",
     "@rollup/plugin-json": "^4.1.0",
@@ -24,11 +27,14 @@
     "@types/lodash": "^4.14.177",
     "@typescript-eslint/eslint-plugin": "^4.15.2",
     "@typescript-eslint/parser": "^4.15.2",
+    "adm-zip": "^0.5.10",
+    "dotenv": "^16.3.1",
     "eslint": "^7.21.0",
     "eslint-config-airbnb-typescript": "^12.3.1",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-react": "^7.22.0",
+    "imapflow": "^1.0.136",
     "lodash": "^4.17.21",
     "rollup": "^2.38.3",
     "rollup-plugin-serve": "^1.1.0",

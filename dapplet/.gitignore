@@ -104,3 +104,8 @@ dist
 .tern-port
 
 lib/
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+artifacts/

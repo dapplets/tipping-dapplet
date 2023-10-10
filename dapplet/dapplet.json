@@ -16,13 +16,13 @@
   },
   "icon": "src/icons/money-logo.png",
   "contextIds": [
-    "twitter-config.dapplet-base.eth"
+    "social-virtual-config.dapplet-base.eth"
   ],
   "config": {
     "schema": "config/schema.json",
     "default": "config/default.json"
   },
   "dependencies": {
-    "twitter-config.dapplet-base.eth": "0.1.5"
+    "social-virtual-config.dapplet-base.eth": "0.1.0"
   }
 }

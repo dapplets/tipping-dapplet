@@ -14,16 +14,21 @@ import {
 } from './services/identityService';
 import { debounce } from 'lodash';
 import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
-import { NearNetworks } from './interfaces';
+import { ICurrentProfile, NearNetworks } from './interfaces';
 import * as messages from './messages';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'v2.tipping.testnet';
 const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
 
+interface IState {
+  ctx: ICurrentProfile;
+  waitForClaim: boolean;
+}
+
 @Injectable
 export default class {
-  @Inject('twitter-config.dapplet-base.eth')
+  @Inject('social-virtual-config.dapplet-base.eth')
   public adapter;
   public network: NearNetworks;
   public tippingContractAddress: string;
@@ -39,6 +44,7 @@ export default class {
   private _isItAnInternalWalletLogin = false;
 
   private _globalContext = {};
+  public state = Core.state<IState>({ ctx: null, waitForClaim: false });
 
   executeInitWidgetFunctions = (): Promise<void[]> =>
     Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
@@ -83,7 +89,9 @@ export default class {
       GLOBAL: (global) => {
         this._globalContext = global;
       },
-      PROFILE: () => {
+      PROFILE: (ctx: ICurrentProfile) => {
+        if (!ctx.authorUsername) return;
+        this.state[ctx.id].ctx.next(ctx);
         return [
           button({
             id: 'bindButton',
@@ -127,34 +135,32 @@ export default class {
           }),
         ];
       },
-      POST: () => {
-        return [
-          button({
-            DEFAULT: {
-              img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
-              label: 'Tip',
-              tooltip: 'Send donation',
-              amount: '0',
-              donationsAmount: '0',
-              nearAccount: '',
-              debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
-              init: this.onPostButtonInit,
-              exec: this.onPostButtonExec,
-            },
-          }),
-          avatarBadge({
-            DEFAULT: {
-              img: NEAR_SMALL_ICON,
-              basic: true,
-              horizontal: 'right',
-              vertical: 'bottom',
-              hidden: true,
-              init: this.onPostAvatarBadgeInit,
-              exec: this.onPostAvatarBadgeExec,
-            },
-          }),
-        ];
-      },
+      POST: () => [
+        button({
+          DEFAULT: {
+            img: { DARK: WHITE_ICON, LIGHT: DARK_ICON },
+            label: 'Tip',
+            tooltip: 'Send donation',
+            amount: '0',
+            donationsAmount: '0',
+            nearAccount: '',
+            debouncedDonate: debounce(this.onDebounceDonate, this._debounceDelay),
+            init: this.onPostButtonInit,
+            exec: this.onPostButtonExec,
+          },
+        }),
+        avatarBadge({
+          DEFAULT: {
+            img: NEAR_SMALL_ICON,
+            basic: true,
+            horizontal: 'right',
+            vertical: 'bottom',
+            hidden: true,
+            init: this.onPostAvatarBadgeInit,
+            exec: this.onPostAvatarBadgeExec,
+          },
+        }),
+      ],
     });
     this._$ = $;
   }
@@ -173,10 +179,17 @@ export default class {
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = formatNear(tokens);
-      me.label = `Claim${Number(availableTokens) === 0 ? '' : ' and get ' + availableTokens + ' Ⓝ'}`;
-      me.disabled = false;
-      me.loading = false;
-      me.hidden = false;
+      if (this.state[profile.id].waitForClaim.value) {
+        me.label = 'Waiting...';
+        me.disabled = true;
+        me.loading = true;
+        me.hidden = false;
+      } else {
+        me.label = `Claim${Number(availableTokens) === 0 ? '' : ' and get ' + availableTokens + ' Ⓝ'}`;
+        me.disabled = false;
+        me.loading = false;
+        me.hidden = false;
+      }
     } else {
       me.hidden = true;
     }
@@ -186,6 +199,7 @@ export default class {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
+    this.state[profile.id].waitForClaim.next(true);
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const accountGId = createAccountGlobalId(profile.id, websiteName);
     try {
@@ -202,7 +216,7 @@ export default class {
           return this.executeInitWidgetFunctions();
         } else {
           await Core.alert(messages.aboutCA);
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
@@ -232,6 +246,7 @@ export default class {
       console.error(e);
     } finally {
       this._isItAnInternalWalletLogin = false;
+      this.state[profile.id].waitForClaim.next(false);
       this.executeInitWidgetFunctions();
     }
   };
@@ -288,7 +303,7 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
@@ -362,7 +377,7 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(this._globalContext, walletAccountId, this.network);
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
@@ -440,7 +455,7 @@ export default class {
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
         Core.notify({
           title: 'Tipping Dapplet',
-          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet),
+          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet, websiteName),
           teaser: messages.teaserSuccessfulTipTransfer(amount),
         });
       }
@@ -456,7 +471,7 @@ export default class {
     }
   };
 
-  onPostButtonExec = async (tweet, me) => {
+  onPostButtonExec = async (post, me) => {
     const donationsAmount = Number(formatNear(me.donationsAmount));
     const donation = Number(formatNear(me.amount));
     const stepYocto = Number(formatNear(this._stepYocto));
@@ -469,7 +484,7 @@ export default class {
       me.amount = sum(me.amount, this._stepYocto);
       me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
     }
-    me.debouncedDonate(me, tweet.authorUsername, tweet.id, me.amount, tweet);
+    me.debouncedDonate(me, post.authorUsername, post.id, me.amount, post);
   };
 
   onPostAvatarBadgeInit = async (post, me) => {
@@ -495,7 +510,7 @@ export default class {
     }
   };
 
-  onPostAvatarBadgeExec = (ctx, me) => {
+  onPostAvatarBadgeExec = (_, me) => {
     if (this.network === NearNetworks.Testnet) {
       Core.openPage(`https://explorer.testnet.near.org/accounts/${me.nearAccount}`);
     } else if (this.network === NearNetworks.Mainnet) {

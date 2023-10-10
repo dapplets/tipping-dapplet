@@ -1,12 +1,14 @@
 {
   "name": "tipping-near-dapplet",
-  "version": "0.4.5",
-  "description": "Tipping Dapplet, allowing you to send money to another person on Twitter",
+  "version": "0.5.5",
+  "description": "Tipping Dapplet, allowing you to send money to another person on Twitter and GitHub",
   "main": "",
   "scripts": {
     "install": "cd dapplet && npm i",
     "start": "cd dapplet && npm start",
-    "prettier": "npx prettier --write ."
+    "prettier": "npx prettier --write .",
+    "test": "cd dapplet && npm run test",
+    "cd": "concurrently -c \"yellow,green\" -n \"dapplet,cli\" \"npm start\" \"npx @dapplets/cli@latest deploy tipping-near-dapplet -I\" -ks \"command-cli\""
   },
   "repository": {
     "type": "git",
@@ -22,7 +24,7 @@
     "@types/bn.js": "^5.1.0",
     "@types/lodash": "^4.14.177",
     "@types/numeral": "^2.0.2",
-    "concurrently": "^6.0.2",
+    "concurrently": "^8.2.1",
     "prettier": "2.2.1"
   },
   "bugs": {
