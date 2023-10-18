@@ -3,10 +3,16 @@ import { getCurrentProfileAsync } from '../helpers';
 import { CARequestStatusMsg } from '../messages';
 
 export const getSession = async (network: NearNetworks, contractId: string): Promise<any> => {
+  //ToDo DiP: put session reuse inside the Core.login(...)
   const prevSessions = await Core.sessions();
   const walletOrigin = createNearOrigin(network);
+  console.log('prevSessions', prevSessions);
   const prevSession = prevSessions.find((x) => x.authMethod === walletOrigin);
+  console.log('prevSession', prevSession);
   return (
+    //ToDo DiP: prevSession is always zero?
+    //ToDo DiP: move session reuse into Core
+    //ToDo DiP: think about what is the key to reuse. introduce separate key for reuse?
     prevSession ??
     (await Core.login({
       authMethods: [walletOrigin],
