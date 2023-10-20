@@ -39,7 +39,7 @@ export const offerToReloginOrConnectAccount = ({
 
 export const tipTransfer = (amount: string, fee: string, externalAccount: string, websiteName: string): string =>
   `You're are about to tip ${Core.near.utils.format.formatNearAmount(amount)} $NEAR to @${externalAccount} ${
-    websiteName === 'Twitter' ? 'tweet' : websiteName === 'GitHub' ? 'comment' : 'post'
+    websiteName === 'GitHub' ? 'comment' : 'post'
   }.\n` + `${Core.near.utils.format.formatNearAmount(fee)}$NEAR fee`;
 
 export const successfulTipTransfer = (
@@ -53,7 +53,11 @@ export const successfulTipTransfer = (
   linkFrom?: string,
 ): string =>
   `${Core.near.utils.format.formatNearAmount(amount)} $NEAR from [${addressFrom}](${linkFrom}) was tipped to [${
-    websiteName === 'Twitter' ? 'tweet by @' + `${externalAccount}` : websiteName === 'GitHub' ? 'comment' : 'post'
+    websiteName === 'Twitter' || websiteName === 'X'
+      ? 'post by @' + `${externalAccount}`
+      : websiteName === 'GitHub'
+      ? 'comment'
+      : 'post'
   }](${postCtx.url}). [Tx link](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>

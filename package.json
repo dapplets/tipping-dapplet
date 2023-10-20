@@ -1,7 +1,7 @@
 {
   "name": "tipping-near-dapplet",
   "version": "0.5.6",
-  "description": "Tipping Dapplet, allowing you to send money to another person on Twitter and GitHub",
+  "description": "Tipping Dapplet, allowing you to send money to another person on X and GitHub",
   "main": "",
   "scripts": {
     "install": "cd dapplet && npm i",
