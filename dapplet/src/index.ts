@@ -433,7 +433,7 @@ export default class {
         return;
       }
       if (Number(formatNear(me.donationsAmount)) === 10) me.disabled = true;
-      me.label = formatNear(me.donationsAmount) + ' NEAR';
+      me.label = formatNear(me.donationsAmount) + ' Ⓝ';
     } else {
       me.hidden = true;
     }
@@ -483,7 +483,6 @@ export default class {
             txHash,
             tweet,
             websiteName,
-            tweet.authorFullname,
             addressFrom,
             linkFrom,
           ),
@@ -497,7 +496,7 @@ export default class {
       me.loading = false;
       me.disabled = false;
       me.amount = '0';
-      me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' NEAR';
+      me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' Ⓝ';
       this.executeInitWidgetFunctions();
     }
   };
@@ -513,7 +512,7 @@ export default class {
       lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
     ) {
       me.amount = sum(me.amount, this._stepYocto);
-      me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
+      me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' Ⓝ';
     }
     me.debouncedDonate(me, post.authorUsername, post.id, me.amount, post);
   };
