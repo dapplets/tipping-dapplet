@@ -1,7 +1,7 @@
 import { test } from '../fixtures/my-near-wallet';
 
 test('Rebind', async ({ page, restoreAndConnectWallet, confirmNewSession }) => {
-  await page.goto(process.env.TWITTER_TEST_PROFILE_URL)
+  await page.goto(process.env.TWITTER_TEST_PROFILE_URL);
 
   // click rebind
   await page.getByLabel('Profile').first().click();

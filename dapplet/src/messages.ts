@@ -38,9 +38,9 @@ export const offerToReloginOrConnectAccount = ({
   }connect ${walletAccountId} to @${username}. Do you want to make a new connection?`;
 
 export const tipTransfer = (amount: string, fee: string, externalAccount: string, websiteName: string): string =>
-  `You're are about to tip ${Core.near.utils.format.formatNearAmount(amount)} $NEAR to @${externalAccount} ${
-    websiteName === 'Twitter' ? 'tweet' : websiteName === 'GitHub' ? 'comment' : 'post'
-  }.\n` + `${Core.near.utils.format.formatNearAmount(fee)}$NEAR fee`;
+  `You're are about to tip ${Core.near.utils.format.formatNearAmount(amount)} NEAR to @${externalAccount} ${
+    websiteName === 'GitHub' ? 'comment' : 'post'
+  }.\n` + `${Core.near.utils.format.formatNearAmount(fee)} NEAR fee`;
 
 export const successfulTipTransfer = (
   amount: string,
@@ -48,16 +48,22 @@ export const successfulTipTransfer = (
   txHash: string,
   postCtx: any,
   websiteName: string,
+  addressFrom: string,
+  linkFrom: string,
 ): string =>
-  `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped to [${
-    websiteName === 'Twitter' ? 'tweet' : websiteName === 'GitHub' ? 'comment' : 'post'
+  `${Core.near.utils.format.formatNearAmount(amount)} NEAR from [${addressFrom}](${linkFrom}) was tipped to [${
+    websiteName === 'Twitter' || websiteName === 'X'
+      ? 'post by @' + `${postCtx.authorUsername}`
+      : websiteName === 'GitHub'
+      ? 'comment'
+      : 'post'
   }](${postCtx.url}). [Tx link](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
   `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet` + '\nContinue?';
 
 export const claiming = (walletAccountId: string, availableTokens: number): string =>
-  `You are about to claim ${availableTokens.toFixed(2)} $NEAR and set ${nearUnicode}${walletAccountId} as a tipping` +
+  `You are about to claim ${availableTokens.toFixed(2)} NEAR and set ${nearUnicode}${walletAccountId} as a tipping` +
   '\nContinue?';
 
 export const claimed = (
@@ -72,7 +78,7 @@ export const claimed = (
   return (
     `${
       availableTokens
-        ? availableTokens.toFixed(2) + ' $NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
+        ? availableTokens.toFixed(2) + ' NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
         : nearUnicode + walletAccountId + ' has been set as a tipping wallet. '
     }` + ` [Tx link](${explorerUrl}/transactions/${txHash})`
   );
@@ -100,7 +106,7 @@ export const CARequestStatusMsg = (firstAccount: string, secondAccount: string, 
 export const teaserClaimed = (walletAccountId: string, availableTokens?: number) => {
   return `${
     availableTokens
-      ? availableTokens.toFixed(2) + ' $NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
+      ? availableTokens.toFixed(2) + ' NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
       : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
   }`;
 };
@@ -114,5 +120,5 @@ export const teaserBinded = (walletAccountId: string, username: string): string 
 };
 
 export const teaserSuccessfulTipTransfer = (amount: string): string => {
-  return `${Core.near.utils.format.formatNearAmount(amount)} $NEAR was tipped.`;
+  return `${Core.near.utils.format.formatNearAmount(amount)} NEAR was tipped.`;
 };

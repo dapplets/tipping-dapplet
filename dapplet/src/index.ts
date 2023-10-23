@@ -13,7 +13,7 @@ import {
   connectNewAccount,
 } from './services/identityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync } from './helpers';
+import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync, truncateAddress } from './helpers';
 import { ICurrentProfile, NearNetworks } from './interfaces';
 import * as messages from './messages';
 
@@ -433,7 +433,7 @@ export default class {
         return;
       }
       if (Number(formatNear(me.donationsAmount)) === 10) me.disabled = true;
-      me.label = formatNear(me.donationsAmount) + ' NEAR';
+      me.label = formatNear(me.donationsAmount) + ' Ⓝ';
     } else {
       me.hidden = true;
     }
@@ -445,17 +445,47 @@ export default class {
     try {
       const { websiteName } = await getCurrentUserAsync(this._globalContext);
       const accountGId = createAccountGlobalId(externalAccount, websiteName);
+      const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+
+      let addressFrom;
+
+      let linkFrom;
+
+      if (walletAccountId.includes('testnet') || walletAccountId.includes('near')) {
+        addressFrom = walletAccountId;
+      } else {
+        addressFrom = truncateAddress(walletAccountId, 24);
+      }
+
+      if (this.network === NearNetworks.Testnet) {
+        linkFrom = 'https://explorer.testnet.near.org/accounts/' + addressFrom;
+      } else if (this.network === NearNetworks.Mainnet) {
+        linkFrom = 'https://explorer.near.org/accounts/' + addressFrom;
+      } else {
+        linkFrom = 'https://explorer.near.org';
+      }
+
       me.loading = true;
       me.disabled = true;
       const fee = await this._tippingService.calculateFee(amount);
       const total = sum(amount, fee);
+
       if (await Core.confirm(messages.tipTransfer(amount, fee, externalAccount, websiteName))) {
         const txHash = await this._tippingService.sendTips(accountGId, tweetGId, total);
         const explorerUrl =
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
+
         Core.notify({
           title: 'Tipping Dapplet',
-          message: messages.successfulTipTransfer(amount, explorerUrl, txHash, tweet, websiteName),
+          message: messages.successfulTipTransfer(
+            amount,
+            explorerUrl,
+            txHash,
+            tweet,
+            websiteName,
+            addressFrom,
+            linkFrom,
+          ),
           teaser: messages.teaserSuccessfulTipTransfer(amount),
         });
       }
@@ -466,7 +496,7 @@ export default class {
       me.loading = false;
       me.disabled = false;
       me.amount = '0';
-      me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' NEAR';
+      me.label = equals(me.donationsAmount, '0') ? 'Tip' : formatNear(me.donationsAmount) + ' Ⓝ';
       this.executeInitWidgetFunctions();
     }
   };
@@ -482,7 +512,7 @@ export default class {
       lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
     ) {
       me.amount = sum(me.amount, this._stepYocto);
-      me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' NEAR';
+      me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' Ⓝ';
     }
     me.debouncedDonate(me, post.authorUsername, post.id, me.amount, post);
   };

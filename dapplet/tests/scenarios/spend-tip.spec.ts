@@ -6,7 +6,7 @@ test('Send Tip and check change text to button claim', async ({
   confirmNewSession,
   approveTransaction,
 }) => {
-  await page.goto(process.env.TWITTER_TEST_PROFILE_URL)
+  await page.goto(process.env.TWITTER_TEST_PROFILE_URL);
 
   // check claim button text
   await page.getByTestId('app-text-transition-container').locator(`span:has-not-text("Claim and get")`);
@@ -14,7 +14,7 @@ test('Send Tip and check change text to button claim', async ({
   // click send tip and ok
   await page.getByTitle('Send donation').first().dblclick();
   await page.waitForTimeout(3000);
-  await page.getByTitle('Send donation').first().getByText('0.10 NEAR');
+  await page.getByTitle('Send donation').first().getByText('0.10 Ⓝ');
   await page.waitForTimeout(3000);
   await page.getByTestId('actions-label').getByRole('button', { name: 'Ok' }).click();
   await page.waitForTimeout(2000);
