@@ -2,13 +2,13 @@
 
 # Tipping NEAR Dapplet
 
-**Tipping NEAR Dapplet** is a dapplet (an augmentation module for [Dapplets browser extension](https://github.com/dapplets/dapplet-extension/releases/latest)) that can connect your X and GitHub profiles with your NEAR crypto wallet and send donations to any other X and GitHub users. Your own tweets and comments can also receive donations from others.
+**Tipping NEAR Dapplet** is a dapplet (an augmentation module for [Dapplets browser extension](https://github.com/dapplets/dapplet-extension/releases/latest)) that can connect your X and GitHub profiles with your NEAR crypto wallet and send donations to any other 𝕏 and GitHub users. Your own tweets and comments can also receive donations from others.
 
 This dapplet works as a tool for community managers, helping them to motivate and evolve community members. Useful or important tweets, pull requests and comments can now be rewarded financially.
 
 # Disclaimer
 
-Tipping dapplet allows you to donate NEAR tokens to X and GitHub users. It charges an extra fee of 3% on each donation and 0.002 NEAR as one time fee for linking an accounts.
+Tipping dapplet allows you to donate NEAR tokens to 𝕏 and GitHub users. It charges an extra fee of 3% on each donation and 0.002 NEAR as one time fee for linking an accounts.
 
 Dapplet is designed to work in desktop Chromium browser. Working in the mobile browser is not guaranteed.
 
@@ -53,11 +53,11 @@ Dapplet is designed to work in desktop Chromium browser. Working in the mobile b
 
 # Run the Tipping Dapplet
 
-_This is the workflow for X. The same for GitHub._
+_This is the workflow for 𝕏. The same for GitHub._
 
 ### Open the [X](https://x.com/home) page
 
-This Dapplet is created especially for **x.com**. Please go to the X website and click on the extension icon to open the **Dapplets Extension**.
+This Dapplet is created especially for **x.com**. Please go to the 𝕏 website and click on the extension icon to open the **Dapplets Extension**.
 
 1. Click on the extension. Click mustache button to open the list of dapplets.
 
@@ -68,13 +68,13 @@ This Dapplet is created especially for **x.com**. Please go to the X website and
 
    ![image](/assets/5_1.png)
 
-Now the dapplet is turned on. You will see two new icons in your X profile.
+Now the dapplet is turned on. You will see two new icons in your 𝕏 profile.
 
 ![image](/assets/000.png)
 
 **The first icon** shows the number of NEAR tokens that were donated to you, but which you have not received, as you have not yet connected your X account to NEAR. If you click on this icon you will see the following message: _«You must link NEAR account before continue»_. To link our account let’s go to the second icon.
 
-**The second icon** shows if your X account is connected to NEAR. If you click on the icon you will see the following message:
+**The second icon** shows if your 𝕏 account is connected to NEAR. If you click on the icon you will see the following message:
 
 ![image](/assets/0000.png)
 
@@ -82,9 +82,9 @@ This means that to connect your account you need to type _yourname.near_ next to
 
 ## Yourname.near connection
 
-Now we will connect your X profile to your NEAR account.
+Now we will connect your 𝕏 profile to your NEAR account.
 
-1. Click **Edit Profile** on your X profile page
+1. Click **Edit Profile** on your 𝕏 profile page
 2. Under _name_ add your _yourname.near_ profile. You will receive tokens to this address.
    ![image](/assets/001.png)
 3. Click **Save**
@@ -101,7 +101,7 @@ Now we will connect your X profile to your NEAR account.
 7. You will be asked to transfer **0.002 NEAR**. This amount is required as a GAS fee for the oracle. This is necessary for the connection to be successful. Click **Approve** to accept.
    ![image](/assets/15.jpg)
 
-Go back to your X Profile page. There, the Link icon has changed to:
+Go back to your 𝕏 Profile page. There, the Link icon has changed to:
 
 ![image](/assets/16.png)
 
@@ -109,9 +109,9 @@ This is temporary, when the transaction is completed successfully the icon will 
 
 ![image](/assets/17.png)
 
-Done, your X account is now linked to Yournamen.near account.
+Done, your 𝕏 account is now linked to Yournamen.near account.
 
-**⚠ Now you can delete the name of your NEAR wallet from X profile username.**
+**⚠ Now you can delete the name of your NEAR wallet from 𝕏 profile username.**
 
 # Accepting donated tokens
 
