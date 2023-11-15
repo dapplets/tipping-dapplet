@@ -122,3 +122,6 @@ export const teaserBinded = (walletAccountId: string, username: string): string 
 export const teaserSuccessfulTipTransfer = (amount: string): string => {
   return `${Core.near.utils.format.formatNearAmount(amount)} NEAR was tipped.`;
 };
+
+export const limitPerItemExceeded = (limitPerItem: number): string =>
+  `The ${limitPerItem} NEAR limit for this content has been exceeded.`;

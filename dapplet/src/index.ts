@@ -432,7 +432,13 @@ export default class {
         me.label = 'Tip';
         return;
       }
-      if (Number(formatNear(me.donationsAmount)) === 10) me.disabled = true;
+      const limit = Number(formatNear(this._maxAmountPerItem));
+      if (Number(formatNear(me.donationsAmount)) === limit) {
+        me.disabled = true;
+        me.tooltip = messages.limitPerItemExceeded(limit).slice(0, -1);
+      } else {
+        me.tooltip = 'Send donation';
+      }
       me.label = formatNear(me.donationsAmount) + ' Ⓝ';
     } else {
       me.hidden = true;
@@ -506,11 +512,23 @@ export default class {
     const donation = Number(formatNear(me.amount));
     const stepYocto = Number(formatNear(this._stepYocto));
     const result = Number((donationsAmount + donation + stepYocto).toFixed(2));
-    if (result > 10) return (me.disabled = true);
+    const limit = Number(formatNear(this._maxAmountPerItem));
+    if (result > limit) {
+      if (donation === 0) {
+        me.disabled = true;
+        me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(this._stepYocto) + ' Ⓝ';
+        await Core.alert(messages.limitPerItemExceeded(limit));
+        me.label = formatNear(me.donationsAmount) + ' Ⓝ';
+        return (me.disabled = false);
+      }
+      me.tooltip = messages.limitPerItemExceeded(limit).slice(0, -1);
+      return (me.disabled = true);
+    }
     if (
       lte(sum(me.donationsAmount, me.amount, this._stepYocto), this._maxAmountPerItem) &&
       lte(sum(me.amount, this._stepYocto), this._maxAmountPerTip)
     ) {
+      if (result === limit) me.disabled = true;
       me.amount = sum(me.amount, this._stepYocto);
       me.label = formatNear(me.donationsAmount) + ' + ' + formatNear(me.amount) + ' Ⓝ';
     }
