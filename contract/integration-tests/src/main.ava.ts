@@ -62,6 +62,13 @@ const twitterUserItemId_1 = "https://twitter.com/teremovskii/status/133640607857
 const twitterUserItemId_2 = "https://twitter.com/teremovskii/status/1336";
 const user_wallet = "nikter.near";
 
+const ACCOUNT_2 = {
+  id: "username-2",
+  originId: "social_network-2",
+  itemId: "https://social_network-2.com/username/status/149208138586876",
+};
+const globalIdAcc_2 = ACCOUNT_2.id + "/" + ACCOUNT_2.originId;
+
 // ======= TESTS =======
 
 test("integration test", async (t) => {
@@ -294,7 +301,7 @@ test("integration test", async (t) => {
   t.is(walletForAutoclaim_7, null);
 
   // == TEST 8 ==
-  console.log("== TEST 8 ==: delete wallet for autoclaim by inself");
+  console.log("== TEST 8 ==: delete wallet for autoclaim by itself");
   // ============
 
   await alice.call(
@@ -384,4 +391,49 @@ test("integration test", async (t) => {
   });
 
   t.is(walletForAutoclaim_9_1, user_wallet);
+
+  // == TEST 10 ==
+  console.log("== TEST 10 ==: send tips to achieve limit per item");
+  // ============
+
+  const tipAmount_10 = NEAR.parse("1.03 N").toString();
+  for (let i = 0; i < 10; i++) {
+    await alice.call(
+      contract,
+      "sendTips",
+      {
+        accountGId: globalIdAcc_2,
+        itemId: ACCOUNT_2.itemId,
+      },
+      {
+        attachedDeposit: tipAmount_10,
+        gas: "300000000000000",
+      }
+    );
+  }
+
+  const totalTipsByItemId_10 = await contract.view("getTotalTipsByItemId", { itemId: ACCOUNT_2.itemId });
+  t.is(totalTipsByItemId_10, "10000000000000000000000000");
+
+  // == TEST 11 ==
+  console.log("== TEST 11 ==: send tip that exceeds limit per item");
+  // ============
+
+  const tipAmount_11 = NEAR.parse("0.01 N").toString();
+
+  const error = await t.throwsAsync(async () =>
+    alice.call(
+      contract,
+      "sendTips",
+      {
+        accountGId: globalIdAcc_2,
+        itemId: ACCOUNT_2.itemId,
+      },
+      {
+        attachedDeposit: tipAmount_11,
+        gas: "300000000000000",
+      }
+    )
+  );
+  t.regex(error!.message, /New total tips amount exceeds allowance/);
 });

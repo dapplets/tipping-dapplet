@@ -150,14 +150,14 @@ export function changeMaxAmountPerTip(maxAmountPerTip: u128): void {
 export function sendTips(accountGId: AccountGlobalId, itemId: string): void {
   _active();
   assert(u128.gt(Context.attachedDeposit, u128.Zero), "Tips amounts must be greater than zero");
+  const donationAmount = u128.muldiv(Context.attachedDeposit, u128.from(100), u128.from(103));
   assert(
     u128.le(
-      u128.add(totalTipsByItem.get(itemId, u128.Zero)!, Context.attachedDeposit),
+      u128.add(totalTipsByItem.get(itemId, u128.Zero)!, donationAmount),
       storage.get<u128>(MAX_AMOUNT_PER_ITEM_KEY, u128.Zero)!
     ),
     "New total tips amount exceeds allowance"
   );
-  const donationAmount = u128.muldiv(Context.attachedDeposit, u128.from(100), u128.from(103));
   const feeAmount = u128.sub(Context.attachedDeposit, donationAmount);
   assert(
     u128.le(donationAmount, storage.get<u128>(MAX_AMOUNT_PER_TIP_KEY, u128.Zero)!),
