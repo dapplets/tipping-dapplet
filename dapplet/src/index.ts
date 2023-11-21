@@ -18,12 +18,27 @@ import { ICurrentProfile, NearNetworks } from './interfaces';
 import * as messages from './messages';
 
 const { parseNearAmount, formatNearAmount } = Core.near.utils.format;
+
+// *** SETTINGS ***
 const TIPPING_TESTNET_CONTRACT_ADDRESS = 'v2.tipping.testnet';
 const TIPPING_MAINNET_CONTRACT_ADDRESS = 'v2.tipping.near';
+const breakForClaimNotification = 1000 * 60 * 60 * 24 * 365; // ms
+// ***   ****   ***
 
 interface IState {
   ctx: ICurrentProfile;
   waitForClaim: boolean;
+  me;
+}
+
+interface IGlobal {
+  fullname: string;
+  id: 'global';
+  img: string;
+  parent: null;
+  url: string;
+  username: string;
+  websiteName: string;
 }
 
 @Injectable
@@ -43,8 +58,8 @@ export default class {
   private _initWidgetFunctions: { [name: string]: () => Promise<void> } = {};
   private _isItAnInternalWalletLogin = false;
 
-  private _globalContext = {};
-  public state = Core.state<IState>({ ctx: null, waitForClaim: false });
+  private _globalContext: IGlobal = null;
+  public state = Core.state<IState>({ ctx: null, waitForClaim: false, me: null });
 
   executeInitWidgetFunctions = (): Promise<void[]> =>
     Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
@@ -86,9 +101,7 @@ export default class {
 
     const { button, avatarBadge } = this.adapter.exports;
     const { $ } = this.adapter.attachConfig({
-      GLOBAL: (global) => {
-        this._globalContext = global;
-      },
+      GLOBAL: this.onGlobalInit,
       PROFILE: (ctx: ICurrentProfile) => {
         if (!ctx.authorUsername) return;
         this.state[ctx.id].ctx.next(ctx);
@@ -165,7 +178,48 @@ export default class {
     this._$ = $;
   }
 
+  onGlobalInit = async (global: IGlobal) => {
+    this._globalContext = global;
+    const { username, websiteName } = await getCurrentUserAsync(global);
+    const accountGId = createAccountGlobalId(username, websiteName);
+    const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
+    if (walletForAutoclaim) return;
+
+    const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
+    const availableTokens = formatNear(tokens);
+    if (Number(availableTokens) === 0) return;
+
+    const showNotification = () =>
+      Core.notify({
+        title: 'Tipping NEAR Dapplet',
+        message: 'Claim and get ' + availableTokens + ' Ⓝ',
+        payload: {
+          key: 'tipping_claim',
+        },
+        actions: [
+          {
+            action: 'claim',
+            title: 'Claim',
+          },
+          {
+            action: 'do_not_disturb',
+            title: 'Do not disturb',
+          },
+        ],
+      });
+
+    await Core.storage.remove('date'); // TESTING: reset date in the storage to show the notification
+    const storageDate = await Core.storage.get('date');
+    const date = storageDate && new Date(storageDate);
+    const currentDate = new Date();
+    if (!date || currentDate.valueOf() - date.valueOf() > breakForClaimNotification) {
+      Core.storage.set('date', currentDate);
+      showNotification();
+    }
+  };
+
   onProfileButtonClaimInit = async (profile, me) => {
+    this.state[profile.id].me.next(me);
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
@@ -195,13 +249,10 @@ export default class {
     }
   };
 
-  onProfileButtonClaimExec = async (profile, me) => {
-    me.disabled = true;
-    me.loading = true;
-    me.label = 'Waiting...';
-    this.state[profile.id].waitForClaim.next(true);
-    const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
-    const accountGId = createAccountGlobalId(profile.id, websiteName);
+  onButtonClaimExec = async (accountId: string) => {
+    this.state[accountId].waitForClaim.next(true);
+    const { username, websiteName, fullname } = await getCurrentUserAsync(this._globalContext);
+    const accountGId = createAccountGlobalId(accountId, websiteName);
     try {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
       this._isItAnInternalWalletLogin = true;
@@ -216,7 +267,15 @@ export default class {
           return this.executeInitWidgetFunctions();
         } else {
           await Core.alert(messages.aboutCA);
-          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
+          if (!this.state[accountId].ctx.value) {
+            this.state[accountId].ctx.next({
+              authorFullname: fullname,
+              authorUsername: accountId,
+              id: accountId,
+              parent: { websiteName },
+            });
+          }
+          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[accountId].ctx);
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
@@ -246,10 +305,42 @@ export default class {
       console.error(e);
     } finally {
       this._isItAnInternalWalletLogin = false;
-      this.state[profile.id].waitForClaim.next(false);
+      this.state[accountId].waitForClaim.next(false);
       this.executeInitWidgetFunctions();
     }
   };
+
+  onProfileButtonClaimExec = async (profile, me) => {
+    me.disabled = true;
+    me.loading = true;
+    me.label = 'Waiting...';
+    this.onButtonClaimExec(profile.id);
+  };
+
+  @OnEvent('notification_action')
+  async handleNotificationActionWithDecorator(props) {
+    const { payload, action, namespace } = props;
+    if (namespace === 'tipping-near-dapplet' && payload.key === 'tipping_claim') {
+      switch (action) {
+        case 'do_not_disturb':
+          Core.storage.set('date', new Date(32534611200000));
+          break;
+        case 'claim': {
+          const { username } = await getCurrentUserAsync(this._globalContext);
+          const profileCtx = this.state[username]?.ctx.value;
+          const profileProxy = this.state[username]?.me.value;
+          if (profileCtx) {
+            this.onProfileButtonClaimExec(profileCtx, profileProxy);
+          } else {
+            this.onButtonClaimExec(username);
+          }
+          break;
+        }
+        default:
+          console.error('The wrong notification action ID:', action);
+      }
+    }
+  }
 
   onProfileButtonUnbindInit = async (profile, me) => {
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
@@ -342,6 +433,7 @@ export default class {
   };
 
   onProfileButtonRebindExec = async (profile, me) => {
+    console.log('ctx profile', profile);
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
@@ -508,6 +600,7 @@ export default class {
   };
 
   onPostButtonExec = async (post, me) => {
+    console.log('ctx', post);
     const donationsAmount = Number(formatNear(me.donationsAmount));
     const donation = Number(formatNear(me.amount));
     const stepYocto = Number(formatNear(this._stepYocto));
