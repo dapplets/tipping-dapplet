@@ -13,7 +13,16 @@ import {
   connectNewAccount,
 } from './services/identityService';
 import { debounce } from 'lodash';
-import { equals, getMilliseconds, lte, sum, formatNear, getCurrentUserAsync, truncateAddress } from './helpers';
+import {
+  equals,
+  getMilliseconds,
+  lte,
+  sum,
+  formatNear,
+  getCurrentUserAsync,
+  truncateAddress,
+  getDomainByWebsiteName,
+} from './helpers';
 import { ICurrentProfile, NearNetworks } from './interfaces';
 import * as messages from './messages';
 
@@ -180,7 +189,7 @@ export default class {
 
   onGlobalInit = async (global: IGlobal) => {
     this._globalContext = global;
-    const { username, websiteName } = await getCurrentUserAsync(global);
+    const { username, websiteName, fullname } = await getCurrentUserAsync(global);
     const accountGId = createAccountGlobalId(username, websiteName);
     const walletForAutoclaim = await this._tippingService.getWalletForAutoclaim(accountGId);
     if (walletForAutoclaim) return;
@@ -192,7 +201,10 @@ export default class {
     const showNotification = () =>
       Core.notify({
         title: 'Tipping NEAR Dapplet',
-        message: 'Claim and get ' + availableTokens + ' Ⓝ',
+        teaser: 'Claim and get ' + availableTokens + ' Ⓝ',
+        message: `Claim ${websiteName} account [${fullname}](${
+          getDomainByWebsiteName[websiteName] + username
+        }) and get ${availableTokens} Ⓝ`,
         payload: {
           key: 'tipping_claim',
         },
