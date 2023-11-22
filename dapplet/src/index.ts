@@ -193,7 +193,7 @@ export default class {
       teaser: 'Claim and get ' + availableTokens + ' Ⓝ',
       message: `Claim ${websiteName} account [${fullname}](${
         getDomainByWebsiteName[websiteName] + username
-      }) and get ${availableTokens} Ⓝ`,
+      }) and get ${availableTokens} NEAR`,
       payload: {
         key: 'tipping_claim',
         websiteName,
@@ -203,11 +203,11 @@ export default class {
       actions: [
         {
           action: 'claim',
-          title: 'Claim',
+          title: 'Claim tips',
         },
         {
           action: 'do_not_disturb',
-          title: 'Do not disturb',
+          title: 'Do not disturb for this account',
         },
       ],
     });
@@ -223,12 +223,11 @@ export default class {
     const availableTokens = formatNear(tokens);
     if (Number(availableTokens) === 0) return;
 
-    await Core.storage.remove('date'); // TESTING: reset date in the storage to show the notification
-    const storageDate = await Core.storage.get('date');
+    const storageDate = await Core.storage.get(`${websiteName}/${username}/date`);
     const date = storageDate && new Date(storageDate);
     const currentDate = new Date();
     if (!date || currentDate.valueOf() - date.valueOf() > breakForClaimNotification) {
-      Core.storage.set('date', currentDate);
+      Core.storage.set(`${websiteName}/${username}/date`, currentDate);
       this.showNotification({ availableTokens, websiteName, username, fullname });
     }
   };
@@ -294,6 +293,7 @@ export default class {
               parent: { websiteName },
             });
           }
+          Core.alert(messages.waitForTheCAConnect());
           const isConnected = await connectNewAccount(
             walletAccountId,
             this.network,
@@ -307,6 +307,7 @@ export default class {
 
       if (!availableTokens) {
         if (await Core.confirm(messages.settingTippingWallet(walletAccountId))) {
+          Core.alert(messages.waitForTheClaiming());
           const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
 
           Core.notify({
@@ -316,6 +317,7 @@ export default class {
           });
         }
       } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens, fullname, websiteName))) {
+        Core.alert(messages.waitForTheClaiming());
         const txHash = await this._tippingService.claimTokens(accountGId);
 
         Core.notify({
@@ -351,12 +353,12 @@ export default class {
   async handleNotificationActionWithDecorator(props) {
     const { payload, action, namespace } = props;
     if (namespace === 'tipping-near-dapplet' && payload.key === 'tipping_claim') {
+      const { websiteName, username, fullname } = payload;
       switch (action) {
         case 'do_not_disturb':
-          Core.storage.set('date', new Date(32534611200000)); // far future
+          Core.storage.set(`${websiteName}/${username}/date`, new Date(32534611200000)); // far future
           break;
         case 'claim': {
-          const { websiteName, username, fullname } = payload;
           const profileCtx = this.state[websiteName + '/' + username]?.ctx.value;
           const profileProxy = this.state[websiteName + '/' + username]?.me.value;
           if (profileCtx) {
@@ -467,7 +469,6 @@ export default class {
   };
 
   onProfileButtonRebindExec = async (profile, me) => {
-    console.log('ctx profile', profile);
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
@@ -638,7 +639,6 @@ export default class {
   };
 
   onPostButtonExec = async (post, me) => {
-    console.log('ctx', post);
     const donationsAmount = Number(formatNear(me.donationsAmount));
     const donation = Number(formatNear(me.amount));
     const stepYocto = Number(formatNear(this._stepYocto));
