@@ -68,7 +68,7 @@ export default class {
   private _isItAnInternalWalletLogin = false;
 
   private _globalContext: IGlobal = null;
-  public state = Core.state<IState>({ ctx: null, waitForClaim: false, me: null });
+  public state = Core.state<IState>({ ctx: null, waitForClaim: false, me: null }); // Keys: <websiteName>/<accountId>
 
   executeInitWidgetFunctions = (): Promise<void[]> =>
     Promise.all(Object.values(this._initWidgetFunctions).map((fn) => fn()));
@@ -113,7 +113,7 @@ export default class {
       GLOBAL: this.onGlobalInit,
       PROFILE: (ctx: ICurrentProfile) => {
         if (!ctx.authorUsername) return;
-        this.state[ctx.id].ctx.next(ctx);
+        this.state[ctx.parent.websiteName + '/' + ctx.id].ctx.next(ctx);
         return [
           button({
             id: 'bindButton',
@@ -187,6 +187,31 @@ export default class {
     this._$ = $;
   }
 
+  showNotification = ({ availableTokens, websiteName, username, fullname }) =>
+    Core.notify({
+      title: 'Tipping NEAR Dapplet',
+      teaser: 'Claim and get ' + availableTokens + ' Ⓝ',
+      message: `Claim ${websiteName} account [${fullname}](${
+        getDomainByWebsiteName[websiteName] + username
+      }) and get ${availableTokens} Ⓝ`,
+      payload: {
+        key: 'tipping_claim',
+        websiteName,
+        username,
+        fullname,
+      },
+      actions: [
+        {
+          action: 'claim',
+          title: 'Claim',
+        },
+        {
+          action: 'do_not_disturb',
+          title: 'Do not disturb',
+        },
+      ],
+    });
+
   onGlobalInit = async (global: IGlobal) => {
     this._globalContext = global;
     const { username, websiteName, fullname } = await getCurrentUserAsync(global);
@@ -198,41 +223,19 @@ export default class {
     const availableTokens = formatNear(tokens);
     if (Number(availableTokens) === 0) return;
 
-    const showNotification = () =>
-      Core.notify({
-        title: 'Tipping NEAR Dapplet',
-        teaser: 'Claim and get ' + availableTokens + ' Ⓝ',
-        message: `Claim ${websiteName} account [${fullname}](${
-          getDomainByWebsiteName[websiteName] + username
-        }) and get ${availableTokens} Ⓝ`,
-        payload: {
-          key: 'tipping_claim',
-        },
-        actions: [
-          {
-            action: 'claim',
-            title: 'Claim',
-          },
-          {
-            action: 'do_not_disturb',
-            title: 'Do not disturb',
-          },
-        ],
-      });
-
     await Core.storage.remove('date'); // TESTING: reset date in the storage to show the notification
     const storageDate = await Core.storage.get('date');
     const date = storageDate && new Date(storageDate);
     const currentDate = new Date();
     if (!date || currentDate.valueOf() - date.valueOf() > breakForClaimNotification) {
       Core.storage.set('date', currentDate);
-      showNotification();
+      this.showNotification({ availableTokens, websiteName, username, fullname });
     }
   };
 
   onProfileButtonClaimInit = async (profile, me) => {
-    this.state[profile.id].me.next(me);
     const { username, websiteName } = await getCurrentUserAsync(this._globalContext);
+    this.state[websiteName + '/' + profile.id].me.next(me);
     const isMyProfile = profile.id?.toLowerCase() === username?.toLowerCase();
     if (isMyProfile) {
       this._initWidgetFunctions[[websiteName, username, 'claim'].join('/')] = () =>
@@ -245,7 +248,7 @@ export default class {
       }
       const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = formatNear(tokens);
-      if (this.state[profile.id].waitForClaim.value) {
+      if (this.state[websiteName + '/' + profile.id].waitForClaim.value) {
         me.label = 'Waiting...';
         me.disabled = true;
         me.loading = true;
@@ -261,9 +264,8 @@ export default class {
     }
   };
 
-  onButtonClaimExec = async (accountId: string) => {
-    this.state[accountId].waitForClaim.next(true);
-    const { username, websiteName, fullname } = await getCurrentUserAsync(this._globalContext);
+  onButtonClaimExec = async (accountId: string, websiteName: string, fullname: string) => {
+    this.state[websiteName + '/' + accountId].waitForClaim.next(true);
     const accountGId = createAccountGlobalId(accountId, websiteName);
     try {
       const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
@@ -273,21 +275,30 @@ export default class {
         if (
           nearAccountsFromCA.length !== 0 &&
           !(await Core.confirm(
-            messages.offerToReloginOrConnectAccount({ username, websiteName, walletAccountId, nearAccountsFromCA }),
+            messages.offerToReloginOrConnectAccount({
+              username: accountId,
+              websiteName,
+              walletAccountId,
+              nearAccountsFromCA,
+            }),
           ))
         ) {
           return this.executeInitWidgetFunctions();
         } else {
           await Core.alert(messages.aboutCA);
-          if (!this.state[accountId].ctx.value) {
-            this.state[accountId].ctx.next({
+          if (!this.state[websiteName + '/' + accountId].ctx.value) {
+            this.state[websiteName + '/' + accountId].ctx.next({
               authorFullname: fullname,
               authorUsername: accountId,
               id: accountId,
               parent: { websiteName },
             });
           }
-          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[accountId].ctx);
+          const isConnected = await connectNewAccount(
+            walletAccountId,
+            this.network,
+            this.state[websiteName + '/' + accountId].ctx,
+          );
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
@@ -300,16 +311,23 @@ export default class {
 
           Core.notify({
             title: 'Tipping Dapplet',
-            message: messages.claimed(walletAccountId, this.network, txHash),
+            message: messages.claimed({ fullname, websiteName, walletAccountId, network: this.network, txHash }),
             teaser: messages.teaserClaimed(walletAccountId),
           });
         }
-      } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens))) {
+      } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens, fullname, websiteName))) {
         const txHash = await this._tippingService.claimTokens(accountGId);
 
         Core.notify({
           title: 'Tipping Dapplet',
-          message: messages.claimed(walletAccountId, this.network, txHash, availableTokens),
+          message: messages.claimed({
+            fullname,
+            websiteName,
+            walletAccountId,
+            network: this.network,
+            txHash,
+            availableTokens,
+          }),
           teaser: messages.teaserClaimed(walletAccountId, availableTokens),
         });
       }
@@ -317,7 +335,7 @@ export default class {
       console.error(e);
     } finally {
       this._isItAnInternalWalletLogin = false;
-      this.state[accountId].waitForClaim.next(false);
+      this.state[websiteName + '/' + accountId].waitForClaim.next(false);
       this.executeInitWidgetFunctions();
     }
   };
@@ -326,7 +344,7 @@ export default class {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
-    this.onButtonClaimExec(profile.id);
+    this.onButtonClaimExec(profile.id, profile.parent.websiteName, profile.parent.fullname);
   };
 
   @OnEvent('notification_action')
@@ -335,16 +353,16 @@ export default class {
     if (namespace === 'tipping-near-dapplet' && payload.key === 'tipping_claim') {
       switch (action) {
         case 'do_not_disturb':
-          Core.storage.set('date', new Date(32534611200000));
+          Core.storage.set('date', new Date(32534611200000)); // far future
           break;
         case 'claim': {
-          const { username } = await getCurrentUserAsync(this._globalContext);
-          const profileCtx = this.state[username]?.ctx.value;
-          const profileProxy = this.state[username]?.me.value;
+          const { websiteName, username, fullname } = payload;
+          const profileCtx = this.state[websiteName + '/' + username]?.ctx.value;
+          const profileProxy = this.state[websiteName + '/' + username]?.me.value;
           if (profileCtx) {
             this.onProfileButtonClaimExec(profileCtx, profileProxy);
           } else {
-            this.onButtonClaimExec(username);
+            this.onButtonClaimExec(username, websiteName, fullname);
           }
           break;
         }
@@ -406,7 +424,11 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
+          const isConnected = await connectNewAccount(
+            walletAccountId,
+            this.network,
+            this.state[websiteName + '/' + profile.id].ctx,
+          );
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.unbinding(walletForAutoclaim, username))) {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
@@ -481,7 +503,11 @@ export default class {
             }),
           )
         ) {
-          const isConnected = await connectNewAccount(walletAccountId, this.network, this.state[profile.id].ctx);
+          const isConnected = await connectNewAccount(
+            walletAccountId,
+            this.network,
+            this.state[websiteName + '/' + profile.id].ctx,
+          );
           if (!isConnected) return this.executeInitWidgetFunctions();
           if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);

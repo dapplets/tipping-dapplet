@@ -60,25 +60,43 @@ export const successfulTipTransfer = (
   }](${postCtx.url}). [Tx link](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
-  `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet` + '\nContinue?';
+  `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet.` + '\nContinue?';
 
-export const claiming = (walletAccountId: string, availableTokens: number): string =>
-  `You are about to claim ${availableTokens.toFixed(2)} NEAR and set ${nearUnicode}${walletAccountId} as a tipping` +
+export const claiming = (
+  walletAccountId: string,
+  availableTokens: number,
+  fullname: string,
+  websiteName: string,
+): string =>
+  `You are about to claim ${availableTokens.toFixed(
+    2,
+  )} NEAR and set ${nearUnicode}${walletAccountId} as a tipping wallet for ${fullname} on ${websiteName}.` +
   '\nContinue?';
 
-export const claimed = (
-  walletAccountId: string,
-  network: NearNetworks,
-  txHash: string,
-  availableTokens?: number,
-): string => {
+export const claimed = ({
+  fullname,
+  websiteName,
+  walletAccountId,
+  network,
+  txHash,
+  availableTokens,
+}: {
+  fullname: string;
+  websiteName: string;
+  walletAccountId: string;
+  network: NearNetworks;
+  txHash: string;
+  availableTokens?: number;
+}): string => {
   const explorerUrl =
     network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
 
   return (
     `${
       availableTokens
-        ? availableTokens.toFixed(2) + ' NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
+        ? `${availableTokens.toFixed(
+            2,
+          )} NEAR of tips was claimed from ${fullname} on ${websiteName} to ${nearUnicode}${walletAccountId}`
         : nearUnicode + walletAccountId + ' has been set as a tipping wallet. '
     }` + ` [Tx link](${explorerUrl}/transactions/${txHash})`
   );
