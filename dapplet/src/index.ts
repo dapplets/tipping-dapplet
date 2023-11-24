@@ -268,10 +268,16 @@ export default class {
     this.state[websiteName + '/' + accountId].waitForClaim.next(true);
     const accountGId = createAccountGlobalId(accountId, websiteName);
     try {
-      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, network);
-      this._isItAnInternalWalletLogin = true;
       const tippingContractAddress =
         network === NearNetworks.Testnet ? TIPPING_TESTNET_CONTRACT_ADDRESS : TIPPING_MAINNET_CONTRACT_ADDRESS;
+      const tippingService = new TippingContractService(network, tippingContractAddress);
+      const walletForAutoclaim = await tippingService.getWalletForAutoclaim(accountGId);
+      if (walletForAutoclaim) {
+        await Core.alert(messages.rebindError(walletForAutoclaim));
+        return;
+      }
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, network);
+      this._isItAnInternalWalletLogin = true;
       const walletAccountId = await connectWallet(network, tippingContractAddress);
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (
@@ -305,7 +311,6 @@ export default class {
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
-      const tippingService = new TippingContractService(network, tippingContractAddress);
       const tokens = await tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
 
