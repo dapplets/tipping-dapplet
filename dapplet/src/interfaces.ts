@@ -23,13 +23,13 @@ export interface ICurrentUser {
 
 export interface ICurrentProfile {
   authorFullname: string;
-  authorImg: string;
+  authorImg?: string;
   authorUsername: string;
   id: string;
   parent?: {
     websiteName: string;
   };
-  url: string;
+  url?: string;
 }
 
 export type TConnectedAccountsVerificationRequestInfo = {

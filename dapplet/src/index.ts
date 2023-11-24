@@ -193,12 +193,13 @@ export default class {
       teaser: 'Claim and get ' + availableTokens + ' Ⓝ',
       message: `Claim ${websiteName} account [${fullname}](${
         getDomainByWebsiteName[websiteName] + username
-      }) and get ${availableTokens} NEAR`,
+      }) and get ${availableTokens} NEAR${this.network === NearNetworks.Testnet ? ' (testnet)' : ''}.`,
       payload: {
         key: 'tipping_claim',
         websiteName,
         username,
         fullname,
+        network: this.network,
       },
       actions: [
         {
@@ -263,13 +264,15 @@ export default class {
     }
   };
 
-  onButtonClaimExec = async (accountId: string, websiteName: string, fullname: string) => {
+  onButtonClaimExec = async (accountId: string, websiteName: string, fullname: string, network: NearNetworks) => {
     this.state[websiteName + '/' + accountId].waitForClaim.next(true);
     const accountGId = createAccountGlobalId(accountId, websiteName);
     try {
-      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, this.network);
+      const nearAccountsFromCA = await getNearAccountsFromCa(accountGId, network);
       this._isItAnInternalWalletLogin = true;
-      const walletAccountId = await connectWallet(this.network, this.tippingContractAddress);
+      const tippingContractAddress =
+        network === NearNetworks.Testnet ? TIPPING_TESTNET_CONTRACT_ADDRESS : TIPPING_MAINNET_CONTRACT_ADDRESS;
+      const walletAccountId = await connectWallet(network, tippingContractAddress);
       if (nearAccountsFromCA.length === 0 || !nearAccountsFromCA.includes(walletAccountId)) {
         if (
           nearAccountsFromCA.length !== 0 &&
@@ -296,37 +299,38 @@ export default class {
           Core.alert(messages.waitForTheCAConnect());
           const isConnected = await connectNewAccount(
             walletAccountId,
-            this.network,
+            network,
             this.state[websiteName + '/' + accountId].ctx,
           );
           if (!isConnected) return this.executeInitWidgetFunctions();
         }
       }
-      const tokens = await this._tippingService.getAvailableTipsByAccount(accountGId);
+      const tippingService = new TippingContractService(network, tippingContractAddress);
+      const tokens = await tippingService.getAvailableTipsByAccount(accountGId);
       const availableTokens = Number(formatNearAmount(tokens, 4));
 
       if (!availableTokens) {
         if (await Core.confirm(messages.settingTippingWallet(walletAccountId))) {
           Core.alert(messages.waitForTheClaiming());
-          const txHash = await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
+          const txHash = await tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
 
           Core.notify({
-            title: 'Tipping Dapplet',
-            message: messages.claimed({ fullname, websiteName, walletAccountId, network: this.network, txHash }),
+            title: 'Tipping NEAR Dapplet',
+            message: messages.claimed({ fullname, websiteName, walletAccountId, network, txHash }),
             teaser: messages.teaserClaimed(walletAccountId),
           });
         }
       } else if (await Core.confirm(messages.claiming(walletAccountId, availableTokens, fullname, websiteName))) {
         Core.alert(messages.waitForTheClaiming());
-        const txHash = await this._tippingService.claimTokens(accountGId);
+        const txHash = await tippingService.claimTokens(accountGId);
 
         Core.notify({
-          title: 'Tipping Dapplet',
+          title: 'Tipping NEAR Dapplet',
           message: messages.claimed({
             fullname,
             websiteName,
             walletAccountId,
-            network: this.network,
+            network,
             txHash,
             availableTokens,
           }),
@@ -346,14 +350,14 @@ export default class {
     me.disabled = true;
     me.loading = true;
     me.label = 'Waiting...';
-    this.onButtonClaimExec(profile.id, profile.parent.websiteName, profile.parent.fullname);
+    this.onButtonClaimExec(profile.id, profile.parent.websiteName, profile.parent.fullname, this.network);
   };
 
   @OnEvent('notification_action')
   async handleNotificationActionWithDecorator(props) {
     const { payload, action, namespace } = props;
-    if (namespace === 'tipping-near-dapplet' && payload.key === 'tipping_claim') {
-      const { websiteName, username, fullname } = payload;
+    const { key, websiteName, username, fullname, network } = payload;
+    if (namespace === 'tipping-near-dapplet' && key === 'tipping_claim') {
       switch (action) {
         case 'do_not_disturb':
           Core.storage.set(`${websiteName}/${username}/date`, new Date(32534611200000)); // far future
@@ -361,10 +365,10 @@ export default class {
         case 'claim': {
           const profileCtx = this.state[websiteName + '/' + username]?.ctx.value;
           const profileProxy = this.state[websiteName + '/' + username]?.me.value;
-          if (profileCtx) {
+          if (profileCtx && network === this.network) {
             this.onProfileButtonClaimExec(profileCtx, profileProxy);
           } else {
-            this.onButtonClaimExec(username, websiteName, fullname);
+            this.onButtonClaimExec(username, websiteName, fullname, network);
           }
           break;
         }
@@ -409,7 +413,7 @@ export default class {
           await this._tippingService.deleteWalletForAutoclaim(accountGId);
 
           Core.notify({
-            title: 'Tipping Dapplet',
+            title: 'Tipping NEAR Dapplet',
             message: messages.unbinded(walletForAutoclaim, username),
             teaser: messages.teaserUnbinded(walletForAutoclaim, username),
           });
@@ -436,7 +440,7 @@ export default class {
             await this._tippingService.deleteWalletForAutoclaim(accountGId);
 
             Core.notify({
-              title: 'Tipping Dapplet',
+              title: 'Tipping NEAR Dapplet',
               message: messages.unbinded(walletForAutoclaim, username),
               teaser: messages.teaserUnbinded(walletForAutoclaim, username),
             });
@@ -487,7 +491,7 @@ export default class {
           await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
 
           Core.notify({
-            title: 'Tipping Dapplet',
+            title: 'Tipping NEAR Dapplet',
             message: messages.binded(walletAccountId, username),
             teaser: messages.teaserBinded(walletAccountId, username),
           });
@@ -513,7 +517,7 @@ export default class {
           if (await Core.confirm(messages.rebinding(username, walletAccountId, walletForAutoclaim))) {
             await this._tippingService.setWalletForAutoclaim(accountGId, walletAccountId);
             Core.notify({
-              title: 'Tipping Dapplet',
+              title: 'Tipping NEAR Dapplet',
               message: messages.binded(walletAccountId, username),
               teaser: messages.teaserBinded(walletAccountId, username),
             });
@@ -613,7 +617,7 @@ export default class {
           this.network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
 
         Core.notify({
-          title: 'Tipping Dapplet',
+          title: 'Tipping NEAR Dapplet',
           message: messages.successfulTipTransfer(
             amount,
             explorerUrl,

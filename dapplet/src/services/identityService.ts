@@ -25,8 +25,8 @@ export const connectWallet = async (network: NearNetworks, contractId: string): 
 export const createAccountGlobalId = (username: string, websiteName: string): string =>
   username + '/' + websiteName.toLowerCase();
 
-export const getNearAccountsFromCa = async (accountGId: string, network: string): Promise<string[]> => {
-  const connectedAccounts = await Core.connectedAccounts.getNet(accountGId);
+export const getNearAccountsFromCa = async (accountGId: string, network: NearNetworks): Promise<string[]> => {
+  const connectedAccounts = await Core.connectedAccounts.getNet(accountGId, network);
   const walletOrigin = createNearOrigin(network);
   return connectedAccounts
     ? connectedAccounts.filter((id) => id.indexOf(walletOrigin) !== -1).map((id) => id.split('/')[0])
@@ -73,11 +73,11 @@ const makeNewCAConnection = async (
     type: conditionType,
     user: authorFullname,
   };
-  await Core.connectedAccounts.requestVerification(args, condition);
+  await Core.connectedAccounts.requestVerification(args, condition, walletNetwork);
   const accountGId = createAccountGlobalId(authorUsername, parent?.websiteName);
-  const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId);
+  const { pendingRequest, pendingRequestId } = await getCAPendingRequest(accountGId, walletNetwork);
   if (pendingRequestId !== -1 && pendingRequest) {
-    const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId);
+    const requestStatus = await waitForCAVerificationRequestResolve(pendingRequestId, walletNetwork);
     await Core.alert(
       CARequestStatusMsg(
         pendingRequest.firstAccount.split('/')[0],
@@ -92,14 +92,15 @@ const makeNewCAConnection = async (
 
 const getCAPendingRequest = async (
   accountGId: string,
+  network?: NearNetworks,
 ): Promise<{
   pendingRequest: TConnectedAccountsVerificationRequestInfo;
   pendingRequestId: number;
 }> => {
-  const pendingRequestsIds = await Core.connectedAccounts.getPendingRequests();
+  const pendingRequestsIds = await Core.connectedAccounts.getPendingRequests(network);
   if (pendingRequestsIds && pendingRequestsIds.length) {
     for (const id of pendingRequestsIds) {
-      const request = await Core.connectedAccounts.getVerificationRequest(id);
+      const request = await Core.connectedAccounts.getVerificationRequest(id, network);
       if (request.firstAccount === accountGId || request.secondAccount === accountGId) {
         return { pendingRequest: request, pendingRequestId: id };
       }
@@ -108,12 +109,12 @@ const getCAPendingRequest = async (
   return { pendingRequest: null, pendingRequestId: -1 };
 };
 
-const waitForCAVerificationRequestResolve = async (id: number): Promise<CARequestStatus> => {
+const waitForCAVerificationRequestResolve = async (id: number, network?: NearNetworks): Promise<CARequestStatus> => {
   try {
-    const requestStatus = await Core.connectedAccounts.getRequestStatus(id);
+    const requestStatus = await Core.connectedAccounts.getRequestStatus(id, network);
     if (requestStatus === 'pending') {
       await new Promise((res) => setTimeout(res, 5000));
-      return waitForCAVerificationRequestResolve(id);
+      return waitForCAVerificationRequestResolve(id, network);
     } else {
       return requestStatus;
     }
