@@ -60,63 +60,81 @@ export const successfulTipTransfer = (
   }](${postCtx.url}). [Tx link](${explorerUrl}/transactions/${txHash})`;
 
 export const settingTippingWallet = (walletAccountId: string): string =>
-  `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet` + '\nContinue?';
+  `You are about to set ${nearUnicode}${walletAccountId} as a tipping wallet.` + '\nContinue?';
 
-export const claiming = (walletAccountId: string, availableTokens: number): string =>
-  `You are about to claim ${availableTokens.toFixed(2)} NEAR and set ${nearUnicode}${walletAccountId} as a tipping` +
+export const claiming = (
+  walletAccountId: string,
+  availableTokens: number,
+  fullname: string,
+  websiteName: string,
+): string =>
+  `You are about to claim ${availableTokens.toFixed(
+    2,
+  )} NEAR and set ${nearUnicode}${walletAccountId} as a tipping wallet for ${fullname} on ${websiteName}.` +
   '\nContinue?';
 
-export const claimed = (
-  walletAccountId: string,
-  network: NearNetworks,
-  txHash: string,
-  availableTokens?: number,
-): string => {
+export const claimed = ({
+  fullname,
+  websiteName,
+  walletAccountId,
+  network,
+  txHash,
+  availableTokens,
+}: {
+  fullname: string;
+  websiteName: string;
+  walletAccountId: string;
+  network: NearNetworks;
+  txHash: string;
+  availableTokens?: number;
+}): string => {
   const explorerUrl =
     network === NearNetworks.Mainnet ? 'https://explorer.near.org' : 'https://explorer.testnet.near.org';
 
   return (
     `${
       availableTokens
-        ? availableTokens.toFixed(2) + ' NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
-        : nearUnicode + walletAccountId + ' has been set as a tipping wallet. '
+        ? `${availableTokens.toFixed(
+            2,
+          )} NEAR of tips was claimed from ${fullname} on ${websiteName} to ${nearUnicode}${walletAccountId}.`
+        : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
     }` + ` [Tx link](${explorerUrl}/transactions/${txHash})`
   );
 };
 
 export const unbinding = (walletForAutoclaim: string, username: string): string =>
-  `You are about to unbind ${nearUnicode}${walletForAutoclaim} from @${username}` + '\nContinue?';
+  `You are about to unbind ${nearUnicode}${walletForAutoclaim} from @${username}.` + '\nContinue?';
 
 export const unbinded = (walletForAutoclaim: string, username: string): string =>
-  `${nearUnicode}${walletForAutoclaim} has been unbound from @${username}`;
+  `${nearUnicode}${walletForAutoclaim} has been unbound from @${username}.`;
 
 export const rebindError = (walletForAutoclaim: string): string =>
   `${nearUnicode}${walletForAutoclaim} is a tipping wallet now. If you want to bind another wallet, login into it using the Extension.`;
 
 export const rebinding = (username: string, walletAccountId: string, walletForAutoclaim: string): string =>
-  `You are about to bind ${nearUnicode}${walletAccountId} to @${username} instead of ${walletForAutoclaim}` +
+  `You are about to bind ${nearUnicode}${walletAccountId} to @${username} instead of ${walletForAutoclaim}.` +
   '\nContinue?';
 
 export const binded = (walletAccountId: string, username: string): string =>
-  `${nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
+  `${nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet.`;
 
 export const CARequestStatusMsg = (firstAccount: string, secondAccount: string, requestStatus: string): string =>
-  'Connection of ' + nearUnicode + firstAccount + ' and ' + secondAccount + ' has been ' + requestStatus;
+  'Connection of ' + nearUnicode + firstAccount + ' and ' + secondAccount + ' has been ' + requestStatus + '.';
 
 export const teaserClaimed = (walletAccountId: string, availableTokens?: number) => {
   return `${
     availableTokens
-      ? availableTokens.toFixed(2) + ' NEAR of tips was claimed to  ' + nearUnicode + walletAccountId
+      ? availableTokens.toFixed(2) + ' NEAR of tips was claimed to  ' + nearUnicode + walletAccountId + '.'
       : nearUnicode + walletAccountId + ' has been set as a tipping wallet.'
   }`;
 };
 
 export const teaserUnbinded = (walletForAutoclaim: string, username: string) => {
-  return `${nearUnicode}${walletForAutoclaim} has been unbound from @${username}`;
+  return `${nearUnicode}${walletForAutoclaim} has been unbound from @${username}.`;
 };
 
 export const teaserBinded = (walletAccountId: string, username: string): string => {
-  return `${nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet`;
+  return `${nearUnicode}${walletAccountId} has been bounded to @${username} in @tippingdapplet.`;
 };
 
 export const teaserSuccessfulTipTransfer = (amount: string): string => {
@@ -125,3 +143,7 @@ export const teaserSuccessfulTipTransfer = (amount: string): string => {
 
 export const limitPerItemExceeded = (limitPerItem: number): string =>
   `The ${limitPerItem} NEAR limit for this content has been exceeded.`;
+
+export const waitForTheClaiming = (): string => 'Wait for the claiming...';
+
+export const waitForTheCAConnect = (): string => 'Wait for your application to be approved...';
