@@ -61,6 +61,7 @@ const globalIdTwitterUser_1 = "teremovskii/twitter";
 const twitterUserItemId_1 = "https://twitter.com/teremovskii/status/1336406078574256135";
 const twitterUserItemId_2 = "https://twitter.com/teremovskii/status/1336";
 const user_wallet = "nikter.near";
+const bosNearSocialItemId = "bos/106744941/bob.near/post/main";
 
 const ACCOUNT_2 = {
   id: "username-2",
@@ -76,7 +77,7 @@ test("integration test", async (t) => {
   console.log("== TEST 1 ==: initialize contract");
   // ============
 
-  const { alice, contract } = t.context.accounts;
+  const { alice, bob, contract } = t.context.accounts;
   await alice.call(contract, "initialize", {
     ownerAccountId: alice.accountId,
     caContractAddress: "connected-accounts.near",
@@ -436,4 +437,23 @@ test("integration test", async (t) => {
     )
   );
   t.regex(error!.message, /New total tips amount exceeds allowance/);
+
+  // == TEST 12 ==
+  console.log("== TEST 12 ==: send tip directly to NEAR address");
+  // ============
+
+  await alice.call(
+    contract,
+    "sendTips",
+    {
+      accountGId: bob.accountId,
+      itemId: bosNearSocialItemId,
+    },
+    {
+      attachedDeposit: tipAmount_10,
+      gas: "300000000000000",
+    }
+  );
+  const balance = await bob.balance();
+  t.is(NEAR.from(balance.total).toHuman(), NEAR.parse("31").toHuman());
 });

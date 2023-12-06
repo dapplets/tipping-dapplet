@@ -165,14 +165,17 @@ export function sendTips(accountGId: AccountGlobalId, itemId: string): void {
   );
   assert(!u128.eq(feeAmount, u128.Zero), "Donation cannot be free");
   const autoclaimWallet = walletsForAutoclaim.get(accountGId);
-  if (!autoclaimWallet) {
+  if (autoclaimWallet) {
+    ContractPromiseBatch.create(autoclaimWallet).transfer(donationAmount);
+    logging.log(
+      Context.sender + " tips " + donationAmount.toString() + " NEAR to " + accountGId + " <=> " + autoclaimWallet
+    );
+  } else if (validateAccountId(accountGId)) {
+    ContractPromiseBatch.create(accountGId).transfer(donationAmount);
+    logging.log(Context.sender + " tips " + donationAmount.toString() + " NEAR to " + accountGId);
+  } else {
     logging.log("A wallet for autoclaim is not determined.");
     _saveTipsInContract(accountGId, donationAmount);
-  } else {
-    ContractPromiseBatch.create(autoclaimWallet!).transfer(donationAmount);
-    logging.log(
-      Context.sender + " tips " + donationAmount.toString() + " NEAR to " + accountGId + " <=> " + autoclaimWallet!
-    );
   }
   _finishTipping(accountGId, itemId, donationAmount, feeAmount);
 }
@@ -381,4 +384,19 @@ function _claim(from: AccountGlobalId, to: NearAccount): void {
   availableTipsByAccountGlobalId.set(from, u128.Zero);
 
   logging.log(to + " claimed " + availableTips.toString() + " NEAR from " + from);
+}
+
+function validateAccountId(accountId: string): boolean {
+  return (
+    accountId.length >= 2 &&
+    accountId.length <= 64 &&
+    accountId.indexOf("/") == -1 &&
+    accountId.indexOf(".") != 0 &&
+    accountId.indexOf(".") != accountId.length - 1 &&
+    accountId.indexOf("-") != 0 &&
+    accountId.indexOf("-") != accountId.length - 1 &&
+    accountId.indexOf("_") != 0 &&
+    accountId.indexOf("_") != accountId.length - 1 &&
+    accountId.toLowerCase() == accountId
+  );
 }
