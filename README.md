@@ -1,4 +1,5 @@
-![image](/assets/tipping-dapplet-cover.jpg)
+![image](/assets/dark.png#gh-dark-mode-only)
+![image](/assets/light.png#gh-light-mode-only)
 
 # Tipping NEAR Dapplet
 
